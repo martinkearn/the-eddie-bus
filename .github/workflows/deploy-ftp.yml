@@ -22,7 +22,7 @@ jobs:
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Mirror src to FTP server
+      - name: Mirror src to public_html
         env:
           FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
@@ -32,4 +32,4 @@ jobs:
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             -p 21 \
             "$FTP_SERVER" \
-            -e "set ftp:ssl-allow no; set ftp:passive-mode on; mirror --reverse --delete --verbose ./src/ ./; bye"
+            -e "set ftp:ssl-allow no; set ftp:passive-mode on; mkdir -p public_html; mirror --reverse --verbose ./src/ ./public_html/; bye"
