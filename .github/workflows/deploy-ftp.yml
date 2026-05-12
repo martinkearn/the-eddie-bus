@@ -32,4 +32,4 @@ jobs:
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             -p 21 \
             "$FTP_SERVER" \
-            -e "set ftp:ssl-allow no; set ftp:passive-mode on; mirror --reverse --verbose ./src/ /public_html/; bye"
+            -e "set ftp:ssl-allow no; set ftp:passive-mode on; mirror --reverse --delete --verbose ./src/ /public_html/; bye"
