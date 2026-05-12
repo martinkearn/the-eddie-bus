@@ -14,6 +14,7 @@ jobs:
   deploy:
     name: Build and upload static export
     runs-on: ubuntu-latest
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
@@ -36,6 +37,11 @@ jobs:
           test -d out/_next/static
           test -f out/index.html
 
+      - name: Log deploy fingerprint
+        run: |
+          echo "Deploying commit: $GITHUB_SHA"
+          grep -o 'Last updated:[^<]*' out/index.html | head -n 1
+
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
@@ -46,19 +52,19 @@ jobs:
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
           CSS_FILE=$(basename out/_next/static/css/*.css)
-          LFTP_SETTINGS="set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10;"
+          LFTP_SETTINGS="set cmd:fail-exit yes; set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30;"
 
           if lftp -e "set -a; bye" | grep -q '^net:close-wait'; then
             LFTP_SETTINGS="$LFTP_SETTINGS set net:close-wait 0;"
           fi
 
           attempt=1
-          max_attempts=8
+          max_attempts=3
 
           while [ "$attempt" -le "$max_attempts" ]; do
             echo "FTP deploy attempt $attempt of $max_attempts"
 
-            if lftp \
+            if timeout 900 lftp \
               -u "$FTP_USERNAME","$FTP_PASSWORD" \
               -p 21 \
               "$FTP_SERVER" \
