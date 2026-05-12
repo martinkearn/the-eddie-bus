@@ -54,12 +54,11 @@ jobs:
           timeout 300 lftp \
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set net:timeout 10; set logging yes; set log-file /tmp/lftp.log; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
 
       - name: Show deploy results
         if: always()
         run: |
           echo "=== Local files deployed ==="
-          find ./out -type f | head -20
-          echo "=== Transfer log ==="
-          cat /tmp/lftp.log 2>/dev/null || echo "No transfer log available"
+          find ./out -type f | wc -l
+          echo "files copied"
