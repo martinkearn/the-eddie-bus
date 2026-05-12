@@ -33,4 +33,4 @@ jobs:
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             -p 21 \
             "$FTP_SERVER" \
-            -e "set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 3; mirror --reverse --delete --parallel=4 ./src/ /public_html/; bye"
+            -e "set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 3; set net:close-wait 0; mirror --reverse --delete ./src/ /public_html/; bye"
