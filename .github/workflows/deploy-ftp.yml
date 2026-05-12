@@ -14,13 +14,14 @@ jobs:
   deploy:
     name: Upload src via FTP
     runs-on: ubuntu-latest
+    container: alpine:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
+        run: apk add --no-cache lftp
 
       - name: Mirror src to public_html
         env:
@@ -32,4 +33,4 @@ jobs:
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             -p 21 \
             "$FTP_SERVER" \
-            -e "set ftp:ssl-allow no; set ftp:passive-mode on; mirror --reverse --delete --verbose ./src/ /public_html/; bye"
+            -e "set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 3; mirror --reverse --delete --parallel=4 ./src/ /public_html/; bye"
