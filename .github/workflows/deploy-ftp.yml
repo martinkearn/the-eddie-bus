@@ -1,4 +1,4 @@
-name: Deploy src to Krystal FTP
+name: Deploy static export to Krystal FTP
 
 on:
   push:
@@ -12,18 +12,29 @@ concurrency:
 
 jobs:
   deploy:
-    name: Upload src via FTP
+    name: Build and upload static export
     runs-on: ubuntu-latest
-    container: alpine:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install lftp
-        run: apk add --no-cache lftp
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-      - name: Mirror src to public_html
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build static export
+        run: npm run build
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Mirror out to public_html
         env:
           FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
@@ -45,7 +56,7 @@ jobs:
               -u "$FTP_USERNAME","$FTP_PASSWORD" \
               -p 21 \
               "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./src/ /public_html/; bye"
+              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/ /public_html/; bye"
             then
               echo "FTP deploy succeeded"
               exit 0
