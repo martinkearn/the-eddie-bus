@@ -54,7 +54,7 @@ jobs:
           timeout 300 lftp \
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
 
       - name: Show deploy results
         if: always()
