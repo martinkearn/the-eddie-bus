@@ -45,6 +45,7 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
+          CSS_FILE=$(basename out/_next/static/css/*.css)
           LFTP_SETTINGS="set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10;"
 
           if lftp -e "set -a; bye" | grep -q '^net:close-wait'; then
@@ -61,7 +62,7 @@ jobs:
               -u "$FTP_USERNAME","$FTP_PASSWORD" \
               -p 21 \
               "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; bye"
+              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/static/css/ /public_html/_next/static/css/; mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; cls /public_html/_next/static/css/$CSS_FILE; bye"
             then
               echo "FTP deploy succeeded"
               exit 0
