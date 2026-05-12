@@ -29,14 +29,36 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          LFTP_SETTINGS="set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 3;"
+          LFTP_SETTINGS="set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10;"
 
           if lftp -e "set -a; bye" | grep -q '^net:close-wait'; then
             LFTP_SETTINGS="$LFTP_SETTINGS set net:close-wait 0;"
           fi
 
-          lftp \
-            -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            -p 21 \
-            "$FTP_SERVER" \
-            -e "$LFTP_SETTINGS mirror --reverse --delete ./src/ /public_html/; bye"
+          attempt=1
+          max_attempts=8
+
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "FTP deploy attempt $attempt of $max_attempts"
+
+            if lftp \
+              -u "$FTP_USERNAME","$FTP_PASSWORD" \
+              -p 21 \
+              "$FTP_SERVER" \
+              -e "$LFTP_SETTINGS mirror --reverse --delete ./src/ /public_html/; bye"
+            then
+              echo "FTP deploy succeeded"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep_seconds=$((attempt * 20))
+              echo "FTP temporarily unavailable (for example 421 max users). Retrying in ${sleep_seconds}s..."
+              sleep "$sleep_seconds"
+            fi
+
+            attempt=$((attempt + 1))
+          done
+
+          echo "FTP deploy failed after $max_attempts attempts"
+          exit 1
