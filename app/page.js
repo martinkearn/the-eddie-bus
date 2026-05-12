@@ -36,7 +36,7 @@ export default function Home() {
 
       <small>Serving care homes and specialist groups in the Bromsgrove area since 1985.</small>
 
-      <small>Last updated: 12th May 2026 16:25</small>
+      <small>Last updated: 12th May 2026 17:20</small>
     </main>
   )
 }

@@ -43,7 +43,7 @@ jobs:
           grep -o 'Last updated:[^<]*' out/index.html | head -n 1
 
       - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
+        run: sudo apt-get install -y lftp
 
       - name: Mirror out to public_html
         env:
@@ -51,37 +51,15 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          CSS_FILE=$(basename out/_next/static/css/*.css)
-          LFTP_SETTINGS="set cmd:fail-exit yes; set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30;"
+          timeout 300 lftp \
+            -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            "$FTP_SERVER" \
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set net:timeout 10; set xfer:log yes; set cmd:verbose yes; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
 
-          if lftp -e "set -a; bye" | grep -q '^net:close-wait'; then
-            LFTP_SETTINGS="$LFTP_SETTINGS set net:close-wait 0;"
-          fi
-
-          attempt=1
-          max_attempts=3
-
-          while [ "$attempt" -le "$max_attempts" ]; do
-            echo "FTP deploy attempt $attempt of $max_attempts"
-
-            if timeout 900 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              -p 21 \
-              "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/static/css/ /public_html/_next/static/css/; mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; cls /public_html/_next/static/css/$CSS_FILE; bye"
-            then
-              echo "FTP deploy succeeded"
-              exit 0
-            fi
-
-            if [ "$attempt" -lt "$max_attempts" ]; then
-              sleep_seconds=$((attempt * 20))
-              echo "FTP temporarily unavailable (for example 421 max users). Retrying in ${sleep_seconds}s..."
-              sleep "$sleep_seconds"
-            fi
-
-            attempt=$((attempt + 1))
-          done
-
-          echo "FTP deploy failed after $max_attempts attempts"
-          exit 1
+      - name: Show deploy results
+        if: always()
+        run: |
+          echo "=== Local files deployed ==="
+          find ./out -type f | head -20
+          echo "=== Transfer log ==="
+          cat /tmp/lftp.log 2>/dev/null || echo "No transfer log available"
