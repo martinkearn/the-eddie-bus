@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#003cae",
+                    "surface-container": "#eeeeee",
+                    "inverse-surface": "#2f3131",
+                    "on-primary-fixed-variant": "#93000d",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-container": "#636262",
+                    "on-surface-variant": "#5d3f3c",
+                    "on-primary": "#ffffff",
+                    "inverse-on-surface": "#f1f1f1",
+                    "surface-container-high": "#e8e8e8",
+                    "on-background": "#1a1c1c",
+                    "tertiary-fixed-dim": "#b5c4ff",
+                    "primary": "#ba0013",
+                    "surface-dim": "#dadada",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#ffdad6",
+                    "surface-tint": "#c00014",
+                    "primary-fixed-dim": "#ffb4ab",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed": "#e5e2e1",
+                    "tertiary-fixed": "#dce1ff",
+                    "tertiary-container": "#406be7",
+                    "on-primary-fixed": "#410002",
+                    "tertiary": "#1e51cd",
+                    "background": "#f9f9f9",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "surface": "#f9f9f9",
+                    "surface-variant": "#e2e2e2",
+                    "on-error": "#ffffff",
+                    "secondary": "#5f5e5e",
+                    "on-surface": "#1a1c1c",
+                    "error": "#ba1a1a",
+                    "primary-container": "#e31e24",
+                    "surface-bright": "#f9f9f9",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#e2e2e2",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "outline-variant": "#e7bdb8",
+                    "outline": "#926f6b",
+                    "on-tertiary-container": "#fdfaff",
+                    "inverse-primary": "#ffb4ab",
+                    "secondary-container": "#e2dfde",
+                    "surface-container-low": "#f3f3f3",
+                    "on-tertiary-fixed": "#00164e",
+                    "on-primary-container": "#fffafa"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "1rem",
+                    "stack-lg": "2rem",
+                    "margin-desktop": "2.5rem",
+                    "gutter": "1.5rem",
+                    "stack-sm": "0.5rem",
+                    "section-gap": "4rem",
+                    "margin-mobile": "1rem"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "callout": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-md": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "callout": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- TopNavBar (Shared Component) -->
+<header class="docked full-width top-0 sticky z-50 bg-surface border-b border-outline-variant shadow-sm px-margin-mobile py-4 flex justify-between items-center md:hidden">
+<div class="flex items-center">
+<img alt="The EDDIE Bus Logo" class="h-10 w-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv37wXCusxUMdFjcHvrZli_OGVMv2oOjOSc1fenCBMivo9b25qMoi7D7qYn-3q8F5EYgdNfaMPh6kXmRA_9IAjmE2EHCkxXHVYRtZlSeWm88R50nQ-sy_LW364Rx2FBWBQSg4Ocr0i4YH_K2kHAzKU2U75kc14WVeDEvM6oYCkLjhhienS9nOa8ZxTGKuqZtcnp-ksiYPW0bVZBFpF36l2mWQ2CIGQUKDkPGEJUpziuEEdp8C6IlNlW2ccZPVZ2Isvj2H624DV-vA"/>
+</div>
+<button class="p-2 text-primary focus:bg-surface-container-low rounded-lg transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined text-[32px]">menu</span>
+</button>
+</header>
+<main class="min-h-screen">
+<!-- Hero Section -->
+<section class="relative bg-surface-container-lowest">
+<div class="w-full h-64 relative overflow-hidden">
+<img alt="Side view of The EDDIE Bus" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNOZYeO-KPz0Q7zVcG-gcspm9PjoZtrAUWEJU1DODuyumGkWMfMj_MBtTGf7yKJKU3s8GXTwBdvR8dJdxNCsbguA_bS7_iAaagS8DU8fmo2Wb_grBqP4REwC_vRe8oEdEkgYwXyug4RQZWUgirxOpe2zpOmEZqsOOzEhOSJQZURBkjftLBlTMCaFP8Bxnr2Rt-jZsqXAHzuMd7Wb6gzRq8JAa24IQey0ruV0avU8Wbu_It06BgBDr1qnuxJGZMyl4M5GdtbMfPhFQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-margin-mobile">
+<span class="bg-primary text-on-primary font-label-lg text-label-lg px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Explore</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-white">Places to visit</h1>
+</div>
+</div>
+<div class="px-margin-mobile py-stack-md bg-surface">
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                    The EDDIE Bus provides affordable transport for community groups and local residents to visit some of the region's best attractions. From shopping trips to scenic garden visits, there's always somewhere new to go.
+                </p>
+</div>
+</section>
+<!-- Destination Categories (Bento/Card Layout) -->
+<section class="px-margin-mobile py-stack-lg space-y-gutter">
+<!-- Category 1: Shopping & Markets -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-stack-md bg-secondary-container flex items-center gap-3">
+<span class="material-symbols-outlined text-on-secondary-container">shopping_cart</span>
+<h2 class="font-headline-md text-headline-md text-on-secondary-container">Shopping &amp; Markets</h2>
+</div>
+<div class="p-stack-md space-y-stack-md">
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-primary-fixed p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary-fixed-variant">store</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Redditch Kingfisher Centre</h3>
+<p class="text-sm text-on-surface-variant mt-1">Direct transport for worry-free shopping trips and lunch outings.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-primary-fixed p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-primary-fixed-variant">sell</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Bromsgrove High Street Market</h3>
+<p class="text-sm text-on-surface-variant mt-1">Visit the local market days with doorstep pickup and drop-off.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Category 2: Garden Centres & Scenic Views -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-stack-md bg-tertiary-fixed flex items-center gap-3">
+<span class="material-symbols-outlined text-on-tertiary-fixed">park</span>
+<h2 class="font-headline-md text-headline-md text-on-tertiary-fixed">Gardens &amp; Nature</h2>
+</div>
+<div class="p-stack-md space-y-stack-md">
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-tertiary-fixed-dim p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant">local_florist</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Webbs Garden Centre</h3>
+<p class="text-sm text-on-surface-variant mt-1">A firm favorite for seasonal displays, plant shopping, and the cafe.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-tertiary-fixed-dim p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant">terrain</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Clent Hills Scenic View</h3>
+<p class="text-sm text-on-surface-variant mt-1">Accessible vantage points for breathtaking views over the countryside.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Category 3: Social & Health Hubs -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-stack-md bg-primary-fixed flex items-center gap-3">
+<span class="material-symbols-outlined text-on-primary-fixed">groups</span>
+<h2 class="font-headline-md text-headline-md text-on-primary-fixed">Social &amp; Health</h2>
+</div>
+<div class="p-stack-md space-y-stack-md">
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-secondary-fixed p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-secondary-fixed-variant">volunteer_activism</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Local Community Centres</h3>
+<p class="text-sm text-on-surface-variant mt-1">Trips to afternoon teas, bingo sessions, and community support groups.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-stack-sm rounded-lg hover:bg-surface-container-low transition-all">
+<div class="bg-secondary-fixed p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-on-secondary-fixed-variant">medical_services</span>
+</div>
+<div>
+<h3 class="font-label-lg text-label-lg text-on-surface">Medical Appointment Routes</h3>
+<p class="text-sm text-on-surface-variant mt-1">Dedicated transport services to key medical hubs in the Bromsgrove area.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Accessibility Note Chip -->
+<div class="flex items-center gap-2 bg-on-tertiary-container text-tertiary p-4 rounded-xl border border-tertiary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">accessible_forward</span>
+<p class="text-sm font-semibold">All these destinations are vetted for wheelchair accessibility.</p>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="px-margin-mobile py-section-gap">
+<div class="bg-inverse-surface rounded-2xl p-stack-lg text-center shadow-xl">
+<h2 class="font-headline-md text-headline-md text-white mb-stack-sm">Ready to visit?</h2>
+<p class="font-body-md text-inverse-on-surface opacity-90 mb-stack-lg">Book a seat or reserve the whole bus for your group's next adventure.</p>
+<button class="w-full bg-primary-container text-on-primary-container font-label-lg text-label-lg py-5 rounded-full shadow-lg active:scale-95 duration-100 flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">calendar_month</span>
+                    Book the EDDIE Bus
+                </button>
+<button class="w-full mt-4 bg-transparent border-2 border-white text-white font-label-lg text-label-lg py-5 rounded-full active:scale-95 duration-100">
+                    Contact Us
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component - Mobile Version) -->
+<footer class="bg-inverse-surface dark:bg-surface-container-highest text-inverse-on-surface dark:text-on-surface w-full">
+<div class="px-margin-mobile py-stack-lg flex flex-col gap-gutter">
+<div>
+<div class="font-headline-md text-headline-md font-bold text-on-primary-fixed mb-4">The EDDIE Bus</div>
+<p class="font-body-md opacity-80 text-sm">Providing accessible transport across Bromsgrove since 1985.</p>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<a class="text-inverse-on-surface opacity-80 hover:opacity-100 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">privacy_tip</span>
+                    Privacy Policy
+                </a>
+<a class="text-inverse-on-surface opacity-80 hover:opacity-100 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">cookie</span>
+                    Cookie Policy
+                </a>
+<a class="text-inverse-on-surface opacity-80 hover:opacity-100 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">mail</span>
+                    theeddiebus@gmail.com
+                </a>
+<a class="text-inverse-on-surface opacity-80 hover:opacity-100 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">phone</span>
+                    07805 400 180
+                </a>
+</div>
+<div class="pt-stack-md border-t border-white/10 mt-4">
+<p class="text-xs opacity-60 leading-relaxed">
+                    © The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666). All rights reserved.
+                </p>
+</div>
+</div>
+</footer>
+<!-- Bottom Navigation Bar (Contextual) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant flex justify-around items-center px-4 py-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center p-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] mt-1 font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center p-2 text-primary font-bold border-b-2 border-primary pb-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="text-[10px] mt-1">Places</span>
+</a>
+<a class="flex flex-col items-center p-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="text-[10px] mt-1">Book</span>
+</a>
+<a class="flex flex-col items-center p-2 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">info</span>
+<span class="text-[10px] mt-1">About</span>
+</a>
+</nav>
+<div class="h-16 md:hidden"></div> <!-- Spacer for fixed nav -->
+</body></html>

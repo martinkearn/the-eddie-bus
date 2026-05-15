@@ -36,6 +36,7 @@ jobs:
         run: |
           test -d out/_next/static
           test -f out/index.html
+          test -n "$(find out/_next/static -type f -name '*.css' -print -quit)"
 
       - name: Log deploy fingerprint
         run: |
@@ -52,7 +53,8 @@ jobs:
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
           LFTP_SETTINGS="set cmd:fail-exit yes; set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30;"
-          CSS_FILE=$(basename out/_next/static/css/*.css)
+          CSS_FILE=$(find out/_next/static -type f -name '*.css' -print -quit)
+          CSS_REMOTE_PATH="/public_html/${CSS_FILE#out/}"
 
           for attempt in {1..3}; do
             echo "FTP deploy attempt $attempt of 3"
@@ -61,7 +63,7 @@ jobs:
               -u "$FTP_USERNAME","$FTP_PASSWORD" \
               -p 21 \
               "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/static/css/ /public_html/_next/static/css/; mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; cls /public_html/_next/static/css/$CSS_FILE; bye"
+              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; cls $CSS_REMOTE_PATH; bye"
             then
               echo "FTP deploy succeeded"
               exit 0

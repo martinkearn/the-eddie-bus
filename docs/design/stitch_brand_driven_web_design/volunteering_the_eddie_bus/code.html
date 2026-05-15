@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Volunteering - The EDDIE Bus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#1a1c1c",
+                    "on-tertiary-container": "#fdfaff",
+                    "surface-bright": "#f9f9f9",
+                    "tertiary-fixed-dim": "#b5c4ff",
+                    "outline": "#926f6b",
+                    "inverse-on-surface": "#f1f1f1",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e7bdb8",
+                    "on-primary-fixed": "#410002",
+                    "on-background": "#1a1c1c",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-tertiary-fixed-variant": "#003cae",
+                    "secondary-container": "#e2dfde",
+                    "surface-container-low": "#f3f3f3",
+                    "primary-fixed": "#ffdad6",
+                    "secondary-fixed": "#e5e2e1",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "secondary": "#5f5e5e",
+                    "surface-container-high": "#e8e8e8",
+                    "tertiary-fixed": "#dce1ff",
+                    "on-tertiary-fixed": "#00164e",
+                    "on-primary-fixed-variant": "#93000d",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#636262",
+                    "inverse-surface": "#2f3131",
+                    "primary-fixed-dim": "#ffb4ab",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#406be7",
+                    "on-surface-variant": "#5d3f3c",
+                    "on-primary-container": "#fffafa",
+                    "surface-container-highest": "#e2e2e2",
+                    "background": "#f9f9f9",
+                    "surface-dim": "#dadada",
+                    "primary-container": "#e31e24",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container": "#eeeeee",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "inverse-primary": "#ffb4ab",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "surface": "#f9f9f9",
+                    "tertiary": "#1e51cd",
+                    "surface-tint": "#c00014",
+                    "primary": "#ba0013"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "1rem",
+                    "stack-lg": "2rem",
+                    "stack-md": "1rem",
+                    "stack-sm": "0.5rem",
+                    "gutter": "1.5rem",
+                    "margin-desktop": "2.5rem",
+                    "section-gap": "4rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "callout": ["Inter"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "callout": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed-dim">
+                The EDDIE Bus
+            </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">How to Book</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Places to Visit</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Policies</a>
+<a class="font-label-lg text-label-lg text-primary font-bold border-b-2 border-primary pb-1" href="#">Volunteering</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden lg:block bg-primary-container text-on-primary-container px-6 py-3 rounded-lg font-label-lg text-label-lg hover:bg-opacity-90 transition-all active:scale-95 duration-100">
+                    Book the EDDIE Bus
+                </button>
+<button class="md:hidden">
+<span class="material-symbols-outlined text-on-surface" data-icon="menu">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-section-gap">
+<!-- Hero Section -->
+<header class="mb-section-gap text-center max-w-4xl mx-auto">
+<h1 class="font-display-lg text-display-lg text-on-surface mb-stack-md">Volunteer with the EDDIE Bus</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                Our service is built on the kindness of local people. Join our team and help provide vital transport for the Bromsgrove community.
+            </p>
+</header>
+<!-- Bento Layout for Content -->
+<div class="bento-grid">
+<!-- Become a Volunteer Driver -->
+<section class="col-span-12 lg:col-span-7 bg-surface-container-lowest p-stack-lg rounded-xl border border-outline-variant shadow-sm">
+<div class="flex items-center gap-4 mb-stack-md">
+<span class="material-symbols-outlined text-primary p-3 bg-primary-fixed rounded-lg" data-icon="directions_bus">directions_bus</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Become a Volunteer Driver</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">
+                    Our drivers are the heartbeat of our service. You don't just drive a bus; you provide a lifeline to those who might otherwise be isolated.
+                </p>
+<div class="space-y-4">
+<h3 class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Requirements</h3>
+<ul class="space-y-3">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">Valid UK driving licence (Category B or D1 depending on vehicle).</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">A friendly, patient, and approachable manner with passengers.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">Confidence driving a large vehicle (training is provided).</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-body-md text-body-md">Reliability and a commitment to helping the Bromsgrove community.</span>
+</li>
+</ul>
+</div>
+</section>
+<!-- Imagery Card -->
+<div class="col-span-12 lg:col-span-5 h-[400px] lg:h-auto rounded-xl overflow-hidden shadow-sm relative group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A brightly lit, high-contrast photograph of a friendly volunteer driver smiling warmly while standing next to a clean, modern community minibus. The setting is a pleasant, green suburban street in Bromsgrove during a sunny afternoon. The lighting is soft and golden, emphasizing a welcoming community atmosphere. The color palette features the bus's signature vibrant red accents against a clean white and natural green background, creating a tactile and professional feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwzQFpTAGE-ZRRvalV64GKAMAyLuOam5t-Vj_bi5bLTkadzy0d3YbEAEKBAvOr5Cee0SVESmUbx1GScr_Nmf_7OqPbsdsWr_V1oam2HMOh-0QmATkPsaOHuAH893YgksFMn7uG66JLiQSgX3hERYT88Kje_lqAa9_wThZrWHznkep4eIBHnrcyYaIhE8mF_C0YhIeB2IEoN3LSCGlkb8jBhjOMOHRWBEQ5Y441rxk1AkMdAy5HpHX8Bl3-OtIYQn_29AR_BMTcLQs"/>
+<div class="absolute bottom-0 left-0 right-0 p-stack-md bg-gradient-to-t from-black/60 to-transparent">
+<span class="text-white font-label-lg text-label-lg">Join our team of dedicated drivers</span>
+</div>
+</div>
+<!-- Driver Checks & Training -->
+<section class="col-span-12 md:col-span-6 bg-secondary-container p-stack-lg rounded-xl flex flex-col justify-center">
+<div class="flex items-center gap-4 mb-stack-md">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="verified_user">verified_user</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Driver Checks &amp; Training</h2>
+</div>
+<p class="font-body-md text-body-md text-on-secondary-container mb-stack-md">
+                    We ensure all our volunteers are well-prepared and comfortable. Our current policy does not require a formal DBS check, but we maintain high standards of safety.
+                </p>
+<div class="bg-surface-container-lowest/50 p-4 rounded-lg border border-outline-variant">
+<h4 class="font-label-lg text-label-lg mb-2">What we provide:</h4>
+<p class="font-body-md text-body-md italic text-on-surface-variant">"Full inductions are provided for every new driver, covering vehicle operation, safety procedures, and passenger care."</p>
+</div>
+</section>
+<!-- Become a Volunteer Helper -->
+<section class="col-span-12 md:col-span-6 border-2 border-primary/20 bg-surface-container-lowest p-stack-lg rounded-xl">
+<div class="flex items-center gap-4 mb-stack-md">
+<span class="material-symbols-outlined text-primary" data-icon="handshake">handshake</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Become a Volunteer Helper</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-stack-md">
+                    Not a driver? You can still make a huge difference. Helper roles are essential for keeping our journeys running smoothly and safely.
+                </p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="p-4 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="accessibility_new">accessibility_new</span>
+<p class="font-label-lg text-label-lg">Passenger Assistance</p>
+</div>
+<div class="p-4 bg-surface-container rounded-lg">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="event_note">event_note</span>
+<p class="font-label-lg text-label-lg">Booking Support</p>
+</div>
+</div>
+</section>
+<!-- Why Volunteer? - Impact Section -->
+<section class="col-span-12 bg-inverse-surface text-inverse-on-surface p-stack-lg rounded-xl relative overflow-hidden">
+<div class="relative z-10 grid md:grid-cols-2 gap-gutter items-center">
+<div>
+<h2 class="font-display-lg text-display-lg mb-stack-md">Why Volunteer?</h2>
+<p class="font-body-lg text-body-lg opacity-90 mb-stack-md">
+                            Volunteering with the EDDIE Bus isn't just about transport; it's about community connection. For many of our passengers, a trip on the bus is their only social outing of the week.
+                        </p>
+<div class="flex gap-4">
+<div class="flex flex-col">
+<span class="font-display-lg text-display-lg text-primary-fixed-dim">30+</span>
+<span class="font-label-lg text-label-lg uppercase opacity-70">Years Serving Bromsgrove</span>
+</div>
+<div class="flex flex-col border-l border-white/20 pl-4">
+<span class="font-display-lg text-display-lg text-primary-fixed-dim">100%</span>
+<span class="font-label-lg text-label-lg uppercase opacity-70">Volunteer Run</span>
+</div>
+</div>
+</div>
+<div class="hidden md:block">
+<div class="bg-surface-container-highest/10 backdrop-blur-md p-stack-md rounded-xl border border-white/10">
+<p class="font-callout text-callout italic mb-4">"I started volunteering because I wanted to give something back. Seeing the smiles on passengers' faces when they get to go on their weekly shopping trip makes it all worthwhile."</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container"></div>
+<span class="font-label-lg text-label-lg">— John, Volunteer Driver</span>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-32 -mt-32"></div>
+</section>
+<!-- Get Involved / Contact Details -->
+<section class="col-span-12 bg-primary-container text-on-primary-container p-stack-lg rounded-xl text-center">
+<h2 class="font-headline-lg text-headline-lg mb-stack-md">Ready to get involved?</h2>
+<p class="font-body-lg text-body-lg mb-stack-lg max-w-2xl mx-auto">
+                    We would love to hear from you. Whether you have a few hours a month or a few days a week, your help is invaluable.
+                </p>
+<div class="flex flex-col md:flex-row justify-center gap-gutter mb-stack-lg">
+<div class="flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-2xl" data-icon="mail">mail</span>
+<span class="font-headline-md text-headline-md">theeddiebus@gmail.com</span>
+</div>
+<div class="flex items-center justify-center gap-3">
+<span class="material-symbols-outlined text-2xl" data-icon="phone_in_talk">phone_in_talk</span>
+<span class="font-headline-md text-headline-md">07805 400 180</span>
+</div>
+</div>
+<button class="bg-on-primary text-primary-container px-10 py-5 rounded-xl font-headline-md text-headline-md hover:shadow-lg transition-all active:scale-95">
+                    Contact Us Today
+                </button>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-inverse-surface dark:bg-surface-container-highest mt-section-gap">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-stack-lg max-w-7xl mx-auto">
+<div class="lg:col-span-1">
+<div class="font-headline-md text-headline-md font-bold text-on-primary-fixed mb-4">The EDDIE Bus</div>
+<p class="font-body-md text-body-md text-inverse-on-surface opacity-80">Supporting the Bromsgrove community through accessible transport since 1985.</p>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-primary-fixed-dim mb-4 uppercase">Information</h4>
+<ul class="space-y-2">
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim" href="#">Privacy Policy</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim" href="#">Cookie Policy</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim" href="#">Accessibility</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim" href="#">Terms &amp; Conditions</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-primary-fixed-dim mb-4 uppercase">Contact</h4>
+<ul class="space-y-2">
+<li class="font-label-lg text-label-lg text-inverse-on-surface opacity-80">theeddiebus@gmail.com</li>
+<li class="font-label-lg text-label-lg text-inverse-on-surface opacity-80">07805 400 180</li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-primary-fixed-dim mb-4 uppercase">Charity Info</h4>
+<p class="font-body-md text-body-md text-inverse-on-surface opacity-80 italic">
+                    The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666).
+                </p>
+</div>
+</div>
+<div class="border-t border-white/10 py-6 text-center max-w-7xl mx-auto">
+<p class="font-label-lg text-label-lg text-inverse-on-surface opacity-60">© The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666). All rights reserved.</p>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>How to Book - The EDDIE Bus</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#1a1c1c",
+                    "on-tertiary-container": "#fdfaff",
+                    "surface-bright": "#f9f9f9",
+                    "tertiary-fixed-dim": "#b5c4ff",
+                    "outline": "#926f6b",
+                    "inverse-on-surface": "#f1f1f1",
+                    "on-primary": "#ffffff",
+                    "outline-variant": "#e7bdb8",
+                    "on-primary-fixed": "#410002",
+                    "on-background": "#1a1c1c",
+                    "on-secondary-fixed-variant": "#474746",
+                    "on-tertiary-fixed-variant": "#003cae",
+                    "secondary-container": "#e2dfde",
+                    "surface-container-low": "#f3f3f3",
+                    "primary-fixed": "#ffdad6",
+                    "secondary-fixed": "#e5e2e1",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "secondary": "#5f5e5e",
+                    "surface-container-high": "#e8e8e8",
+                    "tertiary-fixed": "#dce1ff",
+                    "on-tertiary-fixed": "#00164e",
+                    "on-primary-fixed-variant": "#93000d",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#636262",
+                    "inverse-surface": "#2f3131",
+                    "primary-fixed-dim": "#ffb4ab",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#406be7",
+                    "on-surface-variant": "#5d3f3c",
+                    "on-primary-container": "#fffafa",
+                    "surface-container-highest": "#e2e2e2",
+                    "background": "#f9f9f9",
+                    "surface-dim": "#dadada",
+                    "primary-container": "#e31e24",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container": "#eeeeee",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "inverse-primary": "#ffb4ab",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "surface": "#f9f9f9",
+                    "tertiary": "#1e51cd",
+                    "surface-tint": "#c00014",
+                    "primary": "#ba0013"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "1rem",
+                    "stack-lg": "2rem",
+                    "stack-md": "1rem",
+                    "stack-sm": "0.5rem",
+                    "gutter": "1.5rem",
+                    "margin-desktop": "2.5rem",
+                    "section-gap": "4rem"
+            },
+            "fontFamily": {
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "callout": ["Inter"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "callout": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ba0013;
+            color: white;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm docked full-width top-0 sticky z-50">
+<nav class="flex justify-between items-center w-full px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed-dim">The EDDIE Bus</span>
+</div>
+<div class="hidden lg:flex items-center gap-8">
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-lg text-label-lg text-primary font-bold border-b-2 border-primary pb-1" href="#">How to Book</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Places to Visit</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Policies</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Volunteering</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:flex items-center px-6 py-3 rounded-full border-2 border-on-surface font-label-lg text-label-lg hover:bg-surface-container-low transition-all active:scale-95">Contact Us</button>
+<button class="bg-primary-container text-on-primary-container px-6 py-3 rounded-full font-label-lg text-label-lg hover:bg-opacity-90 transition-all active:scale-95 shadow-md">Book the EDDIE Bus</button>
+</div>
+</nav>
+</header>
+<main class="max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+<!-- Hero Section -->
+<section class="mb-section-gap">
+<div class="relative rounded-xl overflow-hidden min-h-[400px] flex items-center p-margin-desktop bg-on-surface">
+<img alt="The EDDIE Bus parked in a charming English village green" class="absolute inset-0 w-full h-full object-cover opacity-60" data-alt="A bright red community minibus parked in a scenic Bromsgrove village setting during a clear afternoon. The lighting is warm and inviting, highlighting the bus's polished finish against a backdrop of historic stone buildings and lush green trees. The overall aesthetic is professional, modern, and accessible, conveying a strong sense of community reliability and local warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDASFVfxBOpkbOIxBjUr0Sjtfu8jAgh_JTp2Zb7NnBeMNRRoGsNzB3AgMWx1BWF9T4d3gLvMTS4ywFyRoMvJqHg44s4cNGP6NcN8Xvmmywg--OdsQuhkQJp-nslfWAp8iG3jTelayfQmzF3FEnRJcRaikvZ2cyN5eMef6Dpg6P_njAg5UmWAVJ78suGMu2UFbHkszJX4pWU2j0hs4xPlGUYA0IQbV1xMqZS9RoV1LwTpp70UprmIQofabKK6bmGVvIEl0oMsN325Gg"/>
+<div class="relative z-10 max-w-2xl">
+<h1 class="font-display-lg text-display-lg text-on-primary mb-stack-md">Book the EDDIE Bus for your group outing</h1>
+<p class="font-body-lg text-body-lg text-on-primary opacity-90">Providing accessible and affordable group travel for the Bromsgrove community since 1985.</p>
+</div>
+</div>
+</section>
+<!-- Booking Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<!-- Process Column -->
+<div class="lg:col-span-2 flex flex-col gap-gutter">
+<!-- Steps Section -->
+<section class="bg-surface-container-lowest rounded-xl p-8 border border-outline-variant shadow-sm">
+<div class="flex items-center gap-4 mb-stack-lg">
+<span class="material-symbols-outlined text-primary text-4xl">event_available</span>
+<h2 class="font-headline-lg text-headline-lg">Simple 5-Step Booking</h2>
+</div>
+<div class="space-y-stack-lg">
+<div class="flex gap-gutter">
+<span class="step-number">1</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Check Availability</h3>
+<p class="text-on-surface-variant font-body-md">Contact our booking coordinator to see if your desired date is free. Remember, we rely on our wonderful volunteer drivers!</p>
+</div>
+</div>
+<div class="flex gap-gutter">
+<span class="step-number">2</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Details Submission</h3>
+<p class="text-on-surface-variant font-body-md">Provide the destination, pickup time, and expected duration of your outing. Let us know if you need any special accessibility accommodations.</p>
+</div>
+</div>
+<div class="flex gap-gutter">
+<span class="step-number">3</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Driver Assignment</h3>
+<p class="text-on-surface-variant font-body-md">Our team will reach out to our pool of volunteers. Once a driver is confirmed, we'll send you a formal booking confirmation.</p>
+</div>
+</div>
+<div class="flex gap-gutter">
+<span class="step-number">4</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">The Trip</h3>
+<p class="text-on-surface-variant font-body-md">Your driver will arrive at the scheduled pickup point. Please ensure your group is ready to depart on time to maximize your day.</p>
+</div>
+</div>
+<div class="flex gap-gutter">
+<span class="step-number">5</span>
+<div>
+<h3 class="font-headline-md text-headline-md mb-2">Final Payment</h3>
+<p class="text-on-surface-variant font-body-md">After the trip, we calculate the mileage and issue an invoice for payment via bank transfer.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Eligibility Section -->
+<section class="bg-surface-container-low rounded-xl p-8 border border-outline-variant">
+<div class="flex items-center gap-4 mb-stack-md">
+<span class="material-symbols-outlined text-primary text-3xl">groups</span>
+<h2 class="font-headline-md text-headline-md">Eligibility &amp; Carers</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<h4 class="font-label-lg text-label-lg text-primary mb-2">Who can book?</h4>
+<p class="font-body-md text-on-surface-variant">The EDDIE Bus is available for community groups, charities, and elderly resident associations within the Bromsgrove district.</p>
+</div>
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<h4 class="font-label-lg text-label-lg text-primary mb-2">Carer Responsibilities</h4>
+<p class="font-body-md text-on-surface-variant">Group organisers must provide sufficient carers for passengers requiring assistance. Drivers are responsible for the vehicle only.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Sticky Sidebar Info -->
+<aside class="flex flex-col gap-gutter">
+<!-- Costs Card -->
+<div class="bg-primary text-on-primary rounded-xl p-8 shadow-md">
+<h3 class="font-headline-md text-headline-md mb-stack-md">Hire Charges</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-baseline border-b border-on-primary/20 pb-4">
+<span class="font-body-md opacity-90">Rate per Mile</span>
+<span class="text-3xl font-bold">£1.25</span>
+</div>
+<div class="flex justify-between items-baseline border-b border-on-primary/20 pb-4">
+<span class="font-body-md opacity-90">Minimum Charge</span>
+<span class="text-3xl font-bold">£25.00</span>
+</div>
+</div>
+<div class="mt-stack-lg p-4 bg-white/10 rounded-lg">
+<div class="flex gap-2 items-center mb-2">
+<span class="material-symbols-outlined text-sm">account_balance</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Payment Details</span>
+</div>
+<p class="font-body-md">Payment is preferred via Bank Transfer. Bank details will be provided on your final invoice.</p>
+</div>
+</div>
+<!-- Cancellations Card -->
+<div class="bg-surface-container-highest rounded-xl p-8 border border-outline">
+<div class="flex gap-3 mb-4">
+<span class="material-symbols-outlined text-error">notification_important</span>
+<h3 class="font-headline-md text-headline-md">Cancellations</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-stack-md">We understand plans change. However, please provide at least <strong>24 hours notice</strong> for any cancellations.</p>
+<p class="font-body-md text-on-surface-variant">Late cancellations may be subject to a nominal administrative fee to cover our coordination costs.</p>
+</div>
+<!-- Accessibility Chips -->
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-weight="fill">accessible</span>
+                        Wheelchair Accessible
+                    </span>
+<span class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-weight="fill">favorite</span>
+                        Dementia Friendly
+                    </span>
+<span class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-weight="fill">volunteer_activism</span>
+                        Volunteer Led
+                    </span>
+</div>
+<!-- Contact CTA -->
+<div class="mt-auto p-8 rounded-xl border-2 border-dashed border-outline-variant text-center">
+<p class="font-label-lg text-label-lg text-secondary mb-4">Ready to start?</p>
+<button class="w-full bg-on-surface text-on-primary py-4 rounded-lg font-label-lg text-label-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 min-h-[56px]">
+<span class="material-symbols-outlined">call</span>
+                        07805 400 180
+                    </button>
+</div>
+</aside>
+</div>
+<!-- Availability Note Section -->
+<section class="mt-section-gap bg-surface-container rounded-xl p-8 text-center border border-outline-variant">
+<h2 class="font-headline-md text-headline-md mb-stack-md">Note on Availability</h2>
+<p class="font-body-lg text-on-surface-variant max-w-3xl mx-auto">As a community charity, The EDDIE Bus is entirely operated by dedicated volunteers. All bookings are subject to driver availability. We recommend booking as far in advance as possible to ensure your outing can go ahead.</p>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-inverse-surface dark:bg-surface-container-highest mt-section-gap">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-margin-desktop py-stack-lg max-w-7xl mx-auto">
+<div class="lg:col-span-2">
+<span class="font-headline-md text-headline-md font-bold text-on-primary-fixed block mb-4">The EDDIE Bus</span>
+<p class="font-body-md text-inverse-on-surface opacity-80 mb-stack-md">The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666). All rights reserved.</p>
+<div class="flex flex-col gap-2">
+<a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="mailto:theeddiebus@gmail.com">theeddiebus@gmail.com</a>
+<a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="tel:07805400180">Phone: 07805 400 180</a>
+</div>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-primary-fixed mb-4">Quick Links</h4>
+<ul class="space-y-3">
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="#">Privacy Policy</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="#">Cookie Policy</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="#">Accessibility</a></li>
+<li><a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:text-tertiary-fixed-dim transition-all" href="#">Terms &amp; Conditions</a></li>
+</ul>
+</div>
+<div class="flex flex-col items-start gap-4">
+<div class="p-4 bg-white/5 rounded-lg border border-white/10 w-full">
+<p class="font-label-lg text-label-lg text-on-primary-fixed mb-2 uppercase tracking-widest">Office Hours</p>
+<p class="font-body-md text-inverse-on-surface opacity-80">Monday - Friday<br/>09:00 - 17:00</p>
+</div>
+<p class="font-body-md text-inverse-on-surface opacity-80 mt-4">© 2024 The Bromsgrove Minibus Appeal Fund.</p>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#e5e2e1",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#fffafa",
+                    "error-container": "#ffdad6",
+                    "inverse-on-surface": "#f1f1f1",
+                    "on-secondary-fixed-variant": "#474746",
+                    "inverse-primary": "#ffb4ab",
+                    "surface-container-high": "#e8e8e8",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#410002",
+                    "outline": "#926f6b",
+                    "surface-tint": "#c00014",
+                    "on-tertiary-fixed": "#00164e",
+                    "on-surface-variant": "#5d3f3c",
+                    "primary-fixed-dim": "#ffb4ab",
+                    "on-primary-fixed-variant": "#93000d",
+                    "tertiary-fixed-dim": "#b5c4ff",
+                    "primary-container": "#e31e24",
+                    "on-secondary-container": "#636262",
+                    "inverse-surface": "#2f3131",
+                    "surface-bright": "#f9f9f9",
+                    "outline-variant": "#e7bdb8",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#dce1ff",
+                    "on-background": "#1a1c1c",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#e2e2e2",
+                    "surface": "#f9f9f9",
+                    "surface-dim": "#dadada",
+                    "on-secondary-fixed": "#1c1b1b",
+                    "surface-variant": "#e2e2e2",
+                    "secondary": "#5f5e5e",
+                    "tertiary": "#1e51cd",
+                    "surface-container": "#eeeeee",
+                    "on-tertiary-fixed-variant": "#003cae",
+                    "surface-container-low": "#f3f3f3",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#e2dfde",
+                    "primary-fixed": "#ffdad6",
+                    "primary": "#ba0013",
+                    "on-tertiary-container": "#fdfaff",
+                    "background": "#f9f9f9",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#1a1c1c",
+                    "tertiary-container": "#406be7",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-lg": "2rem",
+                    "margin-mobile": "1rem",
+                    "stack-md": "1rem",
+                    "margin-desktop": "2.5rem",
+                    "gutter": "1.5rem",
+                    "stack-sm": "0.5rem",
+                    "section-gap": "4rem"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Inter"],
+                    "callout": ["Inter"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "callout": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-primary">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-4 md:px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<img alt="The EDDIE Bus Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD--I0cVxhStgSKRWpWhF9bSHam2JObl8oQgOLKXSnzMWfYgauSixzzgK0A2x_uu4Ln_E62JZpt55cexGwIpX5LlIlC4OYY6kVCtqDQkd7s0unSpvAKNaWeN1zOIDNNRWR2H6I3j8drpT-XKf-9r-aYllXj5IT4ih74QZ-fnx9F32FgFtoB7of1tu1WPdr-LgdB_bKDdTFx-haYc6_ThWE9jSzfZxgLiTAoKLQB4IZuK6LZL-p2bL-x5Ot9-GgyUh9xkNwLl8OGV4s"/>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-black text-primary dark:text-primary-fixed-dim hidden sm:block">The EDDIE Bus</span>
+</div>
+<!-- Mobile Menu Toggle -->
+<button class="md:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">How to Book</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Places to Visit</a>
+<a class="font-label-lg text-label-lg text-primary font-bold border-b-2 border-primary pb-1" href="#">Policies</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Volunteering</a>
+</nav>
+<div class="hidden lg:flex items-center gap-4">
+<button class="bg-primary-container text-on-primary-container px-6 py-2 rounded-full font-label-lg text-label-lg hover:brightness-110 active:scale-95 duration-100">Book the EDDIE Bus</button>
+</div>
+</div>
+</header>
+<main class="min-h-screen">
+<!-- Hero Section -->
+<section class="bg-surface-container-low py-stack-lg px-margin-mobile text-center border-b border-outline-variant">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-stack-sm">Policies &amp; Legal</h1>
+<p class="font-body-md text-on-surface-variant max-w-md mx-auto">Ensuring our community transport service remains safe, transparent, and accessible for everyone in Bromsgrove.</p>
+</section>
+<!-- Policies Bento Grid / Hub -->
+<section class="px-margin-mobile py-stack-lg max-w-3xl mx-auto">
+<div class="grid grid-cols-1 gap-gutter">
+<!-- Privacy Policy Card -->
+<a class="group bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]" href="#">
+<div class="flex items-start gap-4">
+<div class="bg-primary-fixed p-3 rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="privacy_tip">privacy_tip</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Privacy Policy</h2>
+<p class="font-body-md text-on-surface-variant">How we handle your personal information and maintain your confidentiality according to GDPR standards.</p>
+<div class="mt-4 flex items-center text-primary font-label-lg text-label-lg group-hover:gap-2 transition-all">
+                                Read Policy <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Cookie Policy Card -->
+<a class="group bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]" href="#">
+<div class="flex items-start gap-4">
+<div class="bg-secondary-container p-3 rounded-lg text-secondary">
+<span class="material-symbols-outlined" data-icon="cookie">cookie</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Cookie Policy</h2>
+<p class="font-body-md text-on-surface-variant">Detailed information about how we use cookies to provide a better browsing experience on our website.</p>
+<div class="mt-4 flex items-center text-primary font-label-lg text-label-lg group-hover:gap-2 transition-all">
+                                Read Policy <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Accessibility Statement Card -->
+<a class="group bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]" href="#">
+<div class="flex items-start gap-4">
+<div class="bg-tertiary-fixed p-3 rounded-lg text-tertiary">
+<span class="material-symbols-outlined" data-icon="accessibility_new">accessibility_new</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Accessibility Statement</h2>
+<p class="font-body-md text-on-surface-variant">Our commitment to ensuring this website and our physical bus services are usable for everyone.</p>
+<div class="mt-4 flex items-center text-primary font-label-lg text-label-lg group-hover:gap-2 transition-all">
+                                Read Policy <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+<!-- Terms & Conditions Card -->
+<a class="group bg-surface-container-lowest border border-outline-variant p-stack-md rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]" href="#">
+<div class="flex items-start gap-4">
+<div class="bg-error-container p-3 rounded-lg text-error">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Terms &amp; Conditions</h2>
+<p class="font-body-md text-on-surface-variant">The legal agreement governing the use of our transport booking platform and passenger rules.</p>
+<div class="mt-4 flex items-center text-primary font-label-lg text-label-lg group-hover:gap-2 transition-all">
+                                Read Policy <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+</a>
+</div>
+</section>
+<!-- Help Section -->
+<section class="px-margin-mobile py-stack-lg bg-surface-container-high">
+<div class="max-w-3xl mx-auto rounded-2xl bg-surface p-stack-lg border border-outline-variant text-center">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-sm">Need help understanding these?</h3>
+<p class="font-body-md text-on-surface-variant mb-stack-md">If you have questions about our policies or need them in a different format (large print, audio), please get in touch.</p>
+<div class="flex flex-col gap-4">
+<button class="w-full bg-inverse-surface text-inverse-on-surface py-4 rounded-lg font-label-lg text-label-lg hover:opacity-90 min-h-[56px]">
+                        Contact the Team
+                    </button>
+<a class="font-label-lg text-label-lg text-primary flex items-center justify-center gap-2" href="tel:07805400180">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+                        07805 400 180
+                    </a>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-inverse-surface dark:bg-surface-container-highest">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-4 md:px-margin-desktop py-stack-lg max-w-7xl mx-auto">
+<div class="flex flex-col gap-4">
+<span class="font-headline-md text-headline-md font-bold text-on-primary-fixed">The EDDIE Bus</span>
+<p class="font-body-md text-body-md text-inverse-on-surface opacity-80">Serving the Bromsgrove community since 1984.</p>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-label-lg text-label-lg text-inverse-on-surface font-bold mb-2">Legal</h4>
+<a class="font-label-lg text-label-lg text-primary-fixed-dim underline" href="#">Privacy Policy</a>
+<a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Cookie Policy</a>
+<a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Accessibility</a>
+<a class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Terms &amp; Conditions</a>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-label-lg text-label-lg text-inverse-on-surface font-bold mb-2">Contact</h4>
+<span class="font-label-lg text-label-lg text-inverse-on-surface opacity-80">theeddiebus@gmail.com</span>
+<span class="font-label-lg text-label-lg text-inverse-on-surface opacity-80">Phone: 07805 400 180</span>
+</div>
+<div class="flex flex-col gap-4">
+<p class="font-label-lg text-label-lg text-inverse-on-surface opacity-80 leading-relaxed">
+                    © The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666). All rights reserved.
+                </p>
+</div>
+</div>
+</footer>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-lowest border-t border-outline-variant flex justify-around py-3 z-50">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-bold">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="text-[10px] font-bold">Book</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="policy" data-weight="fill">policy</span>
+<span class="text-[10px] font-bold">Policies</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="text-[10px] font-bold">Volunteering</span>
+</a>
+</nav>
+<!-- Spacer for mobile nav -->
+<div class="md:hidden h-20"></div>
+</body></html>
