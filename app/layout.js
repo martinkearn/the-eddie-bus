@@ -1,14 +1,19 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'EDDIE Bus | New Website Coming Soon',
+  title: 'The EDDIE Bus | Accessible group transport in Bromsgrove',
   description:
-    'EDDIE Bus (Everyday Drives for Disabled, Independent and Elderly) is rebuilding its website. Contact details are available here.',
+    'The EDDIE Bus provides accessible minibus transport for Bromsgrove care homes, residential groups, retired activity groups and specialist groups.',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+      </head>
       <body>{children}</body>
     </html>
   )
