@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Passenger &amp; Accessibility Policy | The EDDIE Bus</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "secondary-fixed": "#e5e2e1",
+                  "error": "#ba1a1a",
+                  "on-primary-container": "#fffafa",
+                  "error-container": "#ffdad6",
+                  "inverse-on-surface": "#f1f1f1",
+                  "on-secondary-fixed-variant": "#474746",
+                  "inverse-primary": "#ffb4ab",
+                  "surface-container-high": "#e8e8e8",
+                  "on-secondary": "#ffffff",
+                  "on-primary-fixed": "#410002",
+                  "outline": "#926f6b",
+                  "surface-tint": "#c00014",
+                  "on-tertiary-fixed": "#00164e",
+                  "on-surface-variant": "#5d3f3c",
+                  "primary-fixed-dim": "#ffb4ab",
+                  "on-primary-fixed-variant": "#93000d",
+                  "tertiary-fixed-dim": "#b5c4ff",
+                  "primary-container": "#e31e24",
+                  "on-secondary-container": "#636262",
+                  "inverse-surface": "#2f3131",
+                  "surface-bright": "#f9f9f9",
+                  "outline-variant": "#e7bdb8",
+                  "on-tertiary": "#ffffff",
+                  "tertiary-fixed": "#dce1ff",
+                  "on-background": "#1a1c1c",
+                  "on-error": "#ffffff",
+                  "surface-container-highest": "#e2e2e2",
+                  "surface": "#f9f9f9",
+                  "surface-dim": "#dadada",
+                  "on-secondary-fixed": "#1c1b1b",
+                  "surface-variant": "#e2e2e2",
+                  "secondary": "#5f5e5e",
+                  "tertiary": "#1e51cd",
+                  "surface-container": "#eeeeee",
+                  "on-tertiary-fixed-variant": "#003cae",
+                  "surface-container-low": "#f3f3f3",
+                  "surface-container-lowest": "#ffffff",
+                  "secondary-container": "#e2dfde",
+                  "primary-fixed": "#ffdad6",
+                  "primary": "#ba0013",
+                  "on-tertiary-container": "#fdfaff",
+                  "background": "#f9f9f9",
+                  "secondary-fixed-dim": "#c8c6c5",
+                  "on-error-container": "#93000a",
+                  "on-surface": "#1a1c1c",
+                  "tertiary-container": "#406be7",
+                  "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "stack-lg": "2rem",
+                  "margin-mobile": "1rem",
+                  "stack-md": "1rem",
+                  "margin-desktop": "2.5rem",
+                  "gutter": "1.5rem",
+                  "stack-sm": "0.5rem",
+                  "section-gap": "4rem"
+          },
+          "fontFamily": {
+                  "headline-lg": ["Plus Jakarta Sans"],
+                  "headline-md": ["Plus Jakarta Sans"],
+                  "body-lg": ["Inter"],
+                  "callout": ["Inter"],
+                  "display-lg": ["Plus Jakarta Sans"],
+                  "label-lg": ["Inter"],
+                  "headline-lg-mobile": ["Plus Jakarta Sans"],
+                  "body-md": ["Inter"]
+          },
+          "fontSize": {
+                  "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "callout": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                  "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                  "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                  "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar (Shared Component) -->
+<nav class="docked full-width top-0 sticky z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex justify-between items-center w-full px-4 md:px-margin-desktop py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<img alt="The EDDIE Bus Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD--I0cVxhStgSKRWpWhF9bSHam2JObl8oQgOLKXSnzMWfYgauSixzzgK0A2x_uu4Ln_E62JZpt55cexGwIpX5LlIlC4OYY6kVCtqDQkd7s0unSpvAKNaWeN1zOIDNNRWR2H6I3j8drpT-XKf-9r-aYllXj5IT4ih74QZ-fnx9F32FgFtoB7of1tu1WPdr-LgdB_bKDdTFx-haYc6_ThWE9jSzfZxgLiTAoKLQB4IZuK6LZL-p2bL-x5Ot9-GgyUh9xkNwLl8OGV4s"/>
+<span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-black text-primary dark:text-primary-fixed-dim hidden sm:inline">The EDDIE Bus</span>
+</div>
+<!-- Mobile Menu Toggle (Simplified for UI context) -->
+<button class="md:hidden p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<!-- Desktop Links -->
+<div class="hidden md:flex items-center gap-6">
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">How to Book</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Places to Visit</a>
+<a class="font-label-lg text-label-lg text-primary font-bold border-b-2 border-primary pb-1" href="#">Policies</a>
+<a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" href="#">Volunteering</a>
+</div>
+<div class="hidden md:flex gap-4">
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary font-label-lg transition-transform active:scale-95">Book the EDDIE Bus</button>
+</div>
+</div>
+</nav>
+<main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+<!-- Hero Section -->
+<header class="mb-stack-lg text-center md:text-left">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-stack-sm">Passenger &amp; Accessibility Policy</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Ensuring safe, inclusive, and reliable community transport for everyone in Bromsgrove.</p>
+</header>
+<!-- Content Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Standard Seating -->
+<section class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-stack-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">airline_seat_recline_extra</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Standard Seating</h2>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4">The EDDIE Bus provides 16 high-quality, comfortable seats with safety belts. All seats are accessible via low-profile steps with sturdy handrails for those with limited mobility.</p>
+<div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase tracking-wider">High Visibility</span>
+<span class="inline-flex items-center px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase tracking-wider">Safety Belts</span>
+</div>
+</section>
+<!-- Wheelchair Transfers -->
+<section class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-stack-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">transfer_within_a_station</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Wheelchair Transfers</h2>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4">Passengers who prefer to transfer to a standard seat can do so. Our lift provides easy boarding, and the wheelchair will be safely stowed in the designated luggage area during transit.</p>
+<img alt="Accessibility lift deployed at the rear of the bus" class="w-full h-40 object-cover rounded-lg border border-outline-variant shadow-sm" data-alt="A detailed view of a modern white minibus with its rear doors wide open, showcasing a heavy-duty hydraulic wheelchair lift deployed to the ground. The lift features high-visibility yellow safety rails and a non-slip metal grid platform. The setting is a sunny Bromsgrove countryside road, emphasizing the bus's role in local accessibility. The lighting is bright and clear, reflecting a reliable and professional service aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_1GdZkfyoV7yMQUaNOMsaf8Ux70qCeAT7djk8vUMsHkfrXY0sijv1jUdV04NkBjRHoN_nfLc9wdCHHaQek2SC99FZufm_LbsX3hvM1XWlGCC-EqlN5mnQ_rucCg3dZvIuj5yjbYdNsD7NotS2hPtrtzTe6neD8mHHgnpIb3mnBXo9o7p8ActyiIp-UGewVVF89KPODuLvOV1wWBCqmMIWfrKV7h8ELJzJrTYQAQoXd7C40zYecW8MAAO8bERHT8KIxrNJb6H-plw"/>
+</section>
+<!-- Static Wheelchairs -->
+<section class="bg-surface-container-low p-6 rounded-xl border border-outline-variant col-span-1 md:col-span-2">
+<div class="md:flex gap-gutter items-start">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-stack-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">accessible</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Static Wheelchairs</h2>
+</div>
+<p class="text-body-md text-on-surface-variant mb-4">We can accommodate up to <strong>3 static wheelchairs</strong> simultaneously. These are secured using industry-standard four-point tie-down systems and lap/diagonal belts for the passenger.</p>
+<div class="flex gap-2">
+<span class="inline-flex items-center px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-xs font-bold uppercase">Up to 3 Slots</span>
+<span class="inline-flex items-center px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-xs font-bold uppercase">4-Point Secure</span>
+</div>
+</div>
+<div class="mt-stack-md md:mt-0 md:w-1/3">
+<img alt="Interior view of wheelchair securing system" class="w-full h-48 object-cover rounded-lg border border-outline-variant" data-alt="The interior of a spacious community minibus looking from the rear toward the front. Two vertical wheelchair securement tracks are visible on the floor, flanked by comfortable passenger seats. High-visibility yellow grab handles and a clean, grey industrial flooring create a sense of safety and modern hygiene. The lighting is soft and even, highlighting the meticulous care taken for passenger safety in Bromsgrove's local transport service." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLAIbtWiTbWiMutLmJX8BeA6Mw3GfAP_MZl8YQHQYFUd3BvKloddY-0UF4x0y9Xc4z-BbHdI7JAwUCGDwNmZZYfjpiIEoqDyfbLzkZuRXzNgcEpsVKi6840DiWDTAY40c_3ck4Gt49lkGW3U5KYkKpl21sgqR_GsfcXa3rv-N-vjxKd_blFoJ5LX3dMHNxjo3Bizp5Df1LFm4eOgx-f9NRN1n2dgOeCIcODsBJrHYGQGPA92bt7h_Yrk1BoPQsqnROJk_cUYHgi1Q"/>
+</div>
+</div>
+</section>
+<!-- Powered Wheelchairs -->
+<section class="bg-surface-container-low p-6 rounded-xl border border-outline-variant">
+<div class="flex items-center gap-3 mb-stack-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">electric_rickshaw</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Powered Wheelchairs</h2>
+</div>
+<p class="text-body-md text-on-surface-variant">Due to weight and space constraints, we can usually accommodate <strong>one large powered wheelchair</strong> or scooter per trip. Please specify the model and dimensions when booking to ensure a perfect fit on our tail-lift.</p>
+</section>
+<!-- Safety Note -->
+<section class="bg-error-container p-6 rounded-xl border border-error/20">
+<div class="flex items-center gap-3 mb-stack-sm">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+<h2 class="font-headline-md text-headline-md text-on-error-container">Important Safety Note</h2>
+</div>
+<p class="text-body-md text-on-error-container">All wheelchairs must be in a safe, roadworthy condition. Our drivers reserve the right to refuse transport if a mobility aid cannot be safely secured using our standard equipment.</p>
+</section>
+<!-- Responsibilities -->
+<section class="bg-surface-container-high p-6 rounded-xl border border-outline-variant md:col-span-2">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person</span>
+              Driver Responsibilities
+            </h3>
+<ul class="space-y-2 text-body-md text-on-surface-variant">
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Operating the hydraulic tail-lift safely.</li>
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Securing wheelchairs and passengers.</li>
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Assisting with entry and exit from the vehicle.</li>
+</ul>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">groups</span>
+              Carer Responsibilities
+            </h3>
+<ul class="space-y-2 text-body-md text-on-surface-variant">
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Assisting with personal care during the journey.</li>
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Helping passengers to and from the bus door.</li>
+<li class="flex gap-2 items-start"><span class="text-primary">•</span> Managing any specialized medical equipment.</li>
+</ul>
+</div>
+</div>
+</section>
+</div>
+<!-- CTA Section -->
+<div class="mt-section-gap text-center bg-primary-container p-stack-lg rounded-2xl shadow-lg">
+<h2 class="font-headline-lg text-on-primary-container mb-stack-sm">Ready to travel with us?</h2>
+<p class="text-on-primary-container/90 mb-stack-md max-w-xl mx-auto">Book the EDDIE Bus today for your community group, medical appointment, or social outing.</p>
+<button class="bg-surface-container-lowest text-primary px-8 py-4 rounded-full font-headline-md hover:shadow-xl transition-all active:scale-95 min-h-[56px] min-w-[240px]">
+        Book the EDDIE Bus
+      </button>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-inverse-surface dark:bg-surface-container-highest mt-section-gap">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter px-4 md:px-margin-desktop py-stack-lg max-w-7xl mx-auto">
+<div>
+<h4 class="font-headline-md text-on-primary-fixed mb-4">The EDDIE Bus</h4>
+<p class="font-body-md text-inverse-on-surface opacity-80">Providing reliable community transport to the residents of Bromsgrove and surrounding areas since 1985.</p>
+</div>
+<div>
+<h4 class="font-label-lg text-primary-fixed-dim mb-4">Quick Links</h4>
+<nav class="flex flex-col gap-2">
+<a class="font-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Privacy Policy</a>
+<a class="font-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Cookie Policy</a>
+<a class="font-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Accessibility</a>
+<a class="font-label-lg text-inverse-on-surface opacity-80 hover:opacity-100 hover:text-tertiary-fixed-dim transition-all" href="#">Terms &amp; Conditions</a>
+</nav>
+</div>
+<div>
+<h4 class="font-label-lg text-primary-fixed-dim mb-4">Contact Info</h4>
+<nav class="flex flex-col gap-2">
+<span class="font-label-lg text-inverse-on-surface opacity-80">theeddiebus@gmail.com</span>
+<span class="font-label-lg text-inverse-on-surface opacity-80">07805 400 180</span>
+</nav>
+</div>
+<div>
+<h4 class="font-label-lg text-primary-fixed-dim mb-4">Charity Info</h4>
+<p class="font-body-md text-inverse-on-surface opacity-80">
+          The Bromsgrove Minibus Appeal Fund<br/>
+          Registered Charity No. 516666
+        </p>
+</div>
+</div>
+<div class="border-t border-white/10 max-w-7xl mx-auto px-4 md:px-margin-desktop py-4">
+<p class="font-label-lg text-inverse-on-surface opacity-60 text-center md:text-left">
+        © The Bromsgrove Minibus Appeal Fund (Registered Charity No. 516666). All rights reserved.
+      </p>
+</div>
+</footer>
+</body></html>
