@@ -209,11 +209,12 @@ export const volunteeringPage = {
 }
 
 export const placesPage = {
-  title: 'Places to visit with the EDDIE Bus',
+  title: 'Choose somewhere your group will enjoy',
   intro: [
     'The EDDIE Bus can help eligible Bromsgrove groups enjoy a wide range of accessible outings and social trips.',
-    'Below are some ideas for places your group may wish to visit. This list is intended as inspiration only. Please contact us to discuss your preferred destination, journey distance and availability.',
+    'Use these destination links for inspiration. Journey distance, timings, suitability and availability are agreed as part of the booking conversation.',
   ],
+  image: images.parksideCourt,
   categories: [
     {
       title: 'Garden centres',
