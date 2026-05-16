@@ -5,7 +5,7 @@ import { accessibilityPage } from '../../src/content/pages'
 import { images } from '../../src/content/site'
 
 export const metadata = {
-  title: 'Passenger & Accessibility Policy | The EDDIE Bus',
+  title: 'Wheelchair Policy | The EDDIE Bus',
   description: 'Passenger capacity, wheelchair access, driver responsibilities and carer responsibilities for The EDDIE Bus.',
 }
 
