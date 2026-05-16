@@ -506,6 +506,39 @@ main {
   color: #ffffff;
 }
 
+.places-hero {
+  min-height: clamp(23rem, 43vw, 34rem);
+  align-items: center;
+  border: 0;
+  background: #9f0011;
+  box-shadow: var(--shadow);
+}
+
+.places-hero .page-intro-bg {
+  opacity: 0.72;
+  mix-blend-mode: normal;
+  object-position: center 58%;
+}
+
+.places-hero::after {
+  background:
+    linear-gradient(90deg, rgba(71, 0, 7, 0.92) 0%, rgba(117, 0, 12, 0.72) 42%, rgba(186, 0, 19, 0.16) 100%),
+    linear-gradient(0deg, rgba(26, 28, 28, 0.28), rgba(26, 28, 28, 0));
+}
+
+.places-hero .page-intro-content {
+  max-width: 720px;
+}
+
+.places-hero h1 {
+  max-width: 18ch;
+}
+
+.places-hero p:not(.eyebrow) {
+  max-width: 58ch;
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .accessibility-feature {
   background: var(--surface-soft);
   padding: 4.5rem max(1rem, calc((100vw - var(--max)) / 2 + 2.5rem));
@@ -709,7 +742,6 @@ main {
 
 .booking-panel,
 .volunteer-driver,
-.places-prompt,
 .detail-pair {
   display: grid;
   gap: 1.5rem;
@@ -725,8 +757,7 @@ main {
 
 .booking-process-card,
 .booking-price-card,
-.volunteer-driver,
-.places-prompt {
+.volunteer-driver {
   border: 1px solid var(--outline);
   border-radius: 1.5rem;
   box-shadow: var(--shadow);
@@ -736,8 +767,7 @@ main {
 .booking-price-card,
 .volunteer-driver > div,
 .volunteer-photo,
-.volunteer-driver > aside,
-.places-prompt {
+.volunteer-driver > aside {
   display: grid;
   gap: 1rem;
   padding: 2.5rem;
@@ -1081,13 +1111,6 @@ main {
   color: #ffffff;
 }
 
-.places-prompt {
-  max-width: 860px;
-  place-items: start center;
-  text-align: center;
-  background: var(--surface);
-}
-
 .places-grid .info-card:nth-child(3n + 2) {
   background: var(--surface-soft);
 }
@@ -1247,6 +1270,11 @@ main {
 .check-list li,
 .plain-list li {
   color: var(--muted);
+}
+
+.plain-list a {
+  color: inherit;
+  font-weight: 700;
 }
 
 .check-list li {
@@ -1618,8 +1646,7 @@ main {
   .about-story-copy,
   .volunteer-driver > div,
   .volunteer-photo,
-  .volunteer-driver > aside,
-  .places-prompt {
+  .volunteer-driver > aside {
     padding: 1.5rem;
   }
 
