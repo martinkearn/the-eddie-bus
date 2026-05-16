@@ -228,7 +228,7 @@ export const placesPage = {
 }
 
 export const accessibilityPage = {
-  title: 'Passenger & accessibility policy',
+  title: 'Wheelchair Policy',
   intro: [
     'The EDDIE Bus is an accessible minibus that can carry able-bodied passengers, passengers who transfer from wheelchairs, static wheelchair users and, in some circumstances, powered wheelchair users.',
     'The final decision about safe passenger numbers, wheelchair storage and seating arrangements is made by the driver.',
