@@ -3,10 +3,10 @@ export const site = {
   publicName: 'The EDDIE Bus',
   slogan: 'Everyday Drives for the Disabled, Independent and Elderly',
   charityNumber: '516666',
-  email: 'theeddiebus@gmail.com',
+  email: 'bookings@theeddiebus.org.uk',
   phone: '07805 400180',
   phoneHref: 'tel:+447805400180',
-  emailHref: 'mailto:theeddiebus@gmail.com',
+  emailHref: 'mailto:bookings@theeddiebus.org.uk',
   primaryCta: 'Book the EDDIE Bus',
   secondaryCta: 'Volunteer with Us',
 }
