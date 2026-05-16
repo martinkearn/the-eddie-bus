@@ -3,8 +3,8 @@ import { images } from './site'
 export const homePage = {
   title: 'Accessible group transport for Bromsgrove care homes and community groups',
   intro: [
-    'The EDDIE Bus provides friendly, accessible minibus transport for care homes, residential groups, retired activity groups and specialist groups across Bromsgrove, nearby villages and surrounding areas.',
-    'Run by The Bromsgrove Minibus Appeal Fund, a registered charity established in 1985, the service helps disabled, independent and elderly residents enjoy everyday journeys, days out and group outings in comfort and safety.',
+    'The EDDIE Bus provides accessible minibus transport for care homes and community groups across Bromsgrove and surrounding areas.',
+    'Run by volunteers since 1985, we help elderly, disabled and independent residents enjoy group outings in comfort and safety.',
   ],
   image: images.busSide,
   whatWeDo: [
