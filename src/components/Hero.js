@@ -17,6 +17,7 @@ export function Hero({ title, intro, image, eyebrow = 'Serving Bromsgrove since 
       </div>
       {image ? (
         <div className="hero-image-frame">
+          <p className="eyebrow hero-image-eyebrow">{eyebrow}</p>
           <img src={image.src} alt={image.alt} />
           <div className="image-badge">
             <strong>Our 13-seat EDDIE Bus</strong>

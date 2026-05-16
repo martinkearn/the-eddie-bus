@@ -398,7 +398,7 @@ main {
   font-weight: 800;
 }
 
-.hero p,
+.hero-intro p,
 .page-intro p {
   max-width: 68ch;
   font-size: 1.05rem;
@@ -406,6 +406,10 @@ main {
 
 .hero-image-frame {
   position: relative;
+}
+
+.hero-image-eyebrow {
+  display: none;
 }
 
 .hero-image-frame img {
@@ -1532,6 +1536,18 @@ main {
     gap: 2rem;
   }
 
+  .hero h1 {
+    display: none;
+  }
+
+  .hero-copy > .eyebrow {
+    display: none;
+  }
+
+  .hero-image-eyebrow {
+    display: none;
+  }
+
   .brand {
     min-width: 0;
   }
@@ -1553,8 +1569,7 @@ main {
   }
 
   .image-badge {
-    position: static;
-    margin-top: 0.75rem;
+    display: none;
   }
 
   .hero-image-frame {
@@ -1569,6 +1584,28 @@ main {
   .category-grid,
   .footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-summary-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.85rem 0.9rem;
+    align-items: start;
+  }
+
+  .home-summary-card .summary-icon {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .home-summary-card h3 {
+    grid-column: 2;
+    max-width: none;
+    align-self: center;
+  }
+
+  .home-summary-card > :not(.summary-icon):not(h3) {
+    grid-column: 1 / -1;
   }
 
   .capacity-band .card-grid {
