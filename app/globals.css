@@ -1249,6 +1249,11 @@ main {
   color: var(--muted);
 }
 
+.plain-list a {
+  color: inherit;
+  font-weight: 700;
+}
+
 .check-list li {
   position: relative;
   padding-left: 1.75rem;

@@ -22,7 +22,15 @@ export function CheckList({ items }) {
 export function PlainList({ items }) {
   return (
     <ul className="plain-list">
-      {items.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}
+      {items.map((item, index) => {
+        const label = typeof item === 'string' ? item : item.label
+
+        return (
+          <li key={`${index}-${label}`}>
+            {typeof item === 'string' ? item : <a href={item.href} target="_blank" rel="noopener noreferrer">{item.label}</a>}
+          </li>
+        )
+      })}
     </ul>
   )
 }
