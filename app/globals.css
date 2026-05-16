@@ -376,6 +376,7 @@ main {
 }
 
 .hero-copy,
+.hero-intro,
 .content-section,
 .info-card,
 .callout,
@@ -1554,6 +1555,14 @@ main {
   .image-badge {
     position: static;
     margin-top: 0.75rem;
+  }
+
+  .hero-image-frame {
+    order: -1;
+  }
+
+  .hero-intro {
+    order: 1;
   }
 
   .card-grid,

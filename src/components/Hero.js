@@ -7,10 +7,12 @@ export function Hero({ title, intro, image, eyebrow = 'Serving Bromsgrove since 
       <div className="hero-copy">
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
-        {intro.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         <div className="button-row">
           <Link className="button button-primary" href="/how-to-book/">{site.primaryCta}</Link>
           <Link className="button button-secondary" href="/volunteering/">Find out about volunteering</Link>
+        </div>
+        <div className="hero-intro">
+          {intro.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         </div>
       </div>
       {image ? (
