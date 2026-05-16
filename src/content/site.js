@@ -29,35 +29,35 @@ export const footerNavigation = [
 
 export const images = {
   busFront: {
-    src: '/images/bus-front.webp',
+    src: '/images/bus-front.jpg',
     alt: 'The EDDIE Bus viewed from the front in a rural setting',
   },
   busFrontCentered: {
-    src: '/images/bus-front-centered.webp',
+    src: '/images/bus-front-centered.jpg',
     alt: 'The EDDIE Bus viewed from the front',
   },
   busSide: {
-    src: '/images/bus-side.webp',
+    src: '/images/bus-side.jpg',
     alt: 'The EDDIE Bus showing the side branding and accessible vehicle badge',
   },
   busSeats: {
-    src: '/images/bus-seats.webp',
+    src: '/images/bus-seats.jpg',
     alt: 'Interior seating inside The EDDIE Bus',
   },
   busSideStep: {
-    src: '/images/bus-side-step.webp',
+    src: '/images/bus-side-step.jpg',
     alt: 'The EDDIE Bus side door with the electric step extended',
   },
   tailLift: {
-    src: '/images/tail-lift.webp',
+    src: '/images/tail-lift.jpg',
     alt: 'The EDDIE Bus rear tail lift lowered for wheelchair access',
   },
   busRear: {
-    src: '/images/bus-rear.webp',
+    src: '/images/bus-rear.jpg',
     alt: 'Rear view of The EDDIE Bus with contact details on the doors',
   },
   busFortyYears: {
-    src: '/images/bus-40-years.webp',
+    src: '/images/bus-40-years.jpg',
     alt: 'Forty years of service sign on The EDDIE Bus',
   },
   edwinMowbray: {
@@ -65,7 +65,7 @@ export const images = {
     alt: 'Edwin Mowbray, known as Eddie, who gave many years of service to the charity',
   },
   parksideCourt: {
-    src: '/images/parkside-court.webp',
+    src: '/images/parkside-court.jpg',
     alt: 'The EDDIE Bus parked outside Parkside Court',
   },
 }
