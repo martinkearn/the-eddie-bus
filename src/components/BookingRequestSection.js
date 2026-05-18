@@ -279,6 +279,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
 
             <label>
               <span>Approx Pickup time *</span>
+              <small className="field-prompt">Times between 07:00 and 16:00. We're flexible and can discuss alternatives.</small>
               <select name="pickupTime" required defaultValue="">
                 <option value="" disabled>Select pickup time</option>
                 {PICKUP_TIME_OPTIONS.map((time) => (
@@ -289,31 +290,37 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
 
             <label className="field-full">
               <span>Name of organisation or group *</span>
+              <small className="field-prompt">e.g. Care home name or group name</small>
               <input type="text" name="organisation" required autoComplete="organization" />
             </label>
 
             <label className="field-full">
               <span>Destination name *</span>
+              <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre</small>
               <input type="text" name="destinationName" required />
             </label>
 
             <label className="field-full">
               <span>Destination address</span>
+              <small className="field-prompt">Optional. If you have it, the postcode is the most important bit for route planning.</small>
               <input type="text" name="destinationAddress" />
             </label>
 
             <label className="field-full">
               <span>Contact name *</span>
+              <small className="field-prompt">Who is coordinating this booking?</small>
               <input type="text" name="contactName" required autoComplete="name" />
             </label>
 
             <label className="field-full">
               <span>Contact email *</span>
+              <small className="field-prompt">We'll send confirmation and next steps here</small>
               <input type="email" name="contactEmail" required autoComplete="email" />
             </label>
 
             <label className="field-full">
               <span>Contact number *</span>
+              <small className="field-prompt">In case we need to clarify details quickly</small>
               <input type="tel" name="contactNumber" required autoComplete="tel" />
             </label>
 
@@ -355,14 +362,15 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
             </div>
 
             <label className="field-full">
-              <span>Any special requirements</span>
+              <span>Any comments</span>
+              <small className="field-prompt">Add any comments or notes here, such as access considerations or special needs</small>
               <textarea name="specialRequirements" rows={4} />
             </label>
           </div>
 
           <div className="booking-form-actions">
-            <button type="submit" className="button button-primary">Send booking request by email</button>
-            <p>After sending, all follow-up and confirmation is handled by email or phone.</p>
+            <button type="submit" className="button button-primary">Send booking request</button>
+            <p className="booking-form-actions-note">After you submit your booking request, we'll check driver availability and contact you by email or phone to confirm your final booking.</p>
           </div>
 
           {submitState.message ? (

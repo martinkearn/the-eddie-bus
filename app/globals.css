@@ -1002,7 +1002,10 @@ main {
 
 .calendar-day.is-selected {
   background: var(--primary-soft);
-  border-color: var(--primary);
+  border: 2px solid var(--primary);
+  font-weight: bold;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+  transform: scale(1.05);
 }
 
 .booking-form-intro {
@@ -1069,6 +1072,15 @@ main {
 
 .field-full {
   grid-column: 1 / -1;
+}
+
+.field-prompt {
+  display: block;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
 .booking-radios {
@@ -1141,6 +1153,17 @@ main {
 
 .booking-form-actions p {
   font-size: 0.9rem;
+}
+
+.booking-form-actions-note {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--primary-soft);
+  border-left: 4px solid var(--primary);
+  border-radius: 0.36rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .booking-status {
