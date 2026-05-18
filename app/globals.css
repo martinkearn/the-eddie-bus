@@ -964,7 +964,7 @@ main {
 
 .booking-request-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   align-items: start;
 }
@@ -1050,6 +1050,13 @@ main {
   font: inherit;
   line-height: 1;
   cursor: pointer;
+}
+
+.calendar-day-spacer {
+  min-height: 3.2rem;
+  border-radius: 0.65rem;
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .calendar-day span {

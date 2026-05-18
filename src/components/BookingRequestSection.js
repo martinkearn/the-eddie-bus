@@ -36,6 +36,10 @@ function addDays(date, amount) {
   return clone
 }
 
+function mondayColumnIndex(date) {
+  return (date.getDay() + 6) % 7
+}
+
 function parseISODateLocal(value) {
   if (!value || typeof value !== 'string') {
     return null
@@ -56,12 +60,9 @@ function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableD
   const start = new Date(startDate)
   start.setHours(0, 0, 0, 0)
 
-  const firstDay = new Date(start)
-  firstDay.setDate(start.getDate() - start.getDay())
-
   const days = []
   for (let i = 0; i < daysToShow; i += 1) {
-    const date = addDays(firstDay, i)
+    const date = addDays(start, i)
     const iso = formatISODate(date)
     const isBeforeToday = date < start
     const isUnavailableWeekday = disabledWeekdays.has(date.getDay())
@@ -81,7 +82,13 @@ function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableD
   for (const day of days) {
     const current = months[months.length - 1]
     if (!current || current.name !== day.month) {
-      months.push({ name: day.month, days: [day] })
+      const [year, month] = day.iso.split('-').map(Number)
+      const firstOfMonth = new Date(year, month - 1, 1)
+      months.push({
+        name: day.month,
+        leadingBlanks: mondayColumnIndex(firstOfMonth),
+        days: [day],
+      })
     } else {
       current.days.push(day)
     }
@@ -394,6 +401,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
                 <section key={month.name} className="calendar-month" role="listitem" aria-label={month.name}>
                   <h4>{month.name}</h4>
                   <div className="calendar-grid">
+                    {Array.from({ length: month.leadingBlanks }).map((_, index) => (
+                      <span key={`${month.name}-blank-${index}`} className="calendar-day-spacer" aria-hidden="true" />
+                    ))}
                     {month.days.map((day) => {
                       const isSelected = day.iso === selectedDate
 
