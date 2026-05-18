@@ -169,8 +169,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
   async function handleSubmit(event) {
     event.preventDefault()
+    const formElement = event.currentTarget
 
-    const form = new FormData(event.currentTarget)
+    const form = new FormData(formElement)
     const payload = {
       bookingDate: String(form.get('bookingDate') || ''),
       organisation: String(form.get('organisation') || ''),
@@ -235,7 +236,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         type: 'success',
         message: `Your booking request has been sent successfully.${bookingIdText} We will contact you soon to confirm details.`,
       })
-      event.currentTarget.reset()
+      formElement.reset()
     } catch (error) {
       setSubmitState({
         type: 'error',

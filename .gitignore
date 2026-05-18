@@ -3,3 +3,4 @@
 out
 node_modules
 backend/php-api/config.private.php
+backend/php-api/config.php

@@ -99,7 +99,7 @@ jobs:
               -u "$FTP_USERNAME","$FTP_PASSWORD" \
               -p 21 \
               "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mkdir -p $API_PUBLIC_DIR; mkdir -p $API_PRIVATE_DIR/src; mkdir -p $API_PRIVATE_DIR/sql; mirror --reverse --delete ./backend/php-api/public/ $API_PUBLIC_DIR/; mirror --reverse --delete ./backend/php-api/src/ $API_PRIVATE_DIR/src/; mirror --reverse --delete ./backend/php-api/sql/ $API_PRIVATE_DIR/sql/; put -O $API_PRIVATE_DIR ./backend/php-api/.env.example; put -O $API_PRIVATE_DIR ./backend/php-api/README.md; bye"
+              -e "$LFTP_SETTINGS mkdir -p $API_PUBLIC_DIR; mkdir -p $API_PRIVATE_DIR/src; mkdir -p $API_PRIVATE_DIR/sql; mirror --reverse --delete ./backend/php-api/public/ $API_PUBLIC_DIR/; mirror --reverse --delete ./backend/php-api/src/ $API_PRIVATE_DIR/src/; mirror --reverse --delete ./backend/php-api/sql/ $API_PRIVATE_DIR/sql/; put -O $API_PRIVATE_DIR ./backend/php-api/config.example.php; put -O $API_PRIVATE_DIR ./backend/php-api/README.md; bye"
             then
               echo "Booking API deploy succeeded"
               exit 0
