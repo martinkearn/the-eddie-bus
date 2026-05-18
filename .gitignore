@@ -2,3 +2,4 @@
 .next
 out
 node_modules
+backend/php-api/config.private.php

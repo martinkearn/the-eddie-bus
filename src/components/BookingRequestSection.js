@@ -118,8 +118,9 @@ function createMailToBody(data) {
   ].join('\n')
 }
 
-export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, showIntro = true, sectionId = 'booking-request' }) {
+export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
   const phoneHref = fallbackPhoneHref || '#'
+  const apiEndpoint = String(bookingApiEndpoint || '').trim()
   const [hasMounted, setHasMounted] = useState(false)
   const initialDaysToShow = Number(availabilityData.daysToShow) || 56
   const addMoreStep = Number(availabilityData.daysIncrement) || 28
@@ -135,6 +136,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const firstAvailable = days.find((day) => day.status === 'available')
 
   const [selectedDate, setSelectedDate] = useState(firstAvailable ? firstAvailable.iso : '')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitState, setSubmitState] = useState({ type: 'idle', message: '' })
 
   useEffect(() => {
@@ -165,7 +167,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     ? formatReadableDate(parseISODateLocal(selectedDate))
     : 'Select a date from the calendar'
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const form = new FormData(event.currentTarget)
@@ -192,16 +194,56 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       return
     }
 
-    const subject = encodeURIComponent(`Booking request for ${payload.organisation}`)
-    const body = encodeURIComponent(createMailToBody(payload))
-    const recipient = (emailHref || 'mailto:').replace(/^mailto:/, '')
+    if (!apiEndpoint) {
+      const subject = encodeURIComponent(`Booking request for ${payload.organisation}`)
+      const body = encodeURIComponent(createMailToBody(payload))
+      const recipient = (emailHref || 'mailto:').replace(/^mailto:/, '')
 
-    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`
+      window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`
 
-    setSubmitState({
-      type: 'success',
-      message: `Your email app should now open. If it does not, please phone ${fallbackPhone}.`,
-    })
+      setSubmitState({
+        type: 'success',
+        message: `Your email app should now open. If it does not, please phone ${fallbackPhone}.`,
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    setSubmitState({ type: 'idle', message: '' })
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const result = await response.json().catch(() => null)
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.message || 'We could not send your booking request at the moment. Please try again or call us.'
+        throw new Error(message)
+      }
+
+      const bookingIdText = typeof result.bookingId === 'number'
+        ? ` Your reference is booking #${result.bookingId}.`
+        : ''
+
+      setSubmitState({
+        type: 'success',
+        message: `Your booking request has been sent successfully.${bookingIdText} We will contact you soon to confirm details.`,
+      })
+      event.currentTarget.reset()
+    } catch (error) {
+      setSubmitState({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'We could not send your booking request at the moment.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -410,10 +452,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             <button 
               type="submit" 
               className="button button-primary" 
-              disabled={!selectedDate || !isAvailable(selectedDate)}
-              aria-disabled={!selectedDate || !isAvailable(selectedDate)}
+              disabled={isSubmitting || !selectedDate || !isAvailable(selectedDate)}
+              aria-disabled={isSubmitting || !selectedDate || !isAvailable(selectedDate)}
             >
-              Send booking request
+              {isSubmitting ? 'Sending...' : 'Send booking request'}
             </button>
             <p className="booking-form-actions-note">After you submit your booking request, we'll check driver availability and contact you by email or phone to confirm your final booking.</p>
           </div>
