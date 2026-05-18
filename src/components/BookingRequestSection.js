@@ -118,7 +118,8 @@ function createMailToBody(data) {
   ].join('\n')
 }
 
-export function BookingRequestSection({ emailHref, fallbackPhone }) {
+export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, showIntro = true, sectionId = 'booking-request' }) {
+  const phoneHref = fallbackPhoneHref || '#'
   const [hasMounted, setHasMounted] = useState(false)
   const initialDaysToShow = Number(availabilityData.daysToShow) || 56
   const addMoreStep = Number(availabilityData.daysIncrement) || 28
@@ -204,15 +205,17 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
   }
 
   return (
-    <section className="booking-request section-band" aria-labelledby="booking-request-heading">
-      <div className="booking-request-head">
-        <p className="eyebrow">Online Booking Request</p>
-        <h2 id="booking-request-heading">Check availability and send a request</h2>
-        <p>
-          Use the calendar to pick an available date, then complete your journey details. We will confirm availability with a
-          volunteer driver and contact you by email or phone.
-        </p>
-      </div>
+    <section id={sectionId} className="booking-request section-band" aria-label="Booking request form">
+      {showIntro ? (
+        <div className="booking-request-head">
+          <p className="eyebrow">Primary Booking Option</p>
+          <h2>Complete the booking request form</h2>
+          <p>
+            Use the calendar to pick an available date, then complete your journey details. This is the quickest way for us to
+            review your request and confirm availability with a volunteer driver.
+          </p>
+        </div>
+      ) : null}
 
       <div className="booking-request-layout">
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
@@ -298,8 +301,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
         </div>
 
         <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
-          <h3>Booking request form</h3>
+          <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
+          <p className="booking-form-alternative">
+            Prefer not to use the form? You can still book by <a href={emailHref}>email</a> or <a href={phoneHref}>{fallbackPhone}</a>.
+          </p>
 
           <div className="booking-form-grid">
             <div className="booking-date-statement">

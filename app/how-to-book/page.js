@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { BookingRequestSection } from '../../src/components/BookingRequestSection'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, PlainList, Section } from '../../src/components/ContentBlocks'
+import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
 import { bookingPage } from '../../src/content/pages'
 import { images, site } from '../../src/content/site'
@@ -14,11 +15,27 @@ export const metadata = {
 export default function HowToBookPage() {
   return (
     <SiteLayout currentPath="/how-to-book/">
-      <section className="booking-intro section-band" aria-labelledby="booking-heading">
-        <p className="eyebrow">How to Book</p>
-        <h1 id="booking-heading">{bookingPage.title}</h1>
-        <p>{bookingPage.intro[0]}</p>
-      </section>
+      <PageIntro
+        title={bookingPage.title}
+        intro={bookingPage.intro.slice(0, 2)}
+        image={images.busSide}
+        label="How to Book"
+        className="booking-hero"
+        actions={(
+          <>
+            <Link className="button button-light" href="#booking-request">Start booking form</Link>
+            <span>The form is preferred for the fastest response, but booking by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}>phone</Link> is also valid.</span>
+          </>
+        )}
+      />
+
+      <BookingRequestSection
+        emailHref={site.emailHref}
+        fallbackPhone={site.phone}
+        fallbackPhoneHref={site.phoneHref}
+        showIntro={false}
+        sectionId="booking-request"
+      />
 
       <section className="booking-panel section-band" aria-label="Booking process and charges">
         <div className="booking-process-card">
@@ -27,18 +44,13 @@ export default function HowToBookPage() {
             {bookingPage.steps.map((step) => <li key={step}>{step}</li>)}
           </ol>
           <p>{bookingPage.stepNote}</p>
-          <div className="booking-process-actions">
-            <Link className="button button-primary" href={site.emailHref}>{site.primaryCta}</Link>
-            <Link className="booking-phone-link" href={site.phoneHref}>Or call {site.phone}</Link>
-          </div>
+          <p className="booking-process-alternative">If needed, you can also book by email at <Link href={site.emailHref}>{site.email}</Link> or phone on <Link href={site.phoneHref}>{site.phone}</Link>.</p>
         </div>
         <aside className="booking-price-card">
           <h2>Hire charge</h2>
           <Paragraphs items={bookingPage.hireCharge} />
         </aside>
       </section>
-
-      <BookingRequestSection emailHref={site.emailHref} fallbackPhone={site.phone} />
 
       <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
         <img src={images.busSeats.src} alt={images.busSeats.alt} />
@@ -73,7 +85,7 @@ export default function HowToBookPage() {
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>
-      <ContactPanel title="Booking contact details" text={[`Email is preferred, but you are also welcome to phone ${site.phone}.`]} />
+      <ContactPanel title="Booking contact details" text={['The booking form above is the quickest way to request a trip, but email and phone bookings are always welcome too.']} />
     </SiteLayout>
   )
 }
