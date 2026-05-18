@@ -260,6 +260,18 @@ main {
   color: #ffffff;
 }
 
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .mobile-menu {
   display: none;
   position: relative;
@@ -987,6 +999,7 @@ main {
 .calendar-day.available {
   background: #e7f8ee;
   border-color: #b7e6cc;
+  cursor: pointer;
 }
 
 .calendar-day.available:hover {
@@ -996,8 +1009,13 @@ main {
 .calendar-day.unavailable {
   background: #f2f2f2;
   border-color: #dfdfdf;
-  opacity: 0.65;
-  cursor: not-allowed;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.calendar-day.unavailable:hover {
+  border-color: #b5b5b5;
+  opacity: 0.85;
 }
 
 .calendar-day.is-selected {
@@ -1046,17 +1064,25 @@ main {
   font: inherit;
 }
 
-.booking-date-display {
-  min-height: 2.75rem;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--outline);
-  border-radius: 0.72rem;
+.booking-date-statement {
+  grid-column: 1 / -1;
+  padding: 1rem;
   background: var(--surface-soft);
+  border: 2px solid var(--tertiary);
+  border-radius: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.booking-date-statement p {
+  margin: 0;
   color: var(--text);
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.booking-date-statement strong {
+  color: var(--text);
+  font-weight: 800;
 }
 
 .booking-form-grid textarea {
@@ -1184,6 +1210,214 @@ main {
   color: #0f5f31;
   background: #def7e8;
   border: 1px solid #9ed7b6;
+}
+
+/* Calendar view responsiveness */
+.booking-calendar-card {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.5rem, 3vw, 2rem);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 1.2rem;
+  box-shadow: 0 12px 28px rgba(26, 28, 28, 0.08);
+}
+
+.calendar-desktop-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.calendar-mobile-view {
+  display: none;
+}
+
+.date-picker-section {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--outline);
+  border-radius: 0.85rem;
+}
+
+.date-picker-section label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.date-picker-section label span {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.date-picker-section input[type="date"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.72rem;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.date-picker-section input[type="date"]:focus-visible {
+  outline: 3px solid var(--tertiary);
+  outline-offset: 1px;
+}
+
+.date-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--outline);
+}
+
+.date-status.date-status-available {
+  background: #e7f8ee;
+  border-color: #b7e6cc;
+}
+
+.date-status.date-status-unavailable {
+  background: #ffdad6;
+  border: 2px solid #ffb4ab;
+  padding: 0.75rem;
+}
+
+.date-status .status-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.date-status.date-status-available .status-dot {
+  background: #1d8f4d;
+}
+
+.date-status.date-status-unavailable .status-dot {
+  background: #d32f2f;
+}
+
+.date-status .status-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.date-status .status-label {
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.date-status.date-status-available .status-label {
+  color: #0f5f31;
+}
+
+.date-status.date-status-unavailable .status-label {
+  color: #93000d;
+}
+
+.date-status .status-date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.date-status .status-message {
+  margin: 0;
+  color: #93000d;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.mobile-date-picker-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.mobile-date-picker-container label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.mobile-date-picker-container label span {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.mobile-date-picker-container input[type="date"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.72rem;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.mobile-date-picker-container input[type="date"]:focus-visible {
+  outline: 3px solid var(--tertiary);
+  outline-offset: 1px;
+}
+
+.mobile-date-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--outline);
+}
+
+.mobile-date-status.available {
+  background: #e7f8ee;
+  border-color: #b7e6cc;
+}
+
+.mobile-date-status.unavailable {
+  background: #f2f2f2;
+  border-color: #dfdfdf;
+}
+
+.mobile-date-status .status-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.mobile-date-status.available .status-dot {
+  background: #1d8f4d;
+}
+
+.mobile-date-status.unavailable .status-dot {
+  background: #b5b5b5;
+}
+
+.mobile-date-status .status-text {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mobile-date-status .status-label {
+  margin: 0;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.mobile-date-status .status-date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .about-aim-section {
@@ -2028,5 +2262,10 @@ main {
   .booking-form-grid,
   .mobility-support-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* On mobile, hide the full calendar view */
+  .calendar-desktop-view {
+    display: none;
   }
 }

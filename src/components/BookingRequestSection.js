@@ -152,10 +152,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
   }
 
   function handleDatePick(isoDate) {
-    if (!isAvailable(isoDate)) {
-      return
-    }
-
     setSelectedDate(isoDate)
     setSubmitState({ type: 'idle', message: '' })
   }
@@ -221,48 +217,83 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
       <div className="booking-request-layout">
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
-            <h3>Availability calendar</h3>
-            <p>Green dates are currently available to request. Grey dates are unavailable.</p>
+            <h3>Pick an available date</h3>
+            <p>Use the date picker or calendar below to select your preferred date.</p>
           </div>
 
-          <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
-            <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
-            <span role="listitem"><strong className="calendar-dot unavailable" aria-hidden="true" />Unavailable</span>
-            <span role="listitem"><strong className="calendar-dot selected" aria-hidden="true" />Selected</span>
-          </div>
+          {/* Shared Date Picker */}
+          <div className="date-picker-section">
+            <label htmlFor="date-input">
+              <span>Select date</span>
+              <input
+                id="date-input"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => handleDatePick(e.target.value)}
+                min={days.length > 0 ? days[0].iso : undefined}
+                max={days.length > 0 ? days[days.length - 1].iso : undefined}
+              />
+            </label>
 
-          <div className="calendar-months" role="list" aria-label="Upcoming availability by month">
-            {!months.length ? <p>Loading availability...</p> : null}
-            {months.map((month) => (
-              <section key={month.name} className="calendar-month" role="listitem" aria-label={month.name}>
-                <h4>{month.name}</h4>
-                <div className="calendar-grid">
-                  {month.days.map((day) => {
-                    const isSelected = day.iso === selectedDate
-                    const unavailable = day.status === 'unavailable'
-
-                    return (
-                      <button
-                        key={day.iso}
-                        type="button"
-                        className={`calendar-day ${day.status} ${isSelected ? 'is-selected' : ''}`}
-                        onClick={() => handleDatePick(day.iso)}
-                        disabled={unavailable}
-                        aria-pressed={isSelected}
-                        aria-label={`${day.readableDate}: ${day.status}`}
-                      >
-                        <span>{day.label}</span>
-                        <small>{day.weekday}</small>
-                      </button>
-                    )
-                  })}
+            {selectedDate && (
+              <div className={`date-status date-status-${days.find(d => d.iso === selectedDate)?.status || 'unknown'}`} role="status" aria-live="polite">
+                <div className="status-dot" />
+                <div className="status-text">
+                  {days.find(d => d.iso === selectedDate)?.status === 'available' ? (
+                    <>
+                      <p className="status-label">✓ Available</p>
+                      <p className="status-date">{formatReadableDate(parseISODateLocal(selectedDate))}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="status-label">⚠ Not available</p>
+                      <p className="status-message">This date is not available for booking. Please select another date.</p>
+                    </>
+                  )}
                 </div>
-              </section>
-            ))}
+              </div>
+            )}
           </div>
 
-          <div className="booking-calendar-actions">
-            <button type="button" className="button button-secondary" onClick={handleAddMoreDates}>Add more dates</button>
+          {/* Desktop Calendar View */}
+          <div className="calendar-desktop-view">
+            <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
+              <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
+              <span role="listitem"><strong className="calendar-dot unavailable" aria-hidden="true" />Unavailable</span>
+              <span role="listitem"><strong className="calendar-dot selected" aria-hidden="true" />Selected</span>
+            </div>
+
+            <div className="calendar-months" role="list" aria-label="Upcoming availability by month">
+              {!months.length ? <p>Loading availability...</p> : null}
+              {months.map((month) => (
+                <section key={month.name} className="calendar-month" role="listitem" aria-label={month.name}>
+                  <h4>{month.name}</h4>
+                  <div className="calendar-grid">
+                    {month.days.map((day) => {
+                      const isSelected = day.iso === selectedDate
+
+                      return (
+                        <button
+                          key={day.iso}
+                          type="button"
+                          className={`calendar-day ${day.status} ${isSelected ? 'is-selected' : ''}`}
+                          onClick={() => handleDatePick(day.iso)}
+                          aria-pressed={isSelected}
+                          aria-label={`${day.readableDate}: ${day.status}`}
+                        >
+                          <span>{day.label}</span>
+                          <small>{day.weekday}</small>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            <div className="booking-calendar-actions">
+              <button type="button" className="button button-secondary" onClick={handleAddMoreDates}>Add more dates</button>
+            </div>
           </div>
         </div>
 
@@ -271,11 +302,12 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
 
           <div className="booking-form-grid">
-            <label>
-              <span>Date for booking *</span>
+            <div className="booking-date-statement">
               <input type="hidden" name="bookingDate" value={selectedDate} />
-              <p className="booking-date-display" aria-live="polite">{selectedDateLabel}</p>
-            </label>
+              <p aria-live="polite">
+                You are booking: <strong>{selectedDateLabel}</strong>
+              </p>
+            </div>
 
             <label>
               <span>Approx Pickup time *</span>
@@ -369,7 +401,14 @@ export function BookingRequestSection({ emailHref, fallbackPhone }) {
           </div>
 
           <div className="booking-form-actions">
-            <button type="submit" className="button button-primary">Send booking request</button>
+            <button 
+              type="submit" 
+              className="button button-primary" 
+              disabled={!selectedDate || !isAvailable(selectedDate)}
+              aria-disabled={!selectedDate || !isAvailable(selectedDate)}
+            >
+              Send booking request
+            </button>
             <p className="booking-form-actions-note">After you submit your booking request, we'll check driver availability and contact you by email or phone to confirm your final booking.</p>
           </div>
 
