@@ -1215,6 +1215,32 @@ main {
   padding: clamp(2rem, 5vw, 3.5rem);
 }
 
+.driver-responsibilities-section {
+  overflow: hidden;
+}
+
+.driver-responsibilities-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.driver-responsibilities-layout img {
+  width: 100%;
+  height: 100%;
+  min-height: 20rem;
+  object-fit: cover;
+  border: 1px solid rgba(231, 189, 184, 0.7);
+  border-radius: 1rem;
+}
+
+.driver-responsibilities-layout > div {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
 .card-grid,
 .category-grid {
   display: grid;
@@ -1539,6 +1565,7 @@ main {
 
   .hero,
   .accessibility-feature,
+  .driver-responsibilities-layout,
   .contact-panel,
   .contact-direct,
   .booking-panel,

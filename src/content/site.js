@@ -52,6 +52,10 @@ export const images = {
     src: '/images/tail-lift.jpg',
     alt: 'The EDDIE Bus rear tail lift lowered for wheelchair access',
   },
+  busRearLiftUp: {
+    src: '/images/bus-rear-lift-up.webp',
+    alt: 'The EDDIE Bus at the rear with the tail lift raised and ready for use',
+  },
   busRear: {
     src: '/images/bus-rear.jpg',
     alt: 'Rear view of The EDDIE Bus with contact details on the doors',

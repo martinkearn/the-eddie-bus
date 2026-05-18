@@ -33,10 +33,15 @@ export default function PassengerAccessibilityPolicyPage() {
         </div>
       </section>
       <Callout title="Important safety note"><Paragraphs items={accessibilityPage.safety} /></Callout>
-      <Section title="Driver responsibilities">
-        <p>The driver is responsible for:</p>
-        <CheckList items={accessibilityPage.driverResponsibilities} />
-        <p>{accessibilityPage.driverBoundary}</p>
+      <Section title="Driver responsibilities" className="driver-responsibilities-section">
+        <div className="driver-responsibilities-layout">
+          <img src={images.busRearLiftUp.src} alt={images.busRearLiftUp.alt} />
+          <div>
+            <p>The driver is responsible for:</p>
+            <CheckList items={accessibilityPage.driverResponsibilities} />
+            <p>{accessibilityPage.driverBoundary}</p>
+          </div>
+        </div>
       </Section>
       <Section title="Carer responsibilities">
         <p>Carers are responsible for:</p>
