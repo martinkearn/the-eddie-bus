@@ -21,15 +21,3 @@ CREATE TABLE IF NOT EXISTS bookings (
   KEY idx_bookings_booking_date (booking_date),
   KEY idx_bookings_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS booking_unavailable_dates (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  unavailable_date DATE NOT NULL,
-  reason VARCHAR(255) NULL,
-  is_active TINYINT(1) NOT NULL DEFAULT 1,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_booking_unavailable_dates_date (unavailable_date),
-  KEY idx_booking_unavailable_dates_active (is_active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

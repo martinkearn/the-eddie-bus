@@ -964,7 +964,7 @@ main {
 
 .booking-request-layout {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   align-items: start;
 }
@@ -1030,8 +1030,46 @@ main {
   gap: 0.65rem;
 }
 
+.calendar-month-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
 .calendar-month h4 {
+  text-align: center;
   font-size: 1.02rem;
+}
+
+.calendar-month-nav {
+  min-height: 2.5rem; /* Slightly larger for better visibility */
+  padding-inline: 1rem; /* More padding for a button-like feel */
+  font-size: 0.85rem; /* Slightly larger text */
+  border: 1px solid var(--muted); /* Add a subtle border */
+  border-radius: 0.25rem; /* Rounded corners for a button look */
+  background-color: var(--background-secondary); /* Subtle background color */
+  color: var(--text-primary); /* Ensure text is visible */
+  transition: background-color 0.2s ease, color 0.2s ease; /* Smooth hover effect */
+}
+
+.calendar-month-nav:hover {
+  background-color: var(--background-hover); /* Slightly darker on hover */
+  color: var(--text-hover); /* Adjust text color on hover */
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .calendar-grid {
@@ -1050,6 +1088,13 @@ main {
   font: inherit;
   line-height: 1;
   cursor: pointer;
+}
+
+.calendar-day-spacer {
+  min-height: 3.2rem;
+  border-radius: 0.65rem;
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .calendar-day span {

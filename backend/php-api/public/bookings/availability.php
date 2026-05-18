@@ -46,19 +46,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     fail_json(405, 'Method not allowed.');
 }
 
-$config = app_config();
-$availabilityConfig = $config['availability'] ?? [];
-
 $today = new DateTimeImmutable('today');
 $startDateRaw = trim((string)($_GET['startDate'] ?? ''));
 $startDate = is_iso_date($startDateRaw) ? $startDateRaw : $today->format('Y-m-d');
 
-$daysToShow = (int)($availabilityConfig['days_to_show'] ?? 90);
+$daysToShow = 70;
 $queryDaysToShow = trim((string)($_GET['daysToShow'] ?? ''));
 if ($queryDaysToShow !== '' && ctype_digit($queryDaysToShow)) {
     $daysToShow = (int)$queryDaysToShow;
 }
-$daysToShow = max(28, min(365, $daysToShow));
+$daysToShow = max(28, $daysToShow);
 
 $startDateObj = DateTimeImmutable::createFromFormat('Y-m-d', $startDate);
 if (!$startDateObj instanceof DateTimeImmutable) {
@@ -73,10 +70,9 @@ try {
     $pdo = db_connection();
 
     $stmt = $pdo->prepare(
-        "SELECT DISTINCT booking_date
+        'SELECT DISTINCT booking_date
          FROM bookings
-         WHERE status IN ('pending', 'confirmed')
-           AND booking_date BETWEEN :start_date AND :end_date"
+         WHERE booking_date BETWEEN :start_date AND :end_date'
     );
     $stmt->execute([
         ':start_date' => $startDate,
@@ -90,36 +86,12 @@ try {
         }
     }
 
-    try {
-        $blockedStmt = $pdo->prepare(
-            'SELECT unavailable_date
-             FROM booking_unavailable_dates
-             WHERE is_active = 1
-               AND unavailable_date BETWEEN :start_date AND :end_date'
-        );
-        $blockedStmt->execute([
-            ':start_date' => $startDate,
-            ':end_date' => $endDate,
-        ]);
-
-        foreach ($blockedStmt->fetchAll() as $row) {
-            $value = trim((string)($row['unavailable_date'] ?? ''));
-            if (is_iso_date($value)) {
-                $unavailableDates[$value] = true;
-            }
-        }
-    } catch (Throwable $exception) {
-        error_log('Booking availability blocked date query skipped: ' . $exception->getMessage());
-    }
-
     $unavailableDateList = array_keys($unavailableDates);
     sort($unavailableDateList);
 
     respond_json(200, [
         'startDate' => $startDate,
         'daysToShow' => $daysToShow,
-        'disablePastDates' => ($availabilityConfig['disable_past_dates'] ?? true) !== false,
-        'disableWeekdays' => $availabilityConfig['disable_weekdays'] ?? [0],
         'unavailableDates' => $unavailableDateList,
     ]);
 } catch (Throwable $exception) {

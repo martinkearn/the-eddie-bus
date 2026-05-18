@@ -14,9 +14,4 @@ return [
         'user' => 'YOUR_DB_USER',
         'pass' => 'YOUR_DB_PASSWORD',
     ],
-    'availability' => [
-        'days_to_show' => 90,
-        'disable_past_dates' => true,
-        'disable_weekdays' => [0],
-    ],
 ];

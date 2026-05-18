@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import availabilityData from '../content/bookingAvailability.json'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-// Availability is sourced from static JSON for now and can be swapped to a backend feed later.
+// Availability is fetched live from the API. When no endpoint is set, a sensible default is used (all days available except Sundays).
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
+const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -37,6 +37,10 @@ function addDays(date, amount) {
   return clone
 }
 
+function mondayColumnIndex(date) {
+  return (date.getDay() + 6) % 7
+}
+
 function parseISODateLocal(value) {
   if (!value || typeof value !== 'string') {
     return null
@@ -50,32 +54,24 @@ function parseISODateLocal(value) {
   return new Date(parts[0], parts[1] - 1, parts[2])
 }
 
-function generateCalendarData(daysToShowOverride) {
-  const defaultStart = new Date()
-  defaultStart.setHours(0, 0, 0, 0)
+const INITIAL_DAYS = 365 * 10; // Allow 10 years of days initially
+const MORE_DAYS_STEP = 365 * 10; // Extend by 10 years on each step
 
-  const configuredStart = parseISODateLocal(availabilityData.startDate)
-  const start = configuredStart || defaultStart
-
-  const firstDay = new Date(start)
-  firstDay.setDate(start.getDate() - start.getDay())
-  const daysToShow = Number(daysToShowOverride) || Number(availabilityData.daysToShow) || 56
-  const disablePastDates = availabilityData.disablePastDates !== false
-  const disabledWeekdays = new Set(Array.isArray(availabilityData.disableWeekdays) ? availabilityData.disableWeekdays : [0])
-  const unavailableDates = new Set(Array.isArray(availabilityData.unavailableDates) ? availabilityData.unavailableDates : [])
-  const today = new Date()
+function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableDatesSet) {
+  const today = new Date(startDate)
   today.setHours(0, 0, 0, 0)
+
+  const rangeStart = new Date(today)
+  rangeStart.setDate(1)
+
   const days = []
-
   for (let i = 0; i < daysToShow; i += 1) {
-    const date = addDays(firstDay, i)
+    const date = addDays(rangeStart, i)
     const iso = formatISODate(date)
-    const isBeforeToday = disablePastDates && date < start
+    const isBeforeToday = date < today
     const isUnavailableWeekday = disabledWeekdays.has(date.getDay())
-    const isBooked = unavailableDates.has(iso)
-
+    const isBooked = unavailableDatesSet.has(iso)
     const status = isBeforeToday || isUnavailableWeekday || isBooked ? 'unavailable' : 'available'
-
     days.push({
       iso,
       label: String(date.getDate()),
@@ -90,13 +86,29 @@ function generateCalendarData(daysToShowOverride) {
   for (const day of days) {
     const current = months[months.length - 1]
     if (!current || current.name !== day.month) {
-      months.push({ name: day.month, days: [day] })
+      const [year, month] = day.iso.split('-').map(Number)
+      const firstOfMonth = new Date(year, month - 1, 1)
+      months.push({
+        name: day.month,
+        leadingBlanks: mondayColumnIndex(firstOfMonth),
+        days: [day],
+      })
     } else {
       current.days.push(day)
     }
   }
 
   return { days, months }
+}
+
+function defaultAvailabilityConfig() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return {
+    startDate: today,
+    disabledWeekdays: new Set(),
+    unavailableDates: new Set(),
+  }
 }
 
 function createMailToBody(data) {
@@ -120,34 +132,96 @@ function createMailToBody(data) {
 
 export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
   const phoneHref = fallbackPhoneHref || '#'
-  const apiEndpoint = String(bookingApiEndpoint || '').trim()
-  const [hasMounted, setHasMounted] = useState(false)
-  const initialDaysToShow = Number(availabilityData.daysToShow) || 56
-  const addMoreStep = Number(availabilityData.daysIncrement) || 28
-  const [daysToShow, setDaysToShow] = useState(initialDaysToShow)
-  const { days, months } = useMemo(() => {
-    if (!hasMounted) {
-      return { days: [], months: [] }
+  const apiEndpoint = useMemo(() => {
+    const explicitEndpoint = String(bookingApiEndpoint || '').trim()
+    if (explicitEndpoint) return explicitEndpoint
+
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return 'http://127.0.0.1:8080/bookings/create.php'
+      }
     }
 
-    return generateCalendarData(daysToShow)
-  }, [daysToShow, hasMounted])
+    return ''
+  }, [bookingApiEndpoint])
+  const availabilityEndpoint = apiEndpoint ? apiEndpoint.replace('create.php', 'availability.php') : ''
+
+  const [hasMounted, setHasMounted] = useState(false)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [calendarConfig, setCalendarConfig] = useState(null)
+  const [daysToShow, setDaysToShow] = useState(INITIAL_DAYS)
+  const [visibleMonthIndex, setVisibleMonthIndex] = useState(0)
+
+  const { days, months } = useMemo(() => {
+    if (!hasMounted || !calendarConfig) return { days: [], months: [] }
+    return buildCalendarDays(
+      calendarConfig.startDate,
+      daysToShow,
+      calendarConfig.disabledWeekdays,
+      calendarConfig.unavailableDates
+    )
+  }, [hasMounted, calendarConfig, daysToShow])
 
   const firstAvailable = days.find((day) => day.status === 'available')
+  const visibleMonth = months[visibleMonthIndex] || null
+  const isCurrentMonth = visibleMonthIndex === 0
+  const canShowPreviousMonth = true // Allow navigating back to previous months indefinitely
+  const canShowNextMonth = true // Allow navigating forward to next months indefinitely
 
-  const [selectedDate, setSelectedDate] = useState(firstAvailable ? firstAvailable.iso : '')
+  const [selectedDate, setSelectedDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitState, setSubmitState] = useState({ type: 'idle', message: '' })
 
+  const fetchAvailability = useCallback(async (startDate, days, existingUnavailable) => {
+    if (!availabilityEndpoint) return null
+    try {
+      const url = `${availabilityEndpoint}?startDate=${formatISODate(startDate)}&daysToShow=${days}`
+      const res = await fetch(url)
+      if (!res.ok) return null
+      const data = await res.json()
+      const merged = new Set(existingUnavailable)
+      if (Array.isArray(data.unavailableDates)) {
+        for (const d of data.unavailableDates) merged.add(d)
+      }
+      return {
+        startDate,
+        disabledWeekdays: new Set(),
+        unavailableDates: merged,
+      }
+    } catch {
+      return null
+    }
+  }, [availabilityEndpoint])
+
   useEffect(() => {
     setHasMounted(true)
-  }, [])
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (availabilityEndpoint) {
+      setAvailabilityLoading(true)
+      fetchAvailability(today, INITIAL_DAYS, new Set()).then((config) => {
+        setCalendarConfig(config || defaultAvailabilityConfig())
+        setAvailabilityLoading(false)
+      })
+    } else {
+      setCalendarConfig(defaultAvailabilityConfig())
+    }
+  }, [availabilityEndpoint, fetchAvailability])
 
   useEffect(() => {
     if (!selectedDate && firstAvailable) {
       setSelectedDate(firstAvailable.iso)
     }
   }, [firstAvailable, selectedDate])
+
+  useEffect(() => {
+    setVisibleMonthIndex((current) => {
+      if (!months.length) return 0
+      return Math.min(current, months.length - 1)
+    })
+  }, [months.length])
 
   function isAvailable(isoDate) {
     const match = days.find((day) => day.iso === isoDate)
@@ -159,13 +233,38 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     setSubmitState({ type: 'idle', message: '' })
   }
 
-  function handleAddMoreDates() {
-    setDaysToShow((current) => current + addMoreStep)
+  function handlePreviousMonth() {
+    setVisibleMonthIndex((current) => Math.max(0, current - 1))
+  }
+
+  function handleNextMonth() {
+    setVisibleMonthIndex((current) => {
+      const nextIndex = current + 1
+      if (nextIndex >= months.length) {
+        setDaysToShow((value) => value + MORE_DAYS_STEP)
+      }
+      return nextIndex
+    })
+  }
+
+  async function handleAddMoreDates() {
+    const nextDays = daysToShow + MORE_DAYS_STEP
+    setDaysToShow(nextDays)
+
+    if (availabilityEndpoint && calendarConfig) {
+      setAvailabilityLoading(true)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const updated = await fetchAvailability(today, nextDays, calendarConfig.unavailableDates)
+      if (updated) setCalendarConfig(updated)
+      setAvailabilityLoading(false)
+    }
   }
 
   const selectedDateLabel = selectedDate
     ? formatReadableDate(parseISODateLocal(selectedDate))
     : 'Select a date from the calendar'
+  const isSelectedDateUnavailable = Boolean(selectedDate && !isAvailable(selectedDate))
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -237,6 +336,22 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         message: `Your booking request has been sent successfully.${bookingIdText} We will contact you soon to confirm details.`,
       })
       formElement.reset()
+
+      if (availabilityEndpoint) {
+        setAvailabilityLoading(true)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const refreshed = await fetchAvailability(today, daysToShow, new Set())
+        if (refreshed) {
+          setCalendarConfig(refreshed)
+          if (refreshed.unavailableDates.has(payload.bookingDate)) {
+            setSelectedDate('')
+          }
+        }
+
+        setAvailabilityLoading(false)
+      }
     } catch (error) {
       setSubmitState({
         type: 'error',
@@ -310,12 +425,48 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </div>
 
             <div className="calendar-months" role="list" aria-label="Upcoming availability by month">
-              {!months.length ? <p>Loading availability...</p> : null}
-              {months.map((month) => (
-                <section key={month.name} className="calendar-month" role="listitem" aria-label={month.name}>
-                  <h4>{month.name}</h4>
+              {availabilityLoading && !visibleMonth ? <p aria-live="polite">Loading availability…</p> : null}
+              {!availabilityLoading && !visibleMonth ? <p>No dates to show.</p> : null}
+              {visibleMonth ? (
+                <section
+                  key={visibleMonth.name}
+                  className="calendar-month"
+                  role="listitem"
+                  aria-label={`${visibleMonth.name} (${visibleMonthIndex + 1} of ${months.length})`}
+                >
+                  <div className="calendar-month-header">
+                    <button
+                      type="button"
+                      className="button button-quiet calendar-month-nav"
+                      onClick={handlePreviousMonth}
+                      disabled={isCurrentMonth || !canShowPreviousMonth}
+                    >
+                      <span>&laquo;</span>
+                      Previous month
+                    </button>
+                    <h4>{visibleMonth.name}</h4>
+                    <button
+                      type="button"
+                      className="button button-quiet calendar-month-nav"
+                      onClick={handleNextMonth}
+                      disabled={!canShowNextMonth}
+                    >
+                      Next month
+                      <span>&raquo;</span>
+                    </button>
+                  </div>
+
+                  <div className="calendar-weekdays" aria-hidden="true">
+                    {WEEKDAY_HEADERS.map((label) => (
+                      <span key={label}>{label}</span>
+                    ))}
+                  </div>
+
                   <div className="calendar-grid">
-                    {month.days.map((day) => {
+                    {Array.from({ length: visibleMonth.leadingBlanks }).map((_, index) => (
+                      <span key={`${visibleMonth.name}-blank-${index}`} className="calendar-day-spacer" aria-hidden="true" />
+                    ))}
+                    {visibleMonth.days.map((day) => {
                       const isSelected = day.iso === selectedDate
 
                       return (
@@ -334,12 +485,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
                     })}
                   </div>
                 </section>
-              ))}
+              ) : null}
             </div>
 
-            <div className="booking-calendar-actions">
-              <button type="button" className="button button-secondary" onClick={handleAddMoreDates}>Add more dates</button>
-            </div>
+            {/* Removed "Show more dates" button as it is now redundant */}
           </div>
         </div>
 
@@ -356,6 +505,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <p aria-live="polite">
                 You are booking: <strong>{selectedDateLabel}</strong>
               </p>
+              {isSelectedDateUnavailable ? (
+                <p className="booking-status error" role="alert">Warning: this date is not available. Please choose an available date to continue.</p>
+              ) : null}
             </div>
 
             <label>
@@ -453,11 +605,14 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             <button 
               type="submit" 
               className="button button-primary" 
-              disabled={isSubmitting || !selectedDate || !isAvailable(selectedDate)}
-              aria-disabled={isSubmitting || !selectedDate || !isAvailable(selectedDate)}
+              disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
+              aria-disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
             >
               {isSubmitting ? 'Sending...' : 'Send booking request'}
             </button>
+            {isSelectedDateUnavailable ? (
+              <p className="booking-status error" role="alert">The selected date is not available. You cannot submit this booking request until you choose an available date.</p>
+            ) : null}
             <p className="booking-form-actions-note">After you submit your booking request, we'll check driver availability and contact you by email or phone to confirm your final booking.</p>
           </div>
 
