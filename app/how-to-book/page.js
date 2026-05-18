@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BookingRequestSection } from '../../src/components/BookingRequestSection'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, PlainList, Section } from '../../src/components/ContentBlocks'
 import { SiteLayout } from '../../src/components/SiteLayout'
@@ -36,6 +37,8 @@ export default function HowToBookPage() {
           <Paragraphs items={bookingPage.hireCharge} />
         </aside>
       </section>
+
+      <BookingRequestSection emailHref={site.emailHref} fallbackPhone={site.phone} />
 
       <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
         <img src={images.busSeats.src} alt={images.busSeats.alt} />
