@@ -63,17 +63,6 @@ function app_config(): array
     }
 
     $privateDb = isset($privateConfig['db']) && is_array($privateConfig['db']) ? $privateConfig['db'] : [];
-    $privateAvailability = isset($privateConfig['availability']) && is_array($privateConfig['availability'])
-        ? $privateConfig['availability']
-        : [];
-
-    $disableWeekdays = [0];
-    if (isset($privateAvailability['disable_weekdays']) && is_array($privateAvailability['disable_weekdays'])) {
-        $disableWeekdays = array_values(array_unique(array_filter(
-            array_map(static fn ($value): int => (int)$value, $privateAvailability['disable_weekdays']),
-            static fn (int $value): bool => $value >= 0 && $value <= 6
-        )));
-    }
 
     return [
         'environment' => (string)($privateConfig['environment'] ?? env_value('APP_ENV', 'production')),
@@ -84,12 +73,6 @@ function app_config(): array
             'name' => (string)($privateDb['name'] ?? required_env_value('DB_NAME')),
             'user' => (string)($privateDb['user'] ?? required_env_value('DB_USER')),
             'pass' => (string)($privateDb['pass'] ?? required_env_value('DB_PASS')),
-        ],
-        'availability' => [
-            'days_to_show' => max(28, min(365, (int)($privateAvailability['days_to_show'] ?? 90))),
-            'disable_past_dates' => ($privateAvailability['disable_past_dates'] ?? true) !== false,
-            'disable_weekdays' => $disableWeekdays,
-            'blocked_booking_statuses' => ['pending', 'confirmed'],
         ],
     ];
 }

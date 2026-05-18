@@ -13,7 +13,7 @@ This is a separate backend for the static Next.js site.
 - POST /bookings/create.php
 - GET /bookings/availability.php
 
-Availability returns JSON in the same shape as the current static `bookingAvailability.json` file:
+Availability returns JSON in this shape:
 
 ```json
 {
