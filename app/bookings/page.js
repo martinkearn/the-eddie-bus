@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BookingRequestSection } from '../../src/components/BookingRequestSection'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, PlainList, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
@@ -7,32 +8,41 @@ import { bookingPage } from '../../src/content/pages'
 import { images, site } from '../../src/content/site'
 
 export const metadata = {
-  title: 'How to Book | The EDDIE Bus',
-  description: 'How to book The EDDIE Bus for eligible Bromsgrove group outings, including charges, payment, cancellations and accessibility details.',
+  title: 'Bookings | The EDDIE Bus',
+  description: 'Book The EDDIE Bus for eligible Bromsgrove group outings, including charges, payment, cancellations and accessibility details.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
-export default function HowToBookPage() {
+export default function BookingsPage() {
+  const bookingApiEndpoint = process.env.NEXT_PUBLIC_BOOKING_API_ENDPOINT || ''
+
   return (
-    <SiteLayout currentPath="/how-to-book/">
+    <SiteLayout currentPath="/bookings/">
       <PageIntro
         title={bookingPage.title}
         intro={bookingPage.intro.slice(0, 2)}
         image={images.busSide}
-        label="How to Book"
+        label="Bookings"
         className="booking-hero"
         actions={(
           <>
-            <Link className="button button-light" href={site.emailHref}>Email booking request</Link>
-            <span>Prefer to talk? Call <Link href={site.phoneHref}>{site.phone}</Link>.</span>
+            <Link className="button button-light" href="#booking-request">Start booking form</Link>
+            <span>The form is preferred for the fastest response, but booking by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}>phone</Link> is also valid.</span>
           </>
         )}
       />
 
-      <section className="booking-intro-highlights section-band" aria-label="Quick booking details">
-        <p><strong>Groups:</strong> usually 6 to 13 people, including carers where needed.</p>
-        <p><strong>Typical availability:</strong> daytime trips, every day except Christmas to New Year.</p>
-        <p><strong>Guide price:</strong> £1.25 per mile, with a £25 minimum charge.</p>
-      </section>
+      <BookingRequestSection
+        emailHref={site.emailHref}
+        fallbackPhone={site.phone}
+        fallbackPhoneHref={site.phoneHref}
+        bookingApiEndpoint={bookingApiEndpoint}
+        showIntro={false}
+        sectionId="booking-request"
+      />
 
       <section className="booking-panel section-band" aria-label="Booking process and charges">
         <div className="booking-process-card">
@@ -41,10 +51,7 @@ export default function HowToBookPage() {
             {bookingPage.steps.map((step) => <li key={step}>{step}</li>)}
           </ol>
           <p>{bookingPage.stepNote}</p>
-          <div className="booking-process-actions">
-            <Link className="button button-primary" href={site.emailHref}>{site.primaryCta}</Link>
-            <Link className="booking-phone-link" href={site.phoneHref}>Or call {site.phone}</Link>
-          </div>
+          <p className="booking-process-alternative">If needed, you can also book by email at <Link href={site.emailHref}>{site.email}</Link> or phone on <Link href={site.phoneHref}>{site.phone}</Link>.</p>
         </div>
         <aside className="booking-price-card">
           <h2>Hire charge</h2>
@@ -85,7 +92,7 @@ export default function HowToBookPage() {
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>
-      <ContactPanel title="Booking contact details" text={[`Email is preferred, but you are also welcome to phone ${site.phone}.`]} />
+      <ContactPanel title="Booking contact details" text={['The booking form above is the quickest way to request a trip, but email and phone bookings are always welcome too.']} />
     </SiteLayout>
   )
 }
