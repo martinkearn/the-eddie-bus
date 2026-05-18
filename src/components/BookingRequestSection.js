@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
+const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -53,18 +54,21 @@ function parseISODateLocal(value) {
   return new Date(parts[0], parts[1] - 1, parts[2])
 }
 
-const INITIAL_DAYS = 70
-const MORE_DAYS_STEP = 70
+const INITIAL_DAYS = 365 * 10; // Allow 10 years of days initially
+const MORE_DAYS_STEP = 365 * 10; // Extend by 10 years on each step
 
 function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableDatesSet) {
-  const start = new Date(startDate)
-  start.setHours(0, 0, 0, 0)
+  const today = new Date(startDate)
+  today.setHours(0, 0, 0, 0)
+
+  const rangeStart = new Date(today)
+  rangeStart.setDate(1)
 
   const days = []
   for (let i = 0; i < daysToShow; i += 1) {
-    const date = addDays(start, i)
+    const date = addDays(rangeStart, i)
     const iso = formatISODate(date)
-    const isBeforeToday = date < start
+    const isBeforeToday = date < today
     const isUnavailableWeekday = disabledWeekdays.has(date.getDay())
     const isBooked = unavailableDatesSet.has(iso)
     const status = isBeforeToday || isUnavailableWeekday || isBooked ? 'unavailable' : 'available'
@@ -147,6 +151,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [calendarConfig, setCalendarConfig] = useState(null)
   const [daysToShow, setDaysToShow] = useState(INITIAL_DAYS)
+  const [visibleMonthIndex, setVisibleMonthIndex] = useState(0)
 
   const { days, months } = useMemo(() => {
     if (!hasMounted || !calendarConfig) return { days: [], months: [] }
@@ -159,6 +164,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   }, [hasMounted, calendarConfig, daysToShow])
 
   const firstAvailable = days.find((day) => day.status === 'available')
+  const visibleMonth = months[visibleMonthIndex] || null
+  const isCurrentMonth = visibleMonthIndex === 0
+  const canShowPreviousMonth = true // Allow navigating back to previous months indefinitely
+  const canShowNextMonth = true // Allow navigating forward to next months indefinitely
 
   const [selectedDate, setSelectedDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -207,6 +216,13 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     }
   }, [firstAvailable, selectedDate])
 
+  useEffect(() => {
+    setVisibleMonthIndex((current) => {
+      if (!months.length) return 0
+      return Math.min(current, months.length - 1)
+    })
+  }, [months.length])
+
   function isAvailable(isoDate) {
     const match = days.find((day) => day.iso === isoDate)
     return Boolean(match && match.status === 'available')
@@ -215,6 +231,20 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   function handleDatePick(isoDate) {
     setSelectedDate(isoDate)
     setSubmitState({ type: 'idle', message: '' })
+  }
+
+  function handlePreviousMonth() {
+    setVisibleMonthIndex((current) => Math.max(0, current - 1))
+  }
+
+  function handleNextMonth() {
+    setVisibleMonthIndex((current) => {
+      const nextIndex = current + 1
+      if (nextIndex >= months.length) {
+        setDaysToShow((value) => value + MORE_DAYS_STEP)
+      }
+      return nextIndex
+    })
   }
 
   async function handleAddMoreDates() {
@@ -395,16 +425,48 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </div>
 
             <div className="calendar-months" role="list" aria-label="Upcoming availability by month">
-              {availabilityLoading && !months.length ? <p aria-live="polite">Loading availability…</p> : null}
-              {!availabilityLoading && !months.length ? <p>No dates to show.</p> : null}
-              {months.map((month) => (
-                <section key={month.name} className="calendar-month" role="listitem" aria-label={month.name}>
-                  <h4>{month.name}</h4>
-                  <div className="calendar-grid">
-                    {Array.from({ length: month.leadingBlanks }).map((_, index) => (
-                      <span key={`${month.name}-blank-${index}`} className="calendar-day-spacer" aria-hidden="true" />
+              {availabilityLoading && !visibleMonth ? <p aria-live="polite">Loading availability…</p> : null}
+              {!availabilityLoading && !visibleMonth ? <p>No dates to show.</p> : null}
+              {visibleMonth ? (
+                <section
+                  key={visibleMonth.name}
+                  className="calendar-month"
+                  role="listitem"
+                  aria-label={`${visibleMonth.name} (${visibleMonthIndex + 1} of ${months.length})`}
+                >
+                  <div className="calendar-month-header">
+                    <button
+                      type="button"
+                      className="button button-quiet calendar-month-nav"
+                      onClick={handlePreviousMonth}
+                      disabled={isCurrentMonth || !canShowPreviousMonth}
+                    >
+                      <span>&laquo;</span>
+                      Previous month
+                    </button>
+                    <h4>{visibleMonth.name}</h4>
+                    <button
+                      type="button"
+                      className="button button-quiet calendar-month-nav"
+                      onClick={handleNextMonth}
+                      disabled={!canShowNextMonth}
+                    >
+                      Next month
+                      <span>&raquo;</span>
+                    </button>
+                  </div>
+
+                  <div className="calendar-weekdays" aria-hidden="true">
+                    {WEEKDAY_HEADERS.map((label) => (
+                      <span key={label}>{label}</span>
                     ))}
-                    {month.days.map((day) => {
+                  </div>
+
+                  <div className="calendar-grid">
+                    {Array.from({ length: visibleMonth.leadingBlanks }).map((_, index) => (
+                      <span key={`${visibleMonth.name}-blank-${index}`} className="calendar-day-spacer" aria-hidden="true" />
+                    ))}
+                    {visibleMonth.days.map((day) => {
                       const isSelected = day.iso === selectedDate
 
                       return (
@@ -423,14 +485,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
                     })}
                   </div>
                 </section>
-              ))}
+              ) : null}
             </div>
 
-            <div className="booking-calendar-actions">
-              <button type="button" className="button button-secondary" onClick={handleAddMoreDates} disabled={availabilityLoading}>
-                {availabilityLoading ? 'Loading…' : 'Add more dates'}
-              </button>
-            </div>
+            {/* Removed "Show more dates" button as it is now redundant */}
           </div>
         </div>
 
