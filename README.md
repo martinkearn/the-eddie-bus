@@ -35,3 +35,10 @@ npm run build
 	- `NEXT_PUBLIC_BOOKING_API_ENDPOINT=https://your-api-domain/bookings/create.php`
 - If this variable is not set, the form falls back to the existing mailto flow.
 - PHP API implementation and SQL schema are in `backend/php-api/`.
+
+## Admin Portal
+
+- Admin UI route: `/admin/`
+- By default, admin API endpoints are derived from `NEXT_PUBLIC_BOOKING_API_ENDPOINT`.
+- Optional override variable:
+	- `NEXT_PUBLIC_ADMIN_API_BASE=https://your-api-domain/admin`

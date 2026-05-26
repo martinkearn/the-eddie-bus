@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS bookings (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   booking_ref VARCHAR(128) NOT NULL,
-  status ENUM('pending', 'confirmed', 'cancelled') NOT NULL DEFAULT 'pending',
+  status ENUM('pending', 'confirmed', 'cancelled', 'completed') NOT NULL DEFAULT 'pending',
   booking_date DATE NOT NULL,
   pickup_time TIME NOT NULL,
   organisation VARCHAR(255) NOT NULL,

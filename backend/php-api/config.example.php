@@ -14,4 +14,9 @@ return [
         'user' => 'YOUR_DB_USER',
         'pass' => 'YOUR_DB_PASSWORD',
     ],
+    'admin' => [
+        'session_cookie_name' => 'eddie_admin_session',
+        'session_cookie_lifetime_seconds' => 315360000,
+        'session_cookie_samesite' => 'Lax',
+    ],
 ];
