@@ -37,6 +37,58 @@ $srcPath = resolve_src_path();
 require_once $srcPath . '/bootstrap.php';
 require_once $srcPath . '/db.php';
 
+function ref_token_from_text(string $value, int $maxLength = 8): string
+{
+    $normalized = strtolower(trim($value));
+    $normalized = preg_replace('/[^a-z0-9]+/', '', $normalized);
+    $normalized = (string)$normalized;
+
+    if ($normalized === '') {
+        return 'x';
+    }
+
+    return substr($normalized, 0, max(1, $maxLength));
+}
+
+function build_booking_ref_base(string $bookingDate, string $pickupTime, string $organisation, string $destinationName): string
+{
+    $datePart = str_replace('-', '', $bookingDate);
+    $timePart = str_replace(':', '', $pickupTime);
+    $orgPart = ref_token_from_text($organisation, 10);
+    $destinationPart = ref_token_from_text($destinationName, 10);
+
+    return sprintf('%s-%s-%s-%s', $datePart, $timePart, $orgPart, $destinationPart);
+}
+
+function next_booking_ref(PDO $pdo, string $baseRef): string
+{
+    $stmt = $pdo->prepare('SELECT booking_ref FROM bookings WHERE booking_ref = :exact OR booking_ref LIKE :like_ref');
+    $stmt->execute([
+        ':exact' => $baseRef,
+        ':like_ref' => $baseRef . '-%',
+    ]);
+
+    $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    if (!is_array($rows) || $rows === []) {
+        return $baseRef;
+    }
+
+    $maxSuffix = 1;
+    foreach ($rows as $row) {
+        $ref = (string)$row;
+        if ($ref === $baseRef) {
+            $maxSuffix = max($maxSuffix, 1);
+            continue;
+        }
+
+        if (preg_match('/^' . preg_quote($baseRef, '/') . '-(\d+)$/', $ref, $matches) === 1) {
+            $maxSuffix = max($maxSuffix, (int)$matches[1]);
+        }
+    }
+
+    return $baseRef . '-' . ($maxSuffix + 1);
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     fail_json(405, 'Method not allowed.');
 }
@@ -114,8 +166,12 @@ $userAgent = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512);
 try {
     $pdo = db_connection();
 
+    $baseRef = build_booking_ref_base($bookingDate, $pickupTime, $organisation, $destinationName);
+    $bookingRef = next_booking_ref($pdo, $baseRef);
+
     $stmt = $pdo->prepare(
         'INSERT INTO bookings (
+            booking_ref,
             booking_date,
             pickup_time,
             organisation,
@@ -131,6 +187,7 @@ try {
             source_ip,
             user_agent
         ) VALUES (
+            :booking_ref,
             :booking_date,
             :pickup_time,
             :organisation,
@@ -148,7 +205,8 @@ try {
         )'
     );
 
-    $stmt->execute([
+    $params = [
+        ':booking_ref' => $bookingRef,
         ':booking_date' => $bookingDate,
         ':pickup_time' => $pickupTime . ':00',
         ':organisation' => $organisation,
@@ -163,7 +221,23 @@ try {
         ':special_requirements' => $specialRequirements !== '' ? $specialRequirements : null,
         ':source_ip' => $sourceIp,
         ':user_agent' => $userAgent,
-    ]);
+    ];
+
+    for ($attempt = 0; $attempt < 5; $attempt += 1) {
+        try {
+            $stmt->execute($params);
+            break;
+        } catch (PDOException $pdoException) {
+            $sqlState = $pdoException->errorInfo[0] ?? '';
+            $isUniqueConflict = $sqlState === '23000';
+            if (!$isUniqueConflict || $attempt === 4) {
+                throw $pdoException;
+            }
+
+            $bookingRef = next_booking_ref($pdo, $baseRef);
+            $params[':booking_ref'] = $bookingRef;
+        }
+    }
 
     $bookingId = (int)$pdo->lastInsertId();
 
@@ -171,6 +245,7 @@ try {
         'ok' => true,
         'message' => 'Booking request saved.',
         'bookingId' => $bookingId,
+        'bookingRef' => $bookingRef,
     ]);
 } catch (Throwable $exception) {
     error_log('Booking create failed: ' . $exception->getMessage());

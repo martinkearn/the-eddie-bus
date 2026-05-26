@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS bookings (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  booking_ref VARCHAR(128) NOT NULL,
   status ENUM('pending', 'confirmed', 'cancelled') NOT NULL DEFAULT 'pending',
   booking_date DATE NOT NULL,
   pickup_time TIME NOT NULL,
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_bookings_booking_ref (booking_ref),
   KEY idx_bookings_booking_date (booking_date),
   KEY idx_bookings_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

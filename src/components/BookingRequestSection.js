@@ -327,13 +327,13 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         throw new Error(message)
       }
 
-      const bookingIdText = typeof result.bookingId === 'number'
-        ? ` Your reference is booking #${result.bookingId}.`
-        : ''
+      const bookingReferenceText = typeof result.bookingRef === 'string' && result.bookingRef.trim() !== ''
+        ? ` and your reference is ${result.bookingRef}`
+        : (typeof result.bookingId === 'number' ? ` and your reference is booking #${result.bookingId}` : '')
 
       setSubmitState({
         type: 'success',
-        message: `Your booking request has been sent successfully.${bookingIdText} We will contact you soon to confirm details.`,
+        message: `Your booking request has been sent successfully${bookingReferenceText}, and we will now check driver availability before contacting you by email or phone to confirm your final booking. We do not send an automatic confirmation email after form submission, so please make a note of your booking reference.`,
       })
       formElement.reset()
 
@@ -353,9 +353,15 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         setAvailabilityLoading(false)
       }
     } catch (error) {
+      const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      const isNetworkError = error instanceof TypeError || (error instanceof Error && /failed to fetch/i.test(error.message))
+      const fallbackMessage = isLocalHost && isNetworkError
+        ? 'Could not reach the local booking API. Start the PHP API server on http://127.0.0.1:8080 and try again.'
+        : 'We could not send your booking request at the moment.'
+
       setSubmitState({
         type: 'error',
-        message: error instanceof Error ? error.message : 'We could not send your booking request at the moment.',
+        message: error instanceof Error ? (error.message || fallbackMessage) : fallbackMessage,
       })
     } finally {
       setIsSubmitting(false)
@@ -613,7 +619,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             {isSelectedDateUnavailable ? (
               <p className="booking-status error" role="alert">The selected date is not available. You cannot submit this booking request until you choose an available date.</p>
             ) : null}
-            <p className="booking-form-actions-note">After you submit your booking request, we'll check driver availability and contact you by email or phone to confirm your final booking.</p>
           </div>
 
           {submitState.message ? (

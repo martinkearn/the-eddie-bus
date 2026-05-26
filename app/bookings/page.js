@@ -92,7 +92,7 @@ export default function BookingsPage() {
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>
-      <ContactPanel title="Booking contact details" text={['The booking form above is the quickest way to request a trip, but email and phone bookings are always welcome too.']} />
+      <ContactPanel title="Contact details" text={['The booking form above is the quickest way to request a trip, but email and phone bookings are always welcome too.']} />
     </SiteLayout>
   )
 }
