@@ -41,6 +41,8 @@ function mapBookingToForm(booking) {
     id: String(booking.id || ''),
     bookingRef: String(booking.booking_ref || ''),
     status: String(booking.status || 'pending'),
+    driverUserId: booking.driver_user_id !== null && booking.driver_user_id !== undefined ? String(booking.driver_user_id) : '',
+    driverUsername: String(booking.driver_username || ''),
     bookingDate: String(booking.booking_date || ''),
     pickupTime: String(booking.pickup_time || ''),
     organisation: String(booking.organisation || ''),
@@ -53,10 +55,31 @@ function mapBookingToForm(booking) {
     poweredWheelchairs: toBooleanFlag(booking.powered_wheelchairs),
     passengerTransfers: toBooleanFlag(booking.passenger_transfers),
     specialRequirements: String(booking.special_requirements || ''),
+    adminNotes: String(booking.admin_notes || ''),
     sourceIp: String(booking.source_ip || ''),
     userAgent: String(booking.user_agent || ''),
     createdAt: String(booking.created_at || ''),
     updatedAt: String(booking.updated_at || ''),
+  }
+}
+
+function formatDateUK(dateStr) {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr + 'T00:00:00Z')
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    
+    const day = date.getUTCDate()
+    const dayOfWeek = date.getUTCDay()
+    const month = date.getUTCMonth()
+    const year = date.getUTCFullYear()
+    
+    const ordinal = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
+    
+    return `${dayNames[dayOfWeek]} ${day}${ordinal} ${monthNames[month]} ${year}`
+  } catch {
+    return dateStr
   }
 }
 
@@ -86,13 +109,16 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
 
   const [users, setUsers] = useState([])
+  const [assignableUsers, setAssignableUsers] = useState([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [userSaveLoadingId, setUserSaveLoadingId] = useState('')
   const [userDeleteLoadingId, setUserDeleteLoadingId] = useState('')
   const [userResetLoadingId, setUserResetLoadingId] = useState('')
   const [userDrafts, setUserDrafts] = useState({})
+  const [resetPasswordResult, setResetPasswordResult] = useState(null)
   const [newUserForm, setNewUserForm] = useState({ username: '', role: 'viewer', password: '' })
   const [newUserLoading, setNewUserLoading] = useState(false)
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false)
 
   const [changePasswordForm, setChangePasswordForm] = useState({ currentPassword: '', newPassword: '' })
   const [changePasswordLoading, setChangePasswordLoading] = useState(false)
@@ -191,8 +217,25 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch, isAdmin])
 
+  const loadAssignableUsers = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const data = await apiFetch('/users/options.php')
+      setAssignableUsers(data.items || [])
+    } catch (error) {
+      setBanner({ type: 'error', message: error.message || 'Could not load Driver options.' })
+    }
+  }, [apiFetch, user])
+
   const loadBookingDetail = useCallback(async (id) => {
     if (!id) return
+
+    if (String(selectedBookingId) === String(id)) {
+      setSelectedBookingId('')
+      setBookingForm(null)
+      return
+    }
 
     setBookingDetailLoading(true)
     try {
@@ -204,7 +247,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     } finally {
       setBookingDetailLoading(false)
     }
-  }, [apiFetch])
+  }, [apiFetch, selectedBookingId])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -240,6 +283,60 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     loadUsers()
   }, [user, isAdmin, loadUsers])
+
+  useEffect(() => {
+    if (!user) {
+      setAssignableUsers([])
+      return
+    }
+
+    loadAssignableUsers()
+  }, [user, loadAssignableUsers])
+
+  useEffect(() => {
+    if (banner.type === 'idle') {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setBanner({ type: 'idle', message: '' })
+    }, 5000)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [banner])
+
+  useEffect(() => {
+    if (activeTab !== 'bookings' || searchTerm.trim() !== '' || !user) {
+      return undefined
+    }
+
+    const pollBookings = async () => {
+      try {
+        const query = new URLSearchParams({
+          limit: String(PAGE_SIZE),
+          offset: '0',
+        })
+        const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
+        const newItems = data.items || []
+
+        setBookings((current) => {
+          const existingIds = new Set(current.map((b) => b.id))
+          const genuinelyNew = newItems.filter((b) => !existingIds.has(b.id))
+          return [...genuinelyNew, ...current]
+        })
+      } catch {
+        // Silently fail polling to avoid spamming errors
+      }
+    }
+
+    const intervalId = window.setInterval(pollBookings, 30000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [activeTab, searchTerm, user, apiFetch])
 
   async function handleLoginSubmit(event) {
     event.preventDefault()
@@ -378,6 +475,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       })
 
       setNewUserForm({ username: '', role: 'viewer', password: '' })
+      setShowCreateUserForm(false)
       setBanner({ type: 'success', message: 'User created successfully.' })
       await loadUsers()
     } catch (error) {
@@ -431,11 +529,29 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       })
 
       const tempPassword = data.temporaryPassword || ''
-      setBanner({ type: 'success', message: `Password reset. Temporary password: ${tempPassword}` })
+      const targetUser = users.find((item) => String(item.id) === String(userId))
+      setResetPasswordResult({
+        userId: String(userId),
+        username: targetUser?.username || 'User',
+        temporaryPassword: tempPassword,
+      })
+      setBanner({ type: 'success', message: 'Password reset successfully.' })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not reset password.' })
     } finally {
       setUserResetLoadingId('')
+    }
+  }
+
+  async function handleCopyTemporaryPassword() {
+    if (!resetPasswordResult?.temporaryPassword) return
+
+    try {
+      const copyText = `Your username is ${resetPasswordResult.username} and your password is ${resetPasswordResult.temporaryPassword}`
+      await navigator.clipboard.writeText(copyText)
+      setBanner({ type: 'success', message: 'Login credentials copied to clipboard.' })
+    } catch {
+      setBanner({ type: 'error', message: 'Could not copy the login credentials.' })
     }
   }
 
@@ -549,13 +665,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     <main className="admin-shell">
       <section className="admin-panel">
         <header className="admin-topbar">
-          <div>
-            <p className="admin-eyebrow">The EDDIE Bus</p>
-            <h1>Admin portal</h1>
-            <p>Signed in as <strong>{user.username}</strong> ({user.role})</p>
+          <div className="admin-brand-block">
+            <Link className="admin-brand" href="/" aria-label="The EDDIE Bus home">
+              <img src="/logo.png" alt="The EDDIE Bus logo" />
+            </Link>
+            <div>
+              <h1>Admin Portal</h1>
+              <p>Welcome {user.username}</p>
+            </div>
           </div>
-          <div className="admin-inline-actions">
-            <button className="button button-quiet" type="button" onClick={handleLogout}>Sign out</button>
+          <div className="admin-topbar-actions">
+            <Link className="button button-quiet" href="/">Back To Main Site</Link>
+            <button className="button button-quiet" type="button" onClick={handleLogout}>Sign Out</button>
           </div>
         </header>
 
@@ -563,16 +684,23 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           <p className={`admin-banner admin-banner-${banner.type}`}>{banner.message}</p>
         )}
 
-        <nav className="admin-tabs" aria-label="Admin sections">
-          <button type="button" className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>Bookings</button>
+        <nav className="admin-tabs" aria-label="Admin sections" role="tablist">
+          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>Bookings</button>
           {isAdmin && (
-            <button type="button" className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>Users</button>
+            <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>Users</button>
           )}
-          <button type="button" className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>My account</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'account'} className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>My Account</button>
         </nav>
 
         {activeTab === 'bookings' && (
           <section className="admin-section" aria-label="Booking management">
+            <div className="admin-section-heading">
+              <div>
+                <h2>Bookings</h2>
+              </div>
+              <Link className="button button-primary" href="/bookings/">Create Booking</Link>
+            </div>
+
             <form className="admin-search" onSubmit={handleSearchSubmit}>
               <input
                 type="search"
@@ -587,9 +715,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Booking ref</th>
+                    <th>Booking Ref</th>
                     <th>Date</th>
                     <th>Status</th>
+                    <th>Driver</th>
                     <th>Organisation</th>
                     <th>Destination</th>
                   </tr>
@@ -602,15 +731,16 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       onClick={() => loadBookingDetail(item.id)}
                     >
                       <td>{item.booking_ref}</td>
-                      <td>{item.booking_date}</td>
+                      <td>{formatDateUK(item.booking_date)}</td>
                       <td>{item.status}</td>
+                      <td>{item.driver_username || 'Unassigned'}</td>
                       <td>{item.organisation}</td>
                       <td>{item.destination_name}</td>
                     </tr>
                   ))}
                   {!bookingsLoading && bookings.length === 0 && (
                     <tr>
-                      <td colSpan={5}>No bookings found.</td>
+                      <td colSpan={6}>No bookings found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -624,12 +754,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 disabled={bookingsLoading || !hasMore}
                 onClick={() => loadBookings({ reset: false, q: searchTerm })}
               >
-                {bookingsLoading ? 'Loading...' : hasMore ? 'Load more' : 'No more bookings'}
+                {bookingsLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Bookings'}
               </button>
             </div>
 
             <section className="admin-editor" aria-label="Booking details">
-              <h2>Booking details</h2>
+              <h2>Booking Details</h2>
               {bookingDetailLoading && <p>Loading booking details...</p>}
               {!bookingDetailLoading && !bookingForm && <p>Select a booking row to view details.</p>}
               {!bookingDetailLoading && bookingForm && (
@@ -655,6 +785,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <option value="confirmed">confirmed</option>
                       <option value="cancelled">cancelled</option>
                       <option value="completed">completed</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Driver</span>
+                    <select
+                      value={bookingForm.driverUserId}
+                      onChange={(event) => handleBookingFieldChange('driverUserId', event.target.value)}
+                      disabled={!isAdmin}
+                    >
+                      <option value="">Unassigned</option>
+                      {assignableUsers.map((item) => (
+                        <option key={item.id} value={String(item.id)}>{item.username}</option>
+                      ))}
                     </select>
                   </label>
 
@@ -787,6 +931,17 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   </label>
 
                   <label className="field-full">
+                    <span>Admin Notes</span>
+                    <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Internal notes only shown to admin portal users</small>
+                    <textarea
+                      rows={4}
+                      value={bookingForm.adminNotes}
+                      onChange={(event) => handleBookingFieldChange('adminNotes', event.target.value)}
+                      disabled={!isAdmin}
+                    />
+                  </label>
+
+                  <label className="field-full">
                     <span>Source IP</span>
                     <input value={bookingForm.sourceIp} disabled />
                   </label>
@@ -809,10 +964,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   {isAdmin && (
                     <div className="field-full admin-inline-actions">
                       <button className="button button-primary" type="submit" disabled={bookingSaveLoading}>
-                        {bookingSaveLoading ? 'Saving...' : 'Save changes'}
+                        {bookingSaveLoading ? 'Saving...' : 'Save Changes'}
                       </button>
-                      <button className="button button-secondary" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
-                        {bookingDeleteLoading ? 'Deleting...' : 'Delete permanently'}
+                      <button className="button button-danger" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
+                        {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
                       </button>
                     </div>
                   )}
@@ -824,45 +979,84 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
         {activeTab === 'users' && isAdmin && (
           <section className="admin-section" aria-label="User management">
-            <h2>Users</h2>
-            <p>Create, edit, reset passwords, and delete users.</p>
-
-            <form className="admin-form-grid" onSubmit={handleCreateUser}>
-              <label>
-                <span>Username</span>
-                <input
-                  value={newUserForm.username}
-                  onChange={(event) => setNewUserForm((current) => ({ ...current, username: event.target.value }))}
-                  required
-                />
-              </label>
-              <label>
-                <span>Role</span>
-                <select
-                  value={newUserForm.role}
-                  onChange={(event) => setNewUserForm((current) => ({ ...current, role: event.target.value }))}
-                >
-                  <option value="viewer">viewer</option>
-                  <option value="admin">admin</option>
-                </select>
-              </label>
-              <label>
-                <span>Password</span>
-                <input
-                  type="password"
-                  minLength={8}
-                  value={newUserForm.password}
-                  onChange={(event) => setNewUserForm((current) => ({ ...current, password: event.target.value }))}
-                  required
-                />
-              </label>
-
-              <div className="field-full admin-inline-actions">
-                <button className="button button-primary" type="submit" disabled={newUserLoading}>
-                  {newUserLoading ? 'Creating...' : 'Create user'}
-                </button>
+            <div className="admin-section-heading">
+              <div>
+                <h2>Users</h2>
+                <p>Create, edit, reset passwords, and delete users.</p>
               </div>
-            </form>
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() => setShowCreateUserForm((current) => !current)}
+              >
+                {showCreateUserForm ? 'Close Create User' : 'Create User'}
+              </button>
+            </div>
+
+            {resetPasswordResult && (
+              <section className="admin-editor" aria-label="Temporary password panel">
+                <h3>Temporary Password</h3>
+                <p>
+                  Username: <strong>{resetPasswordResult.username}</strong>
+                </p>
+                <p>
+                  Temporary password: <strong>{resetPasswordResult.temporaryPassword}</strong>
+                </p>
+                <div className="admin-inline-actions">
+                  <button className="button button-primary" type="button" onClick={handleCopyTemporaryPassword}>
+                    Copy
+                  </button>
+                  <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
+                    Close
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {showCreateUserForm && (
+              <section className="admin-editor" aria-label="Create user form">
+                <h3>Create User</h3>
+                <form className="admin-form-grid" onSubmit={handleCreateUser}>
+                  <label>
+                    <span>Username</span>
+                    <input
+                      value={newUserForm.username}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, username: event.target.value }))}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Role</span>
+                    <select
+                      value={newUserForm.role}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, role: event.target.value }))}
+                    >
+                      <option value="viewer">viewer</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <input
+                      type="password"
+                      minLength={8}
+                      value={newUserForm.password}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, password: event.target.value }))}
+                      required
+                    />
+                  </label>
+
+                  <div className="field-full admin-inline-actions">
+                    <button className="button button-primary" type="submit" disabled={newUserLoading}>
+                      {newUserLoading ? 'Creating...' : 'Create User'}
+                    </button>
+                    <button className="button button-quiet" type="button" onClick={() => setShowCreateUserForm(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </section>
+            )}
 
             <div className="admin-table-wrap">
               <table className="admin-table admin-users-table">
@@ -913,9 +1107,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                               {userSaveLoadingId === String(item.id) ? 'Saving...' : 'Save'}
                             </button>
                             <button className="button button-quiet" type="button" onClick={() => handleResetUserPassword(item.id)} disabled={userResetLoadingId === String(item.id)}>
-                              {userResetLoadingId === String(item.id) ? 'Resetting...' : 'Reset password'}
+                              {userResetLoadingId === String(item.id) ? 'Resetting...' : 'Reset Password'}
                             </button>
-                            <button className="button button-secondary" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={userDeleteLoadingId === String(item.id)}>
+                            <button className="button button-danger" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={userDeleteLoadingId === String(item.id)}>
                               {userDeleteLoadingId === String(item.id) ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
@@ -936,7 +1130,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
         {activeTab === 'account' && (
           <section className="admin-section" aria-label="My account">
-            <h2>Change password</h2>
+            <h2>Change Password</h2>
             <p>Changing your password signs you out of all current sessions.</p>
 
             <form className="admin-form-grid" onSubmit={handleChangePassword}>
@@ -963,7 +1157,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
               <div className="field-full admin-inline-actions">
                 <button className="button button-primary" type="submit" disabled={changePasswordLoading}>
-                  {changePasswordLoading ? 'Updating...' : 'Update password'}
+                  {changePasswordLoading ? 'Updating...' : 'Update Password'}
                 </button>
               </div>
             </form>

@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS admin_users (
   UNIQUE KEY uq_admin_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+ALTER TABLE bookings
+  ADD COLUMN driver_user_id BIGINT UNSIGNED NULL AFTER status,
+  ADD COLUMN admin_notes TEXT NULL AFTER special_requirements,
+  ADD KEY idx_bookings_driver_user_id (driver_user_id),
+  ADD CONSTRAINT fk_bookings_driver_user_id FOREIGN KEY (driver_user_id) REFERENCES admin_users(id) ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS admin_sessions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,

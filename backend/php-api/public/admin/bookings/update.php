@@ -46,6 +46,8 @@ $contactName = trim((string)($payload['contactName'] ?? ''));
 $contactEmail = trim((string)($payload['contactEmail'] ?? ''));
 $contactNumber = trim((string)($payload['contactNumber'] ?? ''));
 $specialRequirements = trim((string)($payload['specialRequirements'] ?? ''));
+$adminNotes = trim((string)($payload['adminNotes'] ?? ''));
+$driverUserIdRaw = trim((string)($payload['driverUserId'] ?? ''));
 
 $allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
 $errors = [];
@@ -77,19 +79,43 @@ if ($contactEmail === '' || filter_var($contactEmail, FILTER_VALIDATE_EMAIL) ===
 if ($contactNumber === '') {
     $errors['contactNumber'] = 'Contact number is required.';
 }
+if ($driverUserIdRaw !== '' && !ctype_digit($driverUserIdRaw)) {
+    $errors['driverUserId'] = 'Driver must be a valid user selection.';
+}
 
 if ($errors !== []) {
     fail_json(422, 'Validation failed.', $errors);
 }
 
+$driverUserId = $driverUserIdRaw !== '' ? (int)$driverUserIdRaw : null;
+
 try {
     $pdo = db_connection();
     require_admin($pdo);
+
+    $columnCheckStmt = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name');
+    $columnCheckStmt->execute([
+        ':table_name' => 'bookings',
+        ':column_name' => 'admin_notes',
+    ]);
+    $hasAdminNotesColumn = ((int)$columnCheckStmt->fetchColumn()) > 0;
+
+    if ($driverUserId !== null) {
+        $driverStmt = $pdo->prepare('SELECT id FROM admin_users WHERE id = :id LIMIT 1');
+        $driverStmt->execute([':id' => $driverUserId]);
+        $driver = $driverStmt->fetch();
+        if (!is_array($driver)) {
+            fail_json(422, 'Driver must be an existing user.');
+        }
+    }
+
+    $adminNotesUpdateSql = $hasAdminNotesColumn ? ",\n             admin_notes = :admin_notes" : '';
 
     $stmt = $pdo->prepare(
         'UPDATE bookings
          SET booking_ref = :booking_ref,
              status = :status,
+             driver_user_id = :driver_user_id,
              booking_date = :booking_date,
              pickup_time = :pickup_time,
              organisation = :organisation,
@@ -101,13 +127,14 @@ try {
              static_wheelchairs = :static_wheelchairs,
              powered_wheelchairs = :powered_wheelchairs,
              passenger_transfers = :passenger_transfers,
-             special_requirements = :special_requirements
+             special_requirements = :special_requirements' . $adminNotesUpdateSql . '
          WHERE id = :id'
     );
 
-    $stmt->execute([
+    $executeParams = [
         ':booking_ref' => $bookingRef,
         ':status' => $status,
+        ':driver_user_id' => $driverUserId,
         ':booking_date' => $bookingDate,
         ':pickup_time' => $pickupTime . ':00',
         ':organisation' => $organisation,
@@ -121,7 +148,13 @@ try {
         ':passenger_transfers' => bool_to_int($payload['passengerTransfers'] ?? 0),
         ':special_requirements' => $specialRequirements !== '' ? $specialRequirements : null,
         ':id' => $bookingId,
-    ]);
+    ];
+
+    if ($hasAdminNotesColumn) {
+        $executeParams[':admin_notes'] = $adminNotes !== '' ? $adminNotes : null;
+    }
+
+    $stmt->execute($executeParams);
 
     if ($stmt->rowCount() === 0) {
         $existsStmt = $pdo->prepare('SELECT id FROM bookings WHERE id = :id LIMIT 1');

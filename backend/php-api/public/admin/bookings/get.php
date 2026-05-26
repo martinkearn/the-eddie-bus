@@ -19,28 +19,41 @@ try {
     $pdo = db_connection();
     require_auth($pdo);
 
+    $columnCheckStmt = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name');
+    $columnCheckStmt->execute([
+        ':table_name' => 'bookings',
+        ':column_name' => 'admin_notes',
+    ]);
+    $hasAdminNotesColumn = ((int)$columnCheckStmt->fetchColumn()) > 0;
+
+    $adminNotesSelectSql = $hasAdminNotesColumn ? 'bookings.admin_notes' : 'NULL AS admin_notes';
+
     $stmt = $pdo->prepare('SELECT
-        id,
-        booking_ref,
-        status,
-        booking_date,
-        TIME_FORMAT(pickup_time, "%H:%i") AS pickup_time,
-        organisation,
-        destination_name,
-        destination_address,
-        contact_name,
-        contact_email,
-        contact_number,
-        static_wheelchairs,
-        powered_wheelchairs,
-        passenger_transfers,
-        special_requirements,
-        source_ip,
-        user_agent,
-        created_at,
-        updated_at
+        bookings.id,
+        bookings.booking_ref,
+        bookings.status,
+        bookings.driver_user_id,
+        driver.username AS driver_username,
+        bookings.booking_date,
+        TIME_FORMAT(bookings.pickup_time, "%H:%i") AS pickup_time,
+        bookings.organisation,
+        bookings.destination_name,
+        bookings.destination_address,
+        bookings.contact_name,
+        bookings.contact_email,
+        bookings.contact_number,
+        bookings.static_wheelchairs,
+        bookings.powered_wheelchairs,
+        bookings.passenger_transfers,
+        bookings.special_requirements,
+        ' . $adminNotesSelectSql . ',
+        bookings.source_ip,
+        bookings.user_agent,
+        bookings.created_at,
+        bookings.updated_at
     FROM bookings
-    WHERE id = :id
+    LEFT JOIN admin_users driver ON driver.id = bookings.driver_user_id
+    WHERE bookings.id = :id
     LIMIT 1');
 
     $stmt->execute([':id' => $bookingId]);

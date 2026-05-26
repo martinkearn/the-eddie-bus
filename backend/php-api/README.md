@@ -22,6 +22,7 @@ This is a separate backend for the static Next.js site.
 - POST /admin/bookings/update.php
 - POST /admin/bookings/delete.php
 - GET /admin/users/list.php
+- GET /admin/users/options.php
 - POST /admin/users/create.php
 - POST /admin/users/update.php
 - POST /admin/users/reset-password.php
@@ -119,6 +120,7 @@ Do not commit plaintext passwords in files, docs, commits, or CI logs.
 - Session auth is cookie-based (`HttpOnly`, `Secure` when on HTTPS).
 - Session CORS requires allowed origin match from config.
 - Booking status supports: `pending`, `confirmed`, `cancelled`, `completed`.
+- Bookings can optionally be assigned to a system user via the admin-only `driver` field.
 - Forgot password endpoint returns manual support instructions for `bookings@theeddiebus.org.uk`.
 
 To manually block dates, insert rows into `booking_unavailable_dates`.
