@@ -12,6 +12,21 @@ This is a separate backend for the static Next.js site.
 
 - POST /bookings/create.php
 - GET /bookings/availability.php
+- POST /admin/auth/login.php
+- POST /admin/auth/logout.php
+- GET /admin/auth/me.php
+- POST /admin/auth/forgot-password.php
+- POST /admin/auth/change-password.php
+- GET /admin/bookings/list.php
+- GET /admin/bookings/get.php
+- POST /admin/bookings/update.php
+- POST /admin/bookings/delete.php
+- GET /admin/users/list.php
+- GET /admin/users/options.php
+- POST /admin/users/create.php
+- POST /admin/users/update.php
+- POST /admin/users/reset-password.php
+- POST /admin/users/delete.php
 
 Availability returns JSON in this shape:
 
@@ -79,10 +94,34 @@ return [
 ## Setup
 
 1. Create database tables using `sql/bookings.sql`.
+2. Apply admin schema updates using `sql/admin_portal.sql`.
 2. Deploy backend/php-api/public to a public URL path, such as /public_html/api.
 3. Deploy backend/php-api/src and backend/php-api/sql to a private path, such as /booking-api.
 4. Add your private config file outside public_html.
 5. Optionally set BOOKING_API_CONFIG_FILE and/or BOOKING_API_SRC_PATH if your paths differ from defaults.
+
+## Initial admin users (no passwords in git)
+
+Use the seed script in a trusted shell session, with passwords provided only as environment variables:
+
+```bash
+ADMIN_INITIAL_PASSWORD='set-admin-password' VIEWER_INITIAL_PASSWORD='set-viewer-password' php backend/php-api/scripts/seed_admin_users.php
+```
+
+The script creates or updates:
+
+- `admin` (role `admin`)
+- `driver` (role `viewer`)
+
+Do not commit plaintext passwords in files, docs, commits, or CI logs.
+
+## Admin behavior
+
+- Session auth is cookie-based (`HttpOnly`, `Secure` when on HTTPS).
+- Session CORS requires allowed origin match from config.
+- Booking status supports: `pending`, `confirmed`, `cancelled`, `completed`.
+- Bookings can optionally be assigned to a system user via the admin-only `driver` field.
+- Forgot password endpoint returns manual support instructions for `bookings@theeddiebus.org.uk`.
 
 To manually block dates, insert rows into `booking_unavailable_dates`.
 

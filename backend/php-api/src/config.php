@@ -67,6 +67,11 @@ function app_config(): array
     return [
         'environment' => (string)($privateConfig['environment'] ?? env_value('APP_ENV', 'production')),
         'allowed_origins' => $allowedOrigins,
+        'admin' => [
+            'session_cookie_name' => (string)($privateConfig['admin']['session_cookie_name'] ?? env_value('ADMIN_SESSION_COOKIE_NAME', 'eddie_admin_session')),
+            'session_cookie_lifetime_seconds' => (int)($privateConfig['admin']['session_cookie_lifetime_seconds'] ?? env_value('ADMIN_SESSION_COOKIE_LIFETIME_SECONDS', '315360000')),
+            'session_cookie_samesite' => (string)($privateConfig['admin']['session_cookie_samesite'] ?? env_value('ADMIN_SESSION_COOKIE_SAMESITE', 'Lax')),
+        ],
         'db' => [
             'host' => (string)($privateDb['host'] ?? required_env_value('DB_HOST')),
             'port' => (string)($privateDb['port'] ?? env_value('DB_PORT', '3306')),

@@ -1,4 +1,4 @@
-name: Deploy static site and booking API to Krystal FTP
+name: Deploy static export to Krystal FTP
 
 on:
   push:
@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and upload static export + booking API
+    name: Build and upload static export
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -30,15 +30,12 @@ jobs:
         run: npm install
 
       - name: Build static export
-        env:
-          NEXT_PUBLIC_BOOKING_API_ENDPOINT: ${{ secrets.NEXT_PUBLIC_BOOKING_API_ENDPOINT }}
         run: npm run build
 
       - name: Verify export artifact layout
         run: |
           test -d out/_next/static
           test -f out/index.html
-          test -n "$(find out/_next/static -type f -name '*.css' -print -quit)"
 
       - name: Log deploy fingerprint
         run: |
@@ -48,71 +45,20 @@ jobs:
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
-      - name: FTP copy to public_html
+      - name: Mirror out to public_html
         env:
           FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          LFTP_SETTINGS="set cmd:fail-exit yes; set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30;"
-          CSS_FILE=$(find out/_next/static -type f -name '*.css' -print -quit)
-          CSS_REMOTE_PATH="/public_html/${CSS_FILE#out/}"
+          timeout 300 lftp \
+            -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            "$FTP_SERVER" \
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
 
-          for attempt in {1..3}; do
-            echo "FTP deploy attempt $attempt of 3"
-
-            if timeout 900 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              -p 21 \
-              "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./out/_next/ /public_html/_next/; mirror --reverse --delete --exclude-glob _next/** ./out/ /public_html/; cls $CSS_REMOTE_PATH; bye"
-            then
-              echo "FTP deploy succeeded"
-              exit 0
-            fi
-
-            if [ "$attempt" -lt 3 ]; then
-              sleep_seconds=$((attempt * 20))
-              echo "FTP temporarily unavailable. Retrying in ${sleep_seconds}s..."
-              sleep "$sleep_seconds"
-            fi
-          done
-
-          echo "FTP deploy failed after 3 attempts"
-          exit 1
-
-      - name: FTP copy booking API
-        env:
-          FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
-          BOOKING_API_PUBLIC_DIR: ${{ secrets.KRYSTAL_BOOKING_API_PUBLIC_DIR }}
-          BOOKING_API_PRIVATE_DIR: ${{ secrets.KRYSTAL_BOOKING_API_PRIVATE_DIR }}
+      - name: Show deploy results
+        if: always()
         run: |
-          LFTP_SETTINGS="set cmd:fail-exit yes; set ftp:ssl-allow no; set ftp:passive-mode on; set ftp:sync-mode off; set ftp:use-feat no; set net:timeout 30; set net:max-retries 10; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30;"
-
-          API_PUBLIC_DIR="${BOOKING_API_PUBLIC_DIR:-/public_html/api}"
-          API_PRIVATE_DIR="${BOOKING_API_PRIVATE_DIR:-/booking-api}"
-
-          for attempt in {1..3}; do
-            echo "Booking API deploy attempt $attempt of 3"
-
-            if timeout 900 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              -p 21 \
-              "$FTP_SERVER" \
-              -e "$LFTP_SETTINGS mirror --reverse --delete ./backend/php-api/public/ $API_PUBLIC_DIR/; mirror --reverse --delete ./backend/php-api/src/ $API_PRIVATE_DIR/src/; mirror --reverse --delete ./backend/php-api/sql/ $API_PRIVATE_DIR/sql/; put -O $API_PRIVATE_DIR ./backend/php-api/config.example.php; put -O $API_PRIVATE_DIR ./backend/php-api/README.md; bye"
-            then
-              echo "Booking API deploy succeeded"
-              exit 0
-            fi
-
-            if [ "$attempt" -lt 3 ]; then
-              sleep_seconds=$((attempt * 20))
-              echo "Booking API FTP temporarily unavailable. Retrying in ${sleep_seconds}s..."
-              sleep "$sleep_seconds"
-            fi
-          done
-
-          echo "Booking API deploy failed after 3 attempts"
-          exit 1
+          echo "=== Local files deployed ==="
+          find ./out -type f | wc -l
+          echo "files copied"
