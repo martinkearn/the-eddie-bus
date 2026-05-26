@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -43,9 +46,11 @@ jobs:
           grep -o 'Last updated:[^<]*' out/index.html | head -n 1
 
       - name: Install lftp
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: sudo apt-get install -y lftp
 
       - name: Mirror out to public_html
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
@@ -57,7 +62,7 @@ jobs:
             -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
 
       - name: Show deploy results
-        if: always()
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           echo "=== Local files deployed ==="
           find ./out -type f | wc -l
