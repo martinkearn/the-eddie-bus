@@ -26,7 +26,7 @@ npm run build
 
 - The site uses Next.js static export, so the build output is safe to host on a file-based web server.
 - Interactive features should be added as client-side React components.
-- Deployment mirrors the generated `out/` directory to the FTP host.
+- Deployment mirrors the generated `out/` directory to the FTP host and also uploads the PHP API public/runtime files.
 
 ## Booking API Integration
 
@@ -42,3 +42,4 @@ npm run build
 - By default, admin API endpoints are derived from `NEXT_PUBLIC_BOOKING_API_ENDPOINT`.
 - Optional override variable:
 	- `NEXT_PUBLIC_ADMIN_API_BASE=https://your-api-domain/admin`
+- The GitHub Actions deploy workflow also mirrors `backend/php-api/public` to `/public_html/api` and `backend/php-api/src` plus `backend/php-api/sql` to the private API path used at runtime.

@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and upload static export
+    name: Build and upload site + API
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -60,6 +60,30 @@ jobs:
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
             -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
+
+      - name: Mirror PHP API public files
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
+        run: |
+          timeout 300 lftp \
+            -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            "$FTP_SERVER" \
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/php-api/public/ /public_html/api/; bye"
+
+      - name: Mirror PHP API runtime files
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
+        run: |
+          timeout 300 lftp \
+            -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            "$FTP_SERVER" \
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/php-api/src/ /booking-api/src/; mirror --reverse ./backend/php-api/sql/ /booking-api/sql/; bye"
 
       - name: Show deploy results
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
