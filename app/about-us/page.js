@@ -41,6 +41,15 @@ export default function AboutUsPage() {
         </div>
       </section>
 
+      <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
+        <img src={images.busSeats.src} alt={images.busSeats.alt} />
+        <div>
+          <p className="eyebrow">On board</p>
+          <h2>Comfortable seating for group journeys</h2>
+          <p>The bus has seating for group travel, with flexible arrangements available when wheelchair spaces or mobility support are needed.</p>
+        </div>
+      </section>
+
       {remainingSections.map((section) => (
         section.title === 'The EDDIE Bus' ? (
           <section key={section.title} className="about-story-card about-story-card-compact section-band" aria-labelledby="the-eddie-bus">

@@ -1,3 +1,4 @@
+import { ContactPanel } from '../../src/components/ContactPanel'
 import { InfoCard, PlainList } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
@@ -19,6 +20,7 @@ export default function PlacesToVisitPage() {
           </InfoCard>
         ))}
       </section>
+      <ContactPanel title="Contact Us" text={['Contact us if you need transport for your group and would like to discuss your plans. We’d love to hear from you.']} />
     </SiteLayout>
   )
 }

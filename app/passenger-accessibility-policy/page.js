@@ -1,3 +1,4 @@
+import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, CheckList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
@@ -43,11 +44,12 @@ export default function PassengerAccessibilityPolicyPage() {
           </div>
         </div>
       </Section>
-      <Section title="Carer responsibilities">
+      <Section title="Carers and support">
         <p>Carers are responsible for:</p>
         <CheckList items={accessibilityPage.carerResponsibilities} />
         <Paragraphs items={accessibilityPage.carerNote} />
       </Section>
+      <ContactPanel title="Contact Us" text={['Whether you are enquiring about transport for your group, interested in volunteering as a driver or helper, or would simply like to find out more, we would love to hear from you.']} />
     </SiteLayout>
   )
 }

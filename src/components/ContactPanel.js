@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { site } from '../content/site'
 
 export function ContactPanel({ title = 'Get in touch', text = [] }) {
@@ -27,10 +26,6 @@ export function ContactPanel({ title = 'Get in touch', text = [] }) {
           <small>Registration Details</small>
           <strong>{site.charityName}</strong>
           <span>Registered Charity No. {site.charityNumber}</span>
-        </div>
-        <div className="contact-panel-actions">
-          <Link className="button button-light" href="/how-to-book/">{site.primaryCta}</Link>
-          <Link className="button button-outline-light" href="/contact-us/">Contact Us</Link>
         </div>
       </div>
     </section>

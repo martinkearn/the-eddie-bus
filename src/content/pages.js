@@ -34,8 +34,7 @@ export const homePage = {
     'Operated in compliance with Section 19 permit requirements',
   ],
   getInTouch: [
-    'Whether you are enquiring about transport for your group, interested in volunteering as a driver or helper, or would simply like to find out more, we would love to hear from you.',
-    'Email is preferred, but you are also welcome to phone.',
+    'Contact us if you need transport for your group, would like to volunteer as a driver or helper, or want to find out more. We’d love to hear from you.',
   ],
 }
 
@@ -53,34 +52,31 @@ export const bookingPage = {
     'After the trip, final mileage is confirmed and payment details are issued.',
   ],
   stepNote: 'The form gives us the key details we need to process your booking request quickly and safely.',
-  hireCharge: [
-    'The hire charge for 2026 is £1.25 per mile.',
-    'Mileage is calculated from the bus storage area at Upton Warren (B61 7EZ) to your collection point(s), then to your destination, back to your drop-off point(s), and finally back to the storage area after the journey.',
-    'There is a minimum charge of £25.',
-    'The bus has a Disability Blue Badge, which can support parking arrangements during trips.',
-  ],
   payment: [
-    'Payment is by bank transfer only.',
-    'Payment is made after the trip, once the final mileage has been confirmed. We will send an invoice.',
+    'The hire charge for 2026 is £1.25 per mile.',
+    'Mileage is calculated from the bus storage area at Upton Warren (B61 7EZ) to your collection point(s), then to your destination, back to your drop-off point(s), and finally back to the storage area.',
+    'There is a minimum charge of £25.',
+    'The bus has a Disability Blue Badge, so parking charges usually do not apply during trips.',
+    'Payment is by bank transfer only. We will send an invoice after the trip, once the final mileage has been confirmed.',
     'Payment is expected within one month of the journey.',
   ],
   cancellations: [
-    'Bookings can be cancelled without charge if at least 24 hours’ notice is given.',
-    'If a booking is cancelled with less than 24 hours’ notice, a nominal charge of £25 will be due.',
-    'There is no charge if the trip is cancelled by the EDDIE Bus, for example because of vehicle problems or driver availability.',
-    'Cancellations due to bad weather are generally accepted without charge.',
+    'Bookings can be cancelled free of charge with at least 24 hours’ notice.',
+    'Cancellations made with less than 24 hours’ notice will be charged £25.',
+    'There is no charge if the trip is cancelled by the EDDIE Bus, for example due to vehicle problems or driver availability.',
+    'Cancellations due to bad weather are usually accepted without charge.',
   ],
   travel: [
-    'The EDDIE Bus is intended for day trips and group outings.',
-    'As a general guideline, trips should usually be no more than 100 miles each way. Longer journeys may be considered, so please contact us to discuss your plans.',
-    'Trips should normally take place during the daytime. Evening trips are not generally offered.',
+    'The EDDIE Bus is available for day trips and group outings.',
+    'As a general guide, trips should usually be no more than 100 miles each way. Longer journeys may be possible, so please contact us to discuss your plans.',
+    'Trips normally take place during the daytime. Evening trips are not generally available.',
     'All trips must be completed within a single day. Overnight trips are not available.',
     'Motorway journeys are allowed.',
   ],
   availability: [
-    'The bus is available every day except for the period from Christmas Eve up to New Year\'s Day.',
-    'All bookings depend on the availability of the bus and a volunteer driver.',
-    'Please contact us to discuss your preferred date and requirements.',
+    'The bus is available every day except between Christmas Eve and New Year’s Day.',
+    'All bookings depend on the availability of both the bus and a volunteer driver.',
+    'Please contact us to discuss your preferred date and any requirements.',
   ],
   bookers: [
     'Care homes',
@@ -92,8 +88,13 @@ export const bookingPage = {
   ],
   bookersNote: 'Adult carers may travel with the group and do not need to meet the passenger eligibility criteria.',
   eligibility: [
+    {
+      term: 'Who can book',
+      text: 'Eligible booking organisations include care homes, residential homes, residential apartments, retired activity groups, social groups meeting the over-60s requirement, and specialist groups supporting elderly or disabled residents.',
+    },
     { term: 'Elderly', text: 'A person aged 60 or over.' },
     { term: 'Group', text: 'A group of 6 to 13 people, including adult carers where required.' },
+    { term: 'Adult carers', text: 'Adult carers may travel with the group and do not need to meet the passenger eligibility criteria.' },
   ],
   carers: [
     'The booking organisation is responsible for providing carers and any passenger support required.',
@@ -203,7 +204,6 @@ export const volunteeringPage = {
   why: 'Volunteering with the EDDIE Bus is a practical way to support elderly and disabled people in Bromsgrove. Your time can help local residents stay connected, enjoy days out and take part in community life.',
   getInvolved: [
     'If you are interested in becoming a volunteer driver or helper, please contact us.',
-    'Email is preferred, but you are also welcome to phone.',
   ],
 }
 

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ContactPanel } from '../../src/components/ContactPanel'
-import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, PlainList, Section } from '../../src/components/ContentBlocks'
+import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
 import { bookingPage } from '../../src/content/pages'
@@ -12,80 +12,72 @@ export const metadata = {
 }
 
 export default function HowToBookPage() {
+  const whoCanBookText = bookingPage.eligibility.find((item) => item.term === 'Who can book')?.text
+  const whoCanBookDefinitions = bookingPage.eligibility.filter((item) => item.term !== 'Who can book')
+
+  const bookingSteps = [
+    `Email or call us with your preferred date, destination, group size and any mobility needs.`,
+    `We’ll check if the bus and volunteer driver are available.`,
+    `We’ll contact you to confirm the booking, times and pick-up details.`,
+  ]
+
+  const bookingStepNote = `After the trip, we’ll confirm the final mileage and send payment details.`
+
   return (
     <SiteLayout currentPath="/how-to-book/">
       <PageIntro
         title={bookingPage.title}
-        intro={bookingPage.intro.slice(0, 2)}
+        intro={[
+          bookingPage.intro[0],
+          `Book by email or phone. Email is preferred because it helps us capture all journey details clearly.`,
+        ]}
         image={images.busSide}
         label="How to Book"
         className="booking-hero"
-        actions={(
-          <>
-            <Link className="button button-light" href={site.emailHref}>Email booking request</Link>
-            <span>Prefer to talk? Call <Link href={site.phoneHref}>{site.phone}</Link>.</span>
-          </>
-        )}
-      />
+      >
+        <div className="booking-hero-process" aria-label="Booking process">
+          <p className="booking-process-kicker">Start here</p>
+          <h2>Booking process</h2>
+          <ol className="step-list booking-hero-step-list">
+            {bookingSteps.map((step) => <li key={step}>{step}</li>)}
+          </ol>
+          <p>{bookingStepNote}</p>
+        </div>
+        <div className="page-intro-actions">
+          <Link className="button button-light" href={site.emailHref}>Email booking request</Link>
+          <span>Prefer to talk? Call <Link href={site.phoneHref}>{site.phone}</Link>.</span>
+        </div>
+      </PageIntro>
 
-      <section className="booking-intro-highlights section-band" aria-label="Quick booking details">
+      <section className="booking-intro-highlights booking-intro-highlights-featured section-band" aria-label="Quick booking details">
         <p><strong>Groups:</strong> usually 6 to 13 people, including carers where needed.</p>
         <p><strong>Typical availability:</strong> daytime trips, every day except Christmas to New Year.</p>
         <p><strong>Guide price:</strong> £1.25 per mile, with a £25 minimum charge.</p>
       </section>
 
-      <section className="booking-panel section-band" aria-label="Booking process and charges">
-        <div className="booking-process-card">
-          <h2>Booking process</h2>
-          <ol className="step-list">
-            {bookingPage.steps.map((step) => <li key={step}>{step}</li>)}
-          </ol>
-          <p>{bookingPage.stepNote}</p>
-          <div className="booking-process-actions">
-            <Link className="button button-primary" href={site.emailHref}>{site.primaryCta}</Link>
-            <Link className="booking-phone-link" href={site.phoneHref}>Or call {site.phone}</Link>
-          </div>
-        </div>
-        <aside className="booking-price-card">
-          <h2>Hire charge</h2>
-          <Paragraphs items={bookingPage.hireCharge} />
-        </aside>
-      </section>
-
-      <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
-        <img src={images.busSeats.src} alt={images.busSeats.alt} />
-        <div>
-          <p className="eyebrow">On board</p>
-          <h2>Comfortable seating for group journeys</h2>
-          <p>The bus has seating for group travel, with flexible arrangements available when wheelchair spaces or mobility support are needed.</p>
-        </div>
-      </section>
-
       <section className="section-band" aria-label="Charges and payment">
         <CardGrid>
-          <InfoCard title="Payment"><Paragraphs items={bookingPage.payment} /></InfoCard>
+          <InfoCard title="Payment">
+            <Paragraphs items={bookingPage.payment} />
+          </InfoCard>
           <InfoCard title="Cancellations"><Paragraphs items={bookingPage.cancellations} /></InfoCard>
-          <InfoCard title="Eligibility definitions"><DefinitionList items={bookingPage.eligibility} /></InfoCard>
+          <InfoCard title="Who can book">
+            {whoCanBookText ? <p>{whoCanBookText}</p> : null}
+            <DefinitionList items={whoCanBookDefinitions} />
+          </InfoCard>
         </CardGrid>
       </section>
 
       <section className="detail-pair section-band" aria-label="Travel and availability">
         <InfoCard title="Where the bus can travel">
           <Paragraphs items={bookingPage.travel} />
-          <Link className="booking-card-link" href="/places-to-visit/">Get ideas for places to visit</Link>
         </InfoCard>
         <InfoCard title="When the bus is available"><Paragraphs items={bookingPage.availability} /></InfoCard>
       </section>
-      <Section title="Who can book?">
-        <p>The EDDIE Bus is available for groups of Bromsgrove residents from:</p>
-        <PlainList items={bookingPage.bookers} />
-        <p>{bookingPage.bookersNote}</p>
-      </Section>
-      <Section title="Carers and support"><Paragraphs items={bookingPage.carers} /></Section>
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>
-      <ContactPanel title="Booking contact details" text={[`Email is preferred, but you are also welcome to phone ${site.phone}.`]} />
+      <ContactPanel title="Contact Us" text={['Contact us if you need transport for your group and would like to discuss your plans. We’d love to hear from you.']} />
     </SiteLayout>
   )
 }

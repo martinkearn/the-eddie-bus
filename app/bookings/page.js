@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { BookingRequestSection } from '../../src/components/BookingRequestSection'
 import { ContactPanel } from '../../src/components/ContactPanel'
-import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, PlainList, Section } from '../../src/components/ContentBlocks'
+import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
 import { bookingPage } from '../../src/content/pages'
@@ -83,11 +83,6 @@ export default function BookingsPage() {
         </InfoCard>
         <InfoCard title="When the bus is available"><Paragraphs items={bookingPage.availability} /></InfoCard>
       </section>
-      <Section title="Who can book?">
-        <p>The EDDIE Bus is available for groups of Bromsgrove residents from:</p>
-        <PlainList items={bookingPage.bookers} />
-        <p>{bookingPage.bookersNote}</p>
-      </Section>
       <Section title="Carers and support"><Paragraphs items={bookingPage.carers} /></Section>
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
