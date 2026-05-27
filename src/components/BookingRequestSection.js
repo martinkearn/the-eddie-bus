@@ -211,6 +211,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       if (host === 'localhost' || host === '127.0.0.1') {
         return 'http://127.0.0.1:8080/bookings/create.php'
       }
+      return `${window.location.origin}/api/bookings/create.php`
     }
 
     return ''
