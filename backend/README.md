@@ -95,8 +95,8 @@ return [
 
 1. Create database tables using `sql/bookings.sql`.
 2. Apply admin schema updates using `sql/admin_portal.sql`.
-2. Deploy backend/php-api/public to a public URL path, such as /public_html/api.
-3. Deploy backend/php-api/src and backend/php-api/sql to a private path, such as /booking-api.
+2. Deploy backend/public to a public URL path, such as /public_html/api.
+3. Deploy backend/src and backend/sql to a private path, such as /booking-api.
 4. Add your private config file outside public_html.
 5. Optionally set BOOKING_API_CONFIG_FILE and/or BOOKING_API_SRC_PATH if your paths differ from defaults.
 
@@ -105,7 +105,7 @@ return [
 Use the seed script in a trusted shell session, with passwords provided only as environment variables:
 
 ```bash
-ADMIN_INITIAL_PASSWORD='set-admin-password' VIEWER_INITIAL_PASSWORD='set-viewer-password' php backend/php-api/scripts/seed_admin_users.php
+ADMIN_INITIAL_PASSWORD='set-admin-password' VIEWER_INITIAL_PASSWORD='set-viewer-password' php backend/scripts/seed_admin_users.php
 ```
 
 The script creates or updates:

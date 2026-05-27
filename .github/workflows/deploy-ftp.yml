@@ -71,7 +71,7 @@ jobs:
           timeout 300 lftp \
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/php-api/public/ /public_html/api/; bye"
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/public/ /public_html/api/; bye"
 
       - name: Mirror PHP API runtime files
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -83,7 +83,7 @@ jobs:
           timeout 300 lftp \
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/php-api/src/ /booking-api/src/; mirror --reverse ./backend/php-api/sql/ /booking-api/sql/; bye"
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; bye"
 
       - name: Show deploy results
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -9,7 +9,7 @@ A static Next.js site for "The Eddie Bus" charity.
 - [src](src): Shared frontend code used by route files.
 	- This is a common project convention (not required by Next.js) used here for reusable UI and content modules like [src/components](src/components) and [src/content](src/content).
 - [backend](backend): Separate PHP API and SQL assets for booking/admin features.
-	- This is a repository convention, not a Next.js folder. In this project it contains [backend/php-api](backend/php-api).
+	- This is a repository convention, not a Next.js folder. In this project, the PHP API lives directly in [backend](backend).
 
 In short: [app](app) is framework-conventional for Next.js, while [src](src) and [backend](backend) are organizational conventions chosen for this repo.
 
@@ -45,7 +45,7 @@ npm run build
 - Configure this build-time variable before running `npm run build`:
 	- `NEXT_PUBLIC_BOOKING_API_ENDPOINT=https://your-api-domain/bookings/create.php`
 - If this variable is not set, the form falls back to the existing mailto flow.
-- PHP API implementation and SQL schema are in `backend/php-api/`.
+- PHP API implementation and SQL schema are in `backend/`.
 
 ## Admin Portal
 
@@ -53,4 +53,4 @@ npm run build
 - By default, admin API endpoints are derived from `NEXT_PUBLIC_BOOKING_API_ENDPOINT`.
 - Optional override variable:
 	- `NEXT_PUBLIC_ADMIN_API_BASE=https://your-api-domain/admin`
-- The GitHub Actions deploy workflow also mirrors `backend/php-api/public` to `/public_html/api` and `backend/php-api/src` plus `backend/php-api/sql` to the private API path used at runtime.
+- The GitHub Actions deploy workflow also mirrors `backend/public` to `/public_html/api` and `backend/src` plus `backend/sql` to the private API path used at runtime.
