@@ -2,5 +2,7 @@
 .next
 out
 node_modules
+*.log
+php_server.log
 backend/php-api/config.private.php
 backend/php-api/config.php

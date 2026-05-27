@@ -2,6 +2,17 @@
 
 A static Next.js site for "The Eddie Bus" charity.
 
+## Repository structure
+
+- [app](app): Next.js App Router routes and layouts.
+	- This is a Next.js convention. Files like [app/layout.js](app/layout.js) and [app/page.js](app/page.js) are framework entry points.
+- [src](src): Shared frontend code used by route files.
+	- This is a common project convention (not required by Next.js) used here for reusable UI and content modules like [src/components](src/components) and [src/content](src/content).
+- [backend](backend): Separate PHP API and SQL assets for booking/admin features.
+	- This is a repository convention, not a Next.js folder. In this project it contains [backend/php-api](backend/php-api).
+
+In short: [app](app) is framework-conventional for Next.js, while [src](src) and [backend](backend) are organizational conventions chosen for this repo.
+
 ## Quick Start
 
 Install dependencies:
