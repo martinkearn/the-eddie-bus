@@ -234,7 +234,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     )
   }, [hasMounted, calendarConfig, daysToShow])
 
-  const firstAvailable = days.find((day) => day.status === 'available')
   const visibleMonth = months[visibleMonthIndex] || null
   const isCurrentMonth = visibleMonthIndex === 0
   const canShowPreviousMonth = true // Allow navigating back to previous months indefinitely
@@ -289,12 +288,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       setAvailabilityError('')
     }
   }, [availabilityEndpoint, fetchAvailability])
-
-  useEffect(() => {
-    if (!selectedDate && firstAvailable) {
-      setSelectedDate(firstAvailable.iso)
-    }
-  }, [firstAvailable, selectedDate])
 
   useEffect(() => {
     setVisibleMonthIndex((current) => {
@@ -478,7 +471,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       <div className="booking-request-layout">
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
-            <h3>Pick an available date</h3>
+            <h3>Pick a date</h3>
             <p>Use the date picker or calendar below to select your preferred date.</p>
           </div>
 
@@ -606,7 +599,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
           </div>
         </div>
 
-        <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
+        {selectedDate ? (
+          <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
           <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
 
@@ -729,7 +723,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
           {submitState.message ? (
             <p className={`booking-status ${submitState.type}`} role="status">{submitState.message}</p>
           ) : null}
-        </form>
+          </form>
+        ) : null}
       </div>
     </section>
   )

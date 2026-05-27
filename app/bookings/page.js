@@ -19,6 +19,11 @@ export const metadata = {
 export default function BookingsPage() {
   const bookingApiEndpoint = process.env.NEXT_PUBLIC_BOOKING_API_ENDPOINT || ''
   const bookingAvailabilityEndpoint = process.env.NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT || ''
+  const simpleBookingSteps = [
+    'Pick your date in the calendar.',
+    'Complete the booking request form.',
+    'We confirm availability and contact you with next steps.',
+  ]
 
   return (
     <SiteLayout currentPath="/bookings/">
@@ -28,13 +33,19 @@ export default function BookingsPage() {
         image={images.busSide}
         label="Bookings"
         className="booking-hero"
-        actions={(
-          <>
-            <Link className="button button-light" href="#booking-request">Start booking form</Link>
-            <span>The form is preferred for the fastest response, but booking by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}>phone</Link> is also valid.</span>
-          </>
-        )}
-      />
+      >
+        <div className="booking-hero-process" aria-label="Booking process">
+          <p className="booking-process-kicker">How to book</p>
+          <h2>Book in 3 steps</h2>
+          <ol className="step-list booking-hero-step-list">
+            {simpleBookingSteps.map((step) => <li key={step}>{step}</li>)}
+          </ol>
+        </div>
+        <div className="page-intro-actions">
+          <Link className="button button-light" href="#booking-request">Start booking form</Link>
+          <span>The form is preferred for the fastest response, but booking by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}>phone</Link> is also valid.</span>
+        </div>
+      </PageIntro>
 
       <BookingRequestSection
         emailHref={site.emailHref}
@@ -45,17 +56,6 @@ export default function BookingsPage() {
         showIntro={false}
         sectionId="booking-request"
       />
-
-      <section className="booking-panel booking-panel-single section-band" aria-label="Booking process">
-        <div className="booking-process-card">
-          <h2>Booking process</h2>
-          <ol className="step-list">
-            {bookingPage.steps.map((step) => <li key={step}>{step}</li>)}
-          </ol>
-          <p>{bookingPage.stepNote}</p>
-          <p className="booking-process-alternative">If needed, you can also book by email at <Link href={site.emailHref}>{site.email}</Link> or phone on <Link href={site.phoneHref}>{site.phone}</Link>.</p>
-        </div>
-      </section>
 
       <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
         <img src={images.busSeats.src} alt={images.busSeats.alt} />

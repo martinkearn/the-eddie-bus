@@ -1490,10 +1490,6 @@ main {
 .date-picker-section {
   display: grid;
   gap: 0.75rem;
-  padding: 1rem;
-  background: var(--surface-soft);
-  border: 1px solid var(--outline);
-  border-radius: 0.85rem;
 }
 
 .date-picker-section label {
