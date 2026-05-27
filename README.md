@@ -53,7 +53,7 @@ npm run build
 - Availability is derived automatically from that value (for example `.../bookings/availability.php`).
 - Optional override (only needed for unusual routing/proxy setups):
 	- `NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT=https://your-api-domain/bookings/availability.php`
-- If this variable is not set, the form falls back to the existing mailto flow.
+- If this variable is not set, the frontend derives the endpoint at runtime from the current page origin. For standard deployments where `backend/public/` is served at `/api/` on the same host (e.g. `https://www.example.com/api/bookings/create.php`), no variable needs to be set.
 - PHP API implementation and SQL schema are in `backend/`.
 - Copy `.env.example` to `.env.local` for local frontend variable setup.
 
