@@ -1,4 +1,0 @@
-[Mon May 18 15:11:33 2026] PHP 8.5.6 Development Server (http://127.0.0.1:8080) started
-[Mon May 18 15:11:35 2026] 127.0.0.1:50440 Accepted
-[Mon May 18 15:11:35 2026] 127.0.0.1:50440 [200]: GET /bookings/availability.php
-[Mon May 18 15:11:35 2026] 127.0.0.1:50440 Closing
