@@ -1711,6 +1711,7 @@ main {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+  object-position: center 82%;
   border: 4px solid var(--surface);
   border-radius: 1.35rem;
   box-shadow: var(--shadow);
@@ -1814,13 +1815,18 @@ main {
   transform: rotate(-1deg);
 }
 
+.about-story-card-bus img {
+  object-fit: cover;
+  object-position: center 56%;
+}
+
 .about-story-card-portrait {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .about-story-card-portrait img {
   min-height: 18rem;
-  object-position: center top;
+  object-position: center;
   transform: rotate(1deg);
 }
 

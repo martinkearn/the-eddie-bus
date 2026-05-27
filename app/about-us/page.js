@@ -52,7 +52,7 @@ export default function AboutUsPage() {
 
       {remainingSections.map((section) => (
         section.title === 'The EDDIE Bus' ? (
-          <section key={section.title} className="about-story-card about-story-card-compact section-band" aria-labelledby="the-eddie-bus">
+          <section key={section.title} className="about-story-card about-story-card-compact about-story-card-bus section-band" aria-labelledby="the-eddie-bus">
             <div className="about-story-copy">
               <h2 id="the-eddie-bus">{section.title}</h2>
               <Paragraphs items={section.paragraphs} />
