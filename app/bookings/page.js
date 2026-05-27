@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { BookingRequestSection } from '../../src/components/BookingRequestSection'
 import { ContactPanel } from '../../src/components/ContactPanel'
-import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
+import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
 import { SiteLayout } from '../../src/components/SiteLayout'
 import { bookingPage } from '../../src/content/pages'
@@ -18,6 +18,7 @@ export const metadata = {
 
 export default function BookingsPage() {
   const bookingApiEndpoint = process.env.NEXT_PUBLIC_BOOKING_API_ENDPOINT || ''
+  const bookingAvailabilityEndpoint = process.env.NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT || ''
 
   return (
     <SiteLayout currentPath="/bookings/">
@@ -40,11 +41,12 @@ export default function BookingsPage() {
         fallbackPhone={site.phone}
         fallbackPhoneHref={site.phoneHref}
         bookingApiEndpoint={bookingApiEndpoint}
+        bookingAvailabilityEndpoint={bookingAvailabilityEndpoint}
         showIntro={false}
         sectionId="booking-request"
       />
 
-      <section className="booking-panel section-band" aria-label="Booking process and charges">
+      <section className="booking-panel booking-panel-single section-band" aria-label="Booking process">
         <div className="booking-process-card">
           <h2>Booking process</h2>
           <ol className="step-list">
@@ -53,10 +55,6 @@ export default function BookingsPage() {
           <p>{bookingPage.stepNote}</p>
           <p className="booking-process-alternative">If needed, you can also book by email at <Link href={site.emailHref}>{site.email}</Link> or phone on <Link href={site.phoneHref}>{site.phone}</Link>.</p>
         </div>
-        <aside className="booking-price-card">
-          <h2>Hire charge</h2>
-          <Paragraphs items={bookingPage.hireCharge} />
-        </aside>
       </section>
 
       <section className="booking-photo-panel section-band" aria-label="Inside the EDDIE Bus">
@@ -83,7 +81,6 @@ export default function BookingsPage() {
         </InfoCard>
         <InfoCard title="When the bus is available"><Paragraphs items={bookingPage.availability} /></InfoCard>
       </section>
-      <Section title="Carers and support"><Paragraphs items={bookingPage.carers} /></Section>
       <Callout title="Looking for trip ideas?">
         <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>

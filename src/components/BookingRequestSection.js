@@ -135,7 +135,68 @@ function createMailToBody(data) {
   ].join('\n')
 }
 
-export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
+function deriveAvailabilityEndpoint(apiEndpoint, explicitAvailabilityEndpoint) {
+  const explicit = String(explicitAvailabilityEndpoint || '').trim()
+  if (explicit) {
+    return explicit
+  }
+
+  const raw = String(apiEndpoint || '').trim()
+  if (!raw) {
+    return ''
+  }
+
+  try {
+    const parsed = new URL(raw)
+    const pathname = parsed.pathname || ''
+
+    if (pathname.endsWith('/bookings/create.php')) {
+      parsed.pathname = pathname.replace('/bookings/create.php', '/bookings/availability.php')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/bookings/create')) {
+      parsed.pathname = pathname.replace('/bookings/create', '/bookings/availability')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/create.php')) {
+      parsed.pathname = pathname.replace('/create.php', '/availability.php')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/create')) {
+      parsed.pathname = pathname.replace('/create', '/availability')
+      parsed.search = ''
+      return parsed.toString()
+    }
+  } catch {
+    // Ignore URL parsing errors for non-absolute paths and fall through to string handling.
+  }
+
+  if (raw.includes('/bookings/create.php')) {
+    return raw.replace('/bookings/create.php', '/bookings/availability.php')
+  }
+
+  if (raw.includes('/bookings/create')) {
+    return raw.replace('/bookings/create', '/bookings/availability')
+  }
+
+  if (raw.endsWith('/create.php')) {
+    return raw.replace('/create.php', '/availability.php')
+  }
+
+  if (raw.endsWith('/create')) {
+    return raw.replace('/create', '/availability')
+  }
+
+  return ''
+}
+
+export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', bookingAvailabilityEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
   const phoneHref = fallbackPhoneHref || '#'
   const apiEndpoint = useMemo(() => {
     const explicitEndpoint = String(bookingApiEndpoint || '').trim()
@@ -150,10 +211,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
     return ''
   }, [bookingApiEndpoint])
-  const availabilityEndpoint = apiEndpoint ? apiEndpoint.replace('create.php', 'availability.php') : ''
+  const availabilityEndpoint = useMemo(() => deriveAvailabilityEndpoint(apiEndpoint, bookingAvailabilityEndpoint), [apiEndpoint, bookingAvailabilityEndpoint])
 
   const [hasMounted, setHasMounted] = useState(false)
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState('')
   const [calendarConfig, setCalendarConfig] = useState(null)
   const [daysToShow, setDaysToShow] = useState(INITIAL_DAYS)
   const [visibleMonthIndex, setVisibleMonthIndex] = useState(0)
@@ -180,22 +242,21 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
   const fetchAvailability = useCallback(async (startDate, days, existingUnavailable) => {
     if (!availabilityEndpoint) return null
-    try {
-      const url = `${availabilityEndpoint}?startDate=${formatISODate(startDate)}&daysToShow=${days}`
-      const res = await fetch(url)
-      if (!res.ok) return null
-      const data = await res.json()
-      const merged = new Set(existingUnavailable)
-      if (Array.isArray(data.unavailableDates)) {
-        for (const d of data.unavailableDates) merged.add(d)
-      }
-      return {
-        startDate,
-        disabledWeekdays: new Set(),
-        unavailableDates: merged,
-      }
-    } catch {
-      return null
+    const url = `${availabilityEndpoint}?startDate=${formatISODate(startDate)}&daysToShow=${days}`
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) {
+      throw new Error(`Availability API request failed with status ${res.status}.`)
+    }
+
+    const data = await res.json()
+    const merged = new Set(existingUnavailable)
+    if (Array.isArray(data.unavailableDates)) {
+      for (const d of data.unavailableDates) merged.add(d)
+    }
+    return {
+      startDate,
+      disabledWeekdays: new Set(),
+      unavailableDates: merged,
     }
   }, [availabilityEndpoint])
 
@@ -205,13 +266,23 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     today.setHours(0, 0, 0, 0)
 
     if (availabilityEndpoint) {
+      setAvailabilityError('')
       setAvailabilityLoading(true)
-      fetchAvailability(today, INITIAL_DAYS, new Set()).then((config) => {
-        setCalendarConfig(config || defaultAvailabilityConfig())
-        setAvailabilityLoading(false)
-      })
+      fetchAvailability(today, INITIAL_DAYS, new Set())
+        .then((config) => {
+          setCalendarConfig(config || defaultAvailabilityConfig())
+          setAvailabilityError('')
+        })
+        .catch(() => {
+          setCalendarConfig(defaultAvailabilityConfig())
+          setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
+        })
+        .finally(() => {
+          setAvailabilityLoading(false)
+        })
     } else {
       setCalendarConfig(defaultAvailabilityConfig())
+      setAvailabilityError('')
     }
   }, [availabilityEndpoint, fetchAvailability])
 
@@ -260,8 +331,15 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       setAvailabilityLoading(true)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const updated = await fetchAvailability(today, nextDays, calendarConfig.unavailableDates)
-      if (updated) setCalendarConfig(updated)
+      try {
+        const updated = await fetchAvailability(today, nextDays, calendarConfig.unavailableDates)
+        if (updated) {
+          setCalendarConfig(updated)
+          setAvailabilityError('')
+        }
+      } catch {
+        setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
+      }
       setAvailabilityLoading(false)
     }
   }
@@ -349,12 +427,17 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        const refreshed = await fetchAvailability(today, daysToShow, new Set())
-        if (refreshed) {
-          setCalendarConfig(refreshed)
-          if (refreshed.unavailableDates.has(payload.bookingDate)) {
-            setSelectedDate('')
+        try {
+          const refreshed = await fetchAvailability(today, daysToShow, new Set())
+          if (refreshed) {
+            setCalendarConfig(refreshed)
+            setAvailabilityError('')
+            if (refreshed.unavailableDates.has(payload.bookingDate)) {
+              setSelectedDate('')
+            }
           }
+        } catch {
+          setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
         }
 
         setAvailabilityLoading(false)
@@ -441,6 +524,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
           {/* Desktop Calendar View */}
           <div className="calendar-desktop-view">
+            {availabilityError ? (
+              <p className="booking-status error" role="alert">{availabilityError}</p>
+            ) : null}
             <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
               <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
               <span role="listitem"><strong className="calendar-dot booked" aria-hidden="true" />Booked</span>
@@ -519,9 +605,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
           <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
-          <p className="booking-form-alternative">
-            Prefer not to use the form? You can still book by <a href={emailHref}>email</a> or <a href={phoneHref}>{fallbackPhone}</a>.
-          </p>
 
           <div className="booking-form-grid">
             <div className="booking-date-statement">
