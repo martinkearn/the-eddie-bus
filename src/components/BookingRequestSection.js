@@ -117,7 +117,7 @@ function createMailToBody(data) {
     '',
     `Date for booking: ${data.bookingDate}`,
     `Organisation or group: ${data.organisation}`,
-    `Destination name: ${data.destinationName}`,
+    `Destination name: ${data.destinationName || 'Not provided'}`,
     `Destination address: ${data.destinationAddress || 'Not provided'}`,
     `Pickup time: ${data.pickupTime}`,
     `Contact name: ${data.contactName}`,
@@ -534,9 +534,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </label>
 
             <label className="field-full">
-              <span>Destination name *</span>
-              <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre</small>
-              <input type="text" name="destinationName" required />
+              <span>Destination name</span>
+              <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre. Leave blank if you do not yet know where you going.</small>
+              <input type="text" name="destinationName" />
             </label>
 
             <label className="field-full">

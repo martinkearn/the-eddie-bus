@@ -112,7 +112,6 @@ $requiredFields = [
     'bookingDate',
     'pickupTime',
     'organisation',
-    'destinationName',
     'contactName',
     'contactEmail',
     'contactNumber',

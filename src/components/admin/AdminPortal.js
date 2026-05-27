@@ -840,7 +840,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       value={bookingForm.destinationName}
                       onChange={(event) => handleBookingFieldChange('destinationName', event.target.value)}
                       disabled={!isAdmin}
-                      required
                     />
                   </label>
 
