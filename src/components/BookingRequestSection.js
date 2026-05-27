@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
 const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -18,6 +17,7 @@ function formatReadableDate(date) {
   const year = date.getFullYear()
   return `${weekday} ${day} ${month} ${year}`
 }
+
 const PICKUP_TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
@@ -117,10 +117,14 @@ function defaultAvailabilityConfig() {
 }
 
 function createMailToBody(data) {
+  const bookingDateDisplay = parseISODateLocal(data.bookingDate)
+    ? formatReadableDate(parseISODateLocal(data.bookingDate))
+    : data.bookingDate
+
   return [
     'New booking request',
     '',
-    `Date for booking: ${data.bookingDate}`,
+    `Date for booking: ${bookingDateDisplay}`,
     `Organisation or group: ${data.organisation}`,
     `Destination name: ${data.destinationName || 'Not provided'}`,
     `Destination address: ${data.destinationAddress || 'Not provided'}`,

@@ -58,8 +58,8 @@ function mapBookingToForm(booking) {
     adminNotes: String(booking.admin_notes || ''),
     sourceIp: String(booking.source_ip || ''),
     userAgent: String(booking.user_agent || ''),
-    createdAt: String(booking.created_at || ''),
-    updatedAt: String(booking.updated_at || ''),
+    createdAt: formatDateTimeUK(booking.created_at),
+    updatedAt: formatDateTimeUK(booking.updated_at),
   }
 }
 
@@ -67,19 +67,33 @@ function formatDateUK(dateStr) {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr + 'T00:00:00Z')
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    
-    const day = date.getUTCDate()
-    const dayOfWeek = date.getUTCDay()
-    const month = date.getUTCMonth()
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
     const year = date.getUTCFullYear()
-    
-    const ordinal = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th'
-    
-    return `${dayNames[dayOfWeek]} ${day}${ordinal} ${monthNames[month]} ${year}`
+
+    return `${day}-${month}-${year}`
   } catch {
     return dateStr
+  }
+}
+
+function formatDateTimeUK(dateTimeStr) {
+  if (!dateTimeStr) return ''
+  try {
+    const parsed = new Date(String(dateTimeStr).replace(' ', 'T'))
+    if (Number.isNaN(parsed.getTime())) {
+      return String(dateTimeStr)
+    }
+
+    const day = String(parsed.getDate()).padStart(2, '0')
+    const month = String(parsed.getMonth() + 1).padStart(2, '0')
+    const year = parsed.getFullYear()
+    const hours = String(parsed.getHours()).padStart(2, '0')
+    const minutes = String(parsed.getMinutes()).padStart(2, '0')
+
+    return `${day}-${month}-${year} ${hours}:${minutes}`
+  } catch {
+    return String(dateTimeStr)
   }
 }
 
