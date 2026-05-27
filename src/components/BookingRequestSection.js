@@ -71,7 +71,12 @@ function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableD
     const isBeforeToday = date < today
     const isUnavailableWeekday = disabledWeekdays.has(date.getDay())
     const isBooked = unavailableDatesSet.has(iso)
-    const status = isBeforeToday || isUnavailableWeekday || isBooked ? 'unavailable' : 'available'
+    let status = 'available'
+    if (isBeforeToday) {
+      status = 'past'
+    } else if (isBooked || isUnavailableWeekday) {
+      status = 'booked'
+    }
     days.push({
       iso,
       label: String(date.getDate()),
@@ -264,6 +269,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const selectedDateLabel = selectedDate
     ? formatReadableDate(parseISODateLocal(selectedDate))
     : 'Select a date from the calendar'
+  const selectedDay = selectedDate ? days.find((day) => day.iso === selectedDate) : null
+  const selectedDayStatus = selectedDay?.status || 'unknown'
   const isSelectedDateUnavailable = Boolean(selectedDate && !isAvailable(selectedDate))
 
   async function handleSubmit(event) {
@@ -403,18 +410,28 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </label>
 
             {selectedDate && (
-              <div className={`date-status date-status-${days.find(d => d.iso === selectedDate)?.status || 'unknown'}`} role="status" aria-live="polite">
+              <div className={`date-status date-status-${selectedDayStatus}`} role="status" aria-live="polite">
                 <div className="status-dot" />
                 <div className="status-text">
-                  {days.find(d => d.iso === selectedDate)?.status === 'available' ? (
+                  {selectedDayStatus === 'available' ? (
                     <>
                       <p className="status-label">✓ Available</p>
                       <p className="status-date">{formatReadableDate(parseISODateLocal(selectedDate))}</p>
                     </>
+                  ) : selectedDayStatus === 'booked' ? (
+                    <>
+                      <p className="status-label">⚠ Booked</p>
+                      <p className="status-message">This date is already booked. Please select another date.</p>
+                    </>
+                  ) : selectedDayStatus === 'past' ? (
+                    <>
+                      <p className="status-label">Past date</p>
+                      <p className="status-message">This date has already passed. Please select a future date.</p>
+                    </>
                   ) : (
                     <>
-                      <p className="status-label">⚠ Not available</p>
-                      <p className="status-message">This date is not available for booking. Please select another date.</p>
+                      <p className="status-label">⚠ Booked</p>
+                      <p className="status-message">This date is already booked. Please select another date.</p>
                     </>
                   )}
                 </div>
@@ -426,7 +443,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
           <div className="calendar-desktop-view">
             <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
               <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
-              <span role="listitem"><strong className="calendar-dot unavailable" aria-hidden="true" />Unavailable</span>
+              <span role="listitem"><strong className="calendar-dot booked" aria-hidden="true" />Booked</span>
+              <span role="listitem"><strong className="calendar-dot past" aria-hidden="true" />Past</span>
               <span role="listitem"><strong className="calendar-dot selected" aria-hidden="true" />Selected</span>
             </div>
 
