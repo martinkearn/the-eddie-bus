@@ -8,21 +8,27 @@ export function Section({ title, children, className = '' }) {
 }
 
 export function Paragraphs({ items }) {
-  return items.map((item, index) => <p key={`${index}-${item}`}>{item}</p>)
+  const safeItems = Array.isArray(items) ? items : []
+
+  return safeItems.map((item, index) => <p key={`${index}-${item}`}>{item}</p>)
 }
 
 export function CheckList({ items }) {
+  const safeItems = Array.isArray(items) ? items : []
+
   return (
     <ul className="check-list">
-      {items.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}
+      {safeItems.map((item, index) => <li key={`${index}-${item}`}>{item}</li>)}
     </ul>
   )
 }
 
 export function PlainList({ items }) {
+  const safeItems = Array.isArray(items) ? items : []
+
   return (
     <ul className="plain-list">
-      {items.map((item, index) => {
+      {safeItems.map((item, index) => {
         const label = typeof item === 'string' ? item : item.label
 
         return (
@@ -50,9 +56,11 @@ export function InfoCard({ title, children, accent, className = '', icon }) {
 }
 
 export function DefinitionList({ items }) {
+  const safeItems = Array.isArray(items) ? items : []
+
   return (
     <div className="definition-list">
-      {items.map((item) => (
+      {safeItems.map((item) => (
         <div key={item.term}>
           <dt>{item.term}</dt>
           <dd>{item.text}</dd>

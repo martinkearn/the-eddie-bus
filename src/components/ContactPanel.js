@@ -1,11 +1,13 @@
 import { site } from '../content/site'
 
 export function ContactPanel({ title = 'Get in touch', text = [] }) {
+  const textItems = Array.isArray(text) ? text : []
+
   return (
     <section className="contact-panel" aria-labelledby="contact-panel-title">
       <div className="contact-panel-main">
         <h2 id="contact-panel-title">{title}</h2>
-        {text.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        {textItems.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         <div className="contact-methods">
           <a href={site.emailHref}>
             <span aria-hidden="true">@</span>
