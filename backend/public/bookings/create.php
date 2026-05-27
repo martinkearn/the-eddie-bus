@@ -52,7 +52,8 @@ function ref_token_from_text(string $value, int $maxLength = 8): string
 
 function build_booking_ref_base(string $bookingDate, string $pickupTime, string $organisation, string $destinationName): string
 {
-    $datePart = str_replace('-', '', $bookingDate);
+    [$year, $month, $day] = explode('-', $bookingDate);
+    $datePart = $day . $month . substr($year, -2);
     $timePart = str_replace(':', '', $pickupTime);
     $orgPart = ref_token_from_text($organisation, 10);
     $destinationPart = ref_token_from_text($destinationName, 10);
@@ -112,7 +113,6 @@ $requiredFields = [
     'bookingDate',
     'pickupTime',
     'organisation',
-    'destinationName',
     'contactName',
     'contactEmail',
     'contactNumber',

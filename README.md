@@ -27,6 +27,12 @@ Run the local dev server:
 npm run dev
 ```
 
+This starts both:
+- Next.js on `http://localhost:3000`
+- PHP API on `http://127.0.0.1:8080`
+
+For local API access to booking availability, ensure `backend/config.private.php` contains working DB settings. This file is not in source control so will need to be created locally based on `config.example.php`.
+
 Build the static export:
 
 ```bash
@@ -42,10 +48,14 @@ npm run build
 ## Booking API Integration
 
 - Booking form submissions can be posted to a separate PHP API.
-- Configure this build-time variable before running `npm run build`:
+- In almost all deployments (including same-host setups), you only need this build-time variable before running `npm run build`:
 	- `NEXT_PUBLIC_BOOKING_API_ENDPOINT=https://your-api-domain/bookings/create.php`
+- Availability is derived automatically from that value (for example `.../bookings/availability.php`).
+- Optional override (only needed for unusual routing/proxy setups):
+	- `NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT=https://your-api-domain/bookings/availability.php`
 - If this variable is not set, the form falls back to the existing mailto flow.
 - PHP API implementation and SQL schema are in `backend/`.
+- Copy `.env.example` to `.env.local` for local frontend variable setup.
 
 ## Admin Portal
 

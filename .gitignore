@@ -6,3 +6,6 @@ node_modules
 php_server.log
 backend/config.private.php
 backend/config.php
+.env
+.env.local
+.env.*.local

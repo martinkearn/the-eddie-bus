@@ -29,7 +29,7 @@ export function Footer() {
       </div>
       <div className="footer-legal">
         <p>© {site.charityName} (Registered Charity No. {site.charityNumber}). All rights reserved.</p>
-        <p>Last updated: 15 May 2026, 13:20 BST</p>
+        <p>Last updated: 15-05-2026, 13:20 BST</p>
       </div>
     </footer>
   )

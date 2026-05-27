@@ -131,8 +131,8 @@ Each booking now stores a human-readable unique reference in `bookings.booking_r
 
 Format:
 
-- `YYYYMMDD-HHMM-org-destination`
-- Example: `20260526-0930-eddie-bus-wigan-hosp`
+- `DDMMYY-HHMM-org-destination`
+- Example: `280626-0930-eddie-bus-wigan-hosp`
 - Spaces and punctuation are stripped from `org` and `destination`, so segments contain only letters and numbers.
 - If the same base reference is submitted more than once, the API appends a numeric suffix such as `-2`, `-3`, etc.
 
@@ -141,7 +141,7 @@ For existing databases created before this change, run:
 ```sql
 ALTER TABLE bookings ADD COLUMN booking_ref VARCHAR(128) NULL AFTER id;
 UPDATE bookings SET booking_ref = CONCAT(
-	DATE_FORMAT(booking_date, '%Y%m%d'), '-', DATE_FORMAT(pickup_time, '%H%i'), '-', id
+	DATE_FORMAT(booking_date, '%d%m%y'), '-', DATE_FORMAT(pickup_time, '%H%i'), '-', id
 ) WHERE booking_ref IS NULL;
 ALTER TABLE bookings MODIFY booking_ref VARCHAR(128) NOT NULL;
 ALTER TABLE bookings ADD UNIQUE KEY uq_bookings_booking_ref (booking_ref);

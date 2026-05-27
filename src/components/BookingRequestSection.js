@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 const MONTH_FORMATTER = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
 const DAY_FORMATTER = new Intl.DateTimeFormat('en-GB', { weekday: 'short' })
 const WEEKDAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -18,6 +17,7 @@ function formatReadableDate(date) {
   const year = date.getFullYear()
   return `${weekday} ${day} ${month} ${year}`
 }
+
 const PICKUP_TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
@@ -71,7 +71,12 @@ function buildCalendarDays(startDate, daysToShow, disabledWeekdays, unavailableD
     const isBeforeToday = date < today
     const isUnavailableWeekday = disabledWeekdays.has(date.getDay())
     const isBooked = unavailableDatesSet.has(iso)
-    const status = isBeforeToday || isUnavailableWeekday || isBooked ? 'unavailable' : 'available'
+    let status = 'available'
+    if (isBeforeToday) {
+      status = 'past'
+    } else if (isBooked || isUnavailableWeekday) {
+      status = 'booked'
+    }
     days.push({
       iso,
       label: String(date.getDate()),
@@ -112,12 +117,16 @@ function defaultAvailabilityConfig() {
 }
 
 function createMailToBody(data) {
+  const bookingDateDisplay = parseISODateLocal(data.bookingDate)
+    ? formatReadableDate(parseISODateLocal(data.bookingDate))
+    : data.bookingDate
+
   return [
     'New booking request',
     '',
-    `Date for booking: ${data.bookingDate}`,
+    `Date for booking: ${bookingDateDisplay}`,
     `Organisation or group: ${data.organisation}`,
-    `Destination name: ${data.destinationName}`,
+    `Destination name: ${data.destinationName || 'Not provided'}`,
     `Destination address: ${data.destinationAddress || 'Not provided'}`,
     `Pickup time: ${data.pickupTime}`,
     `Contact name: ${data.contactName}`,
@@ -130,7 +139,68 @@ function createMailToBody(data) {
   ].join('\n')
 }
 
-export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
+function deriveAvailabilityEndpoint(apiEndpoint, explicitAvailabilityEndpoint) {
+  const explicit = String(explicitAvailabilityEndpoint || '').trim()
+  if (explicit) {
+    return explicit
+  }
+
+  const raw = String(apiEndpoint || '').trim()
+  if (!raw) {
+    return ''
+  }
+
+  try {
+    const parsed = new URL(raw)
+    const pathname = parsed.pathname || ''
+
+    if (pathname.endsWith('/bookings/create.php')) {
+      parsed.pathname = pathname.replace('/bookings/create.php', '/bookings/availability.php')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/bookings/create')) {
+      parsed.pathname = pathname.replace('/bookings/create', '/bookings/availability')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/create.php')) {
+      parsed.pathname = pathname.replace('/create.php', '/availability.php')
+      parsed.search = ''
+      return parsed.toString()
+    }
+
+    if (pathname.endsWith('/create')) {
+      parsed.pathname = pathname.replace('/create', '/availability')
+      parsed.search = ''
+      return parsed.toString()
+    }
+  } catch {
+    // Ignore URL parsing errors for non-absolute paths and fall through to string handling.
+  }
+
+  if (raw.includes('/bookings/create.php')) {
+    return raw.replace('/bookings/create.php', '/bookings/availability.php')
+  }
+
+  if (raw.includes('/bookings/create')) {
+    return raw.replace('/bookings/create', '/bookings/availability')
+  }
+
+  if (raw.endsWith('/create.php')) {
+    return raw.replace('/create.php', '/availability.php')
+  }
+
+  if (raw.endsWith('/create')) {
+    return raw.replace('/create', '/availability')
+  }
+
+  return ''
+}
+
+export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', bookingAvailabilityEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
   const phoneHref = fallbackPhoneHref || '#'
   const apiEndpoint = useMemo(() => {
     const explicitEndpoint = String(bookingApiEndpoint || '').trim()
@@ -145,10 +215,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
     return ''
   }, [bookingApiEndpoint])
-  const availabilityEndpoint = apiEndpoint ? apiEndpoint.replace('create.php', 'availability.php') : ''
+  const availabilityEndpoint = useMemo(() => deriveAvailabilityEndpoint(apiEndpoint, bookingAvailabilityEndpoint), [apiEndpoint, bookingAvailabilityEndpoint])
 
   const [hasMounted, setHasMounted] = useState(false)
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState('')
   const [calendarConfig, setCalendarConfig] = useState(null)
   const [daysToShow, setDaysToShow] = useState(INITIAL_DAYS)
   const [visibleMonthIndex, setVisibleMonthIndex] = useState(0)
@@ -163,7 +234,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     )
   }, [hasMounted, calendarConfig, daysToShow])
 
-  const firstAvailable = days.find((day) => day.status === 'available')
   const visibleMonth = months[visibleMonthIndex] || null
   const isCurrentMonth = visibleMonthIndex === 0
   const canShowPreviousMonth = true // Allow navigating back to previous months indefinitely
@@ -175,22 +245,21 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
   const fetchAvailability = useCallback(async (startDate, days, existingUnavailable) => {
     if (!availabilityEndpoint) return null
-    try {
-      const url = `${availabilityEndpoint}?startDate=${formatISODate(startDate)}&daysToShow=${days}`
-      const res = await fetch(url)
-      if (!res.ok) return null
-      const data = await res.json()
-      const merged = new Set(existingUnavailable)
-      if (Array.isArray(data.unavailableDates)) {
-        for (const d of data.unavailableDates) merged.add(d)
-      }
-      return {
-        startDate,
-        disabledWeekdays: new Set(),
-        unavailableDates: merged,
-      }
-    } catch {
-      return null
+    const url = `${availabilityEndpoint}?startDate=${formatISODate(startDate)}&daysToShow=${days}`
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) {
+      throw new Error(`Availability API request failed with status ${res.status}.`)
+    }
+
+    const data = await res.json()
+    const merged = new Set(existingUnavailable)
+    if (Array.isArray(data.unavailableDates)) {
+      for (const d of data.unavailableDates) merged.add(d)
+    }
+    return {
+      startDate,
+      disabledWeekdays: new Set(),
+      unavailableDates: merged,
     }
   }, [availabilityEndpoint])
 
@@ -200,21 +269,25 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     today.setHours(0, 0, 0, 0)
 
     if (availabilityEndpoint) {
+      setAvailabilityError('')
       setAvailabilityLoading(true)
-      fetchAvailability(today, INITIAL_DAYS, new Set()).then((config) => {
-        setCalendarConfig(config || defaultAvailabilityConfig())
-        setAvailabilityLoading(false)
-      })
+      fetchAvailability(today, INITIAL_DAYS, new Set())
+        .then((config) => {
+          setCalendarConfig(config || defaultAvailabilityConfig())
+          setAvailabilityError('')
+        })
+        .catch(() => {
+          setCalendarConfig(defaultAvailabilityConfig())
+          setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
+        })
+        .finally(() => {
+          setAvailabilityLoading(false)
+        })
     } else {
       setCalendarConfig(defaultAvailabilityConfig())
+      setAvailabilityError('')
     }
   }, [availabilityEndpoint, fetchAvailability])
-
-  useEffect(() => {
-    if (!selectedDate && firstAvailable) {
-      setSelectedDate(firstAvailable.iso)
-    }
-  }, [firstAvailable, selectedDate])
 
   useEffect(() => {
     setVisibleMonthIndex((current) => {
@@ -255,8 +328,15 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       setAvailabilityLoading(true)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const updated = await fetchAvailability(today, nextDays, calendarConfig.unavailableDates)
-      if (updated) setCalendarConfig(updated)
+      try {
+        const updated = await fetchAvailability(today, nextDays, calendarConfig.unavailableDates)
+        if (updated) {
+          setCalendarConfig(updated)
+          setAvailabilityError('')
+        }
+      } catch {
+        setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
+      }
       setAvailabilityLoading(false)
     }
   }
@@ -264,6 +344,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const selectedDateLabel = selectedDate
     ? formatReadableDate(parseISODateLocal(selectedDate))
     : 'Select a date from the calendar'
+  const selectedDay = selectedDate ? days.find((day) => day.iso === selectedDate) : null
+  const selectedDayStatus = selectedDay?.status || 'unknown'
   const isSelectedDateUnavailable = Boolean(selectedDate && !isAvailable(selectedDate))
 
   async function handleSubmit(event) {
@@ -342,12 +424,17 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        const refreshed = await fetchAvailability(today, daysToShow, new Set())
-        if (refreshed) {
-          setCalendarConfig(refreshed)
-          if (refreshed.unavailableDates.has(payload.bookingDate)) {
-            setSelectedDate('')
+        try {
+          const refreshed = await fetchAvailability(today, daysToShow, new Set())
+          if (refreshed) {
+            setCalendarConfig(refreshed)
+            setAvailabilityError('')
+            if (refreshed.unavailableDates.has(payload.bookingDate)) {
+              setSelectedDate('')
+            }
           }
+        } catch {
+          setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
         }
 
         setAvailabilityLoading(false)
@@ -384,7 +471,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       <div className="booking-request-layout">
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
-            <h3>Pick an available date</h3>
+            <h3>Pick a date</h3>
             <p>Use the date picker or calendar below to select your preferred date.</p>
           </div>
 
@@ -403,18 +490,28 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </label>
 
             {selectedDate && (
-              <div className={`date-status date-status-${days.find(d => d.iso === selectedDate)?.status || 'unknown'}`} role="status" aria-live="polite">
+              <div className={`date-status date-status-${selectedDayStatus}`} role="status" aria-live="polite">
                 <div className="status-dot" />
                 <div className="status-text">
-                  {days.find(d => d.iso === selectedDate)?.status === 'available' ? (
+                  {selectedDayStatus === 'available' ? (
                     <>
                       <p className="status-label">✓ Available</p>
                       <p className="status-date">{formatReadableDate(parseISODateLocal(selectedDate))}</p>
                     </>
+                  ) : selectedDayStatus === 'booked' ? (
+                    <>
+                      <p className="status-label">⚠ Booked</p>
+                      <p className="status-message">This date is already booked. Please select another date.</p>
+                    </>
+                  ) : selectedDayStatus === 'past' ? (
+                    <>
+                      <p className="status-label">Past date</p>
+                      <p className="status-message">This date has already passed. Please select a future date.</p>
+                    </>
                   ) : (
                     <>
-                      <p className="status-label">⚠ Not available</p>
-                      <p className="status-message">This date is not available for booking. Please select another date.</p>
+                      <p className="status-label">⚠ Booked</p>
+                      <p className="status-message">This date is already booked. Please select another date.</p>
                     </>
                   )}
                 </div>
@@ -424,9 +521,13 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
           {/* Desktop Calendar View */}
           <div className="calendar-desktop-view">
+            {availabilityError ? (
+              <p className="booking-status error" role="alert">{availabilityError}</p>
+            ) : null}
             <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
               <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
-              <span role="listitem"><strong className="calendar-dot unavailable" aria-hidden="true" />Unavailable</span>
+              <span role="listitem"><strong className="calendar-dot booked" aria-hidden="true" />Booked</span>
+              <span role="listitem"><strong className="calendar-dot past" aria-hidden="true" />Past</span>
               <span role="listitem"><strong className="calendar-dot selected" aria-hidden="true" />Selected</span>
             </div>
 
@@ -498,12 +599,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
           </div>
         </div>
 
-        <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
+        {selectedDate ? (
+          <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
           <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
-          <p className="booking-form-alternative">
-            Prefer not to use the form? You can still book by <a href={emailHref}>email</a> or <a href={phoneHref}>{fallbackPhone}</a>.
-          </p>
 
           <div className="booking-form-grid">
             <div className="booking-date-statement">
@@ -534,9 +633,9 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             </label>
 
             <label className="field-full">
-              <span>Destination name *</span>
-              <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre</small>
-              <input type="text" name="destinationName" required />
+              <span>Destination name</span>
+              <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre. Leave blank if you do not yet know where you going.</small>
+              <input type="text" name="destinationName" />
             </label>
 
             <label className="field-full">
@@ -624,7 +723,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
           {submitState.message ? (
             <p className={`booking-status ${submitState.type}`} role="status">{submitState.message}</p>
           ) : null}
-        </form>
+          </form>
+        ) : null}
       </div>
     </section>
   )
