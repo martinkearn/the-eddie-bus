@@ -841,10 +841,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
               Back To Main Site
             </Link>
-            <Link className="button button-quiet" href="/bookings/request">
-              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-              Create Booking
-            </Link>
+            {isAdmin && (
+              <Link className="button button-quiet" href="/bookings/request">
+                <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                Create Booking
+              </Link>
+            )}
             <button className="button button-quiet" type="button" onClick={handleLogout}>
               <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
               Sign Out
