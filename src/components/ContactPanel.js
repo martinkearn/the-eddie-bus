@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faAward, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons'
 import { site } from '../content/site'
 
 export function ContactPanel({ title = 'Get in touch', text = [] }) {
@@ -10,12 +12,12 @@ export function ContactPanel({ title = 'Get in touch', text = [] }) {
         {textItems.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
         <div className="contact-methods">
           <a href={site.emailHref}>
-            <span aria-hidden="true">@</span>
+            <span aria-hidden="true"><FontAwesomeIcon icon={faEnvelope} /></span>
             <small>Email Us</small>
             <strong>{site.email}</strong>
           </a>
           <a href={site.phoneHref}>
-            <span aria-hidden="true">☎</span>
+            <span aria-hidden="true"><FontAwesomeIcon icon={faPhone} /></span>
             <small>Call Us Directly</small>
             <strong>{site.phone}</strong>
           </a>
@@ -27,6 +29,7 @@ export function ContactPanel({ title = 'Get in touch', text = [] }) {
         <div>
           <small>Registration Details</small>
           <strong>{site.charityName}</strong>
+          <span className="contact-highlight-icon"><FontAwesomeIcon icon={faAward} aria-hidden="true" /> Established 1985</span>
           <span>Registered Charity No. {site.charityNumber}</span>
         </div>
       </div>

@@ -1,5 +1,24 @@
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faCalendarCheck,
+  faEnvelope,
+  faHandshake,
+  faHouse,
+  faMapLocationDot,
+  faShieldHeart,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 import { primaryNavigation, site } from '../content/site'
+
+const navIcons = {
+  '/': faHouse,
+  '/how-to-book/': faCalendarCheck,
+  '/about-us/': faUsers,
+  '/places-to-visit/': faMapLocationDot,
+  '/passenger-accessibility-policy/': faShieldHeart,
+  '/volunteering/': faHandshake,
+}
 
 export function Header({ currentPath }) {
   return (
@@ -17,13 +36,14 @@ export function Header({ currentPath }) {
               href={item.href}
               aria-current={item.href === currentPath ? 'page' : undefined}
             >
+              <FontAwesomeIcon className="nav-link-icon" icon={navIcons[item.href] ?? faCalendarCheck} aria-hidden="true" />
               {item.label}
             </Link>
           ))}
         </div>
         <div className="nav-actions">
-          <Link className="button button-quiet" href="/contact-us/">Contact Us</Link>
-          <Link className="button button-primary" href="/how-to-book/">{site.primaryCta}</Link>
+          <Link className="button button-quiet" href="/contact-us/"><FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />Contact Us</Link>
+          <Link className="button button-primary" href="/how-to-book/"><FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />{site.primaryCta}</Link>
         </div>
         <details className="mobile-menu">
           <summary aria-label="Open navigation menu">
@@ -40,12 +60,13 @@ export function Header({ currentPath }) {
                 href={item.href}
                 aria-current={item.href === currentPath ? 'page' : undefined}
               >
+                <FontAwesomeIcon className="nav-link-icon" icon={navIcons[item.href] ?? faCalendarCheck} aria-hidden="true" />
                 {item.label}
               </Link>
             ))}
             <div className="mobile-menu-actions">
-              <Link className="button button-quiet" href="/contact-us/">Contact Us</Link>
-              <Link className="button button-primary" href="/how-to-book/">{site.primaryCta}</Link>
+              <Link className="button button-quiet" href="/contact-us/"><FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />Contact Us</Link>
+              <Link className="button button-primary" href="/how-to-book/"><FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />{site.primaryCta}</Link>
             </div>
           </div>
         </details>

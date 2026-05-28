@@ -1,4 +1,15 @@
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faCalendarDays,
+  faCalendarXmark,
+  faClipboardList,
+  faMapLocationDot,
+  faMoneyBillWave,
+  faPhone,
+  faRoute,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, CheckList, DefinitionList, InfoCard } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
@@ -23,7 +34,7 @@ export default function BookingsPage() {
 
   const paymentHighlights = [
     'We charge £1.25 per mile.',
-    'Minimum charge: is £25.',
+    'Minimum charge is £25.',
     'Mileage is from the bus storage area (B61 7EZ) to collection point(s), destination, drop-off point(s), then back to storage.',
     'Disability Blue Badge usually means no parking charges during trips.',
     'Payment is bank transfer only. We issue an invoice after the trip once final mileage is confirmed.',
@@ -80,8 +91,8 @@ export default function BookingsPage() {
           </ol>
         </div>
         <div className="page-intro-actions">
-          <Link className="button button-light" href="/booking/request/">Start booking request</Link>
-          <span>Fastest route: submit the form. You can also book by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}>phone</Link>.</span>
+          <Link className="button button-light" href="/booking/request/"><FontAwesomeIcon icon={faClipboardList} aria-hidden="true" />Start booking request</Link>
+          <span>Fastest route: submit the form. You can also book by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" /> phone</Link>.</span>
         </div>
       </PageIntro>
 
@@ -93,31 +104,31 @@ export default function BookingsPage() {
         </div>
 
         <CardGrid className="booking-info-grid">
-          <InfoCard title="Payment" icon="GBP" className="booking-info-card booking-info-card-payment booking-info-card-half">
+          <InfoCard title="Payment" icon={<FontAwesomeIcon icon={faMoneyBillWave} />} className="booking-info-card booking-info-card-payment booking-info-card-half">
             <CheckList items={paymentHighlights} />
           </InfoCard>
 
-          <InfoCard title="Cancellations" icon="TIME" className="booking-info-card booking-info-card-cancellations booking-info-card-half">
+          <InfoCard title="Cancellations" icon={<FontAwesomeIcon icon={faCalendarXmark} />} className="booking-info-card booking-info-card-cancellations booking-info-card-half">
             <CheckList items={cancellationHighlights} />
           </InfoCard>
 
-          <InfoCard title="Eligibility" icon="GROUP" className="booking-info-card booking-info-card-eligibility booking-info-card-full">
+          <InfoCard title="Eligibility" icon={<FontAwesomeIcon icon={faUsers} />} className="booking-info-card booking-info-card-eligibility booking-info-card-full">
             <DefinitionList items={eligibilityHighlights} />
           </InfoCard>
 
-          <InfoCard title="Where the bus can travel" icon="MAP" className="booking-info-card booking-info-card-travel booking-info-card-half">
+          <InfoCard title="Where the bus can travel" icon={<FontAwesomeIcon icon={faRoute} />} className="booking-info-card booking-info-card-travel booking-info-card-half">
             <CheckList items={travelHighlights} />
-            <Link className="booking-card-link" href="/places-to-visit/">Get ideas for places to visit</Link>
+            <Link className="booking-card-link" href="/places-to-visit/"><FontAwesomeIcon icon={faMapLocationDot} aria-hidden="true" />Get ideas for places to visit</Link>
           </InfoCard>
 
-          <InfoCard title="When the bus is available" icon="CAL" className="booking-info-card booking-info-card-availability booking-info-card-half">
+          <InfoCard title="When the bus is available" icon={<FontAwesomeIcon icon={faCalendarDays} />} className="booking-info-card booking-info-card-availability booking-info-card-half">
             <CheckList items={availabilityHighlights} />
           </InfoCard>
         </CardGrid>
       </section>
 
       <Callout title="Looking for trip ideas?">
-        <p>See <Link href="/places-to-visit/">Places to Visit</Link> for outing ideas.</p>
+        <p><FontAwesomeIcon icon={faMapLocationDot} aria-hidden="true" /> See <Link href="/places-to-visit/">Places to Visit</Link> for outing ideas.</p>
       </Callout>
       <ContactPanel title="Contact details" text={['Use the booking request form for the quickest response. Email and phone bookings are also welcome.']} />
     </SiteLayout>

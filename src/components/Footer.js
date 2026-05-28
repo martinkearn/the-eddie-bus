@@ -1,7 +1,26 @@
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faBookOpen,
+  faCalendarCheck,
+  faCircleInfo,
+  faEnvelope,
+  faMapLocationDot,
+  faPhone,
+  faShieldHeart,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 import { primaryNavigation, site } from '../content/site'
 
 const footerPages = primaryNavigation.filter((item) => item.href !== '/passenger-accessibility-policy/')
+
+const footerPageIcons = {
+  '/': faCircleInfo,
+  '/how-to-book/': faCalendarCheck,
+  '/about-us/': faUsers,
+  '/places-to-visit/': faMapLocationDot,
+  '/volunteering/': faBookOpen,
+}
 
 export function Footer() {
   return (
@@ -15,14 +34,14 @@ export function Footer() {
         </div>
         <div>
           <h2>Contact</h2>
-          <p><a href={site.emailHref}>{site.email}</a></p>
-          <p><a href={site.phoneHref}>{site.phone}</a></p>
+          <p><a href={site.emailHref}><FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />{site.email}</a></p>
+          <p><a href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" />{site.phone}</a></p>
         </div>
         <div>
-          <h2>Pages</h2>
+          <h2><FontAwesomeIcon icon={faShieldHeart} aria-hidden="true" />Pages</h2>
           <ul className="footer-links">
             {footerPages.map((item) => (
-              <li key={item.href}><Link href={item.href}>{item.label}</Link></li>
+              <li key={item.href}><Link href={item.href}><FontAwesomeIcon icon={footerPageIcons[item.href] ?? faCircleInfo} aria-hidden="true" />{item.label}</Link></li>
             ))}
           </ul>
         </div>
