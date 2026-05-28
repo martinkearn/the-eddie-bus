@@ -228,6 +228,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [changePasswordLoading, setChangePasswordLoading] = useState(false)
 
   const isAdmin = user?.role === 'admin'
+  const isBookingsTab = activeTab === 'bookings'
+  const isMyBookingsTab = activeTab === 'my-bookings'
+  const myBookingsDriverUserId = isMyBookingsTab && user?.id !== undefined && user?.id !== null ? String(user.id) : ''
+  const getCurrentBookingsWindow = useCallback(() => getBookingWindowDates(pastWeeksVisible, futureWeeksVisible), [pastWeeksVisible, futureWeeksVisible])
 
   const apiFetch = useCallback(async (path, options = {}) => {
     const requestHeaders = {
@@ -274,7 +278,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch])
 
-  const loadBookings = useCallback(async ({ q = '', windowFrom = '', windowTo = '' } = {}) => {
+  const loadBookings = useCallback(async ({ q = '', windowFrom = '', windowTo = '', driverUserId = '' } = {}) => {
     if (!user) return
 
     setBookingsLoading(true)
@@ -290,6 +294,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       }
       if (q.trim()) {
         query.set('q', q.trim())
+      }
+      if (String(driverUserId || '').trim()) {
+        query.set('driver_user_id', String(driverUserId).trim())
       }
 
       const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
@@ -385,8 +392,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
 
     const window = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
-    loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
-  }, [user, loadBookings])
+    loadBookings({ q: '', windowFrom: window.from, windowTo: window.to, driverUserId: myBookingsDriverUserId })
+  }, [user, loadBookings, myBookingsDriverUserId])
 
   useEffect(() => {
     if (!user || !isAdmin) {
@@ -421,18 +428,21 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   }, [banner])
 
   useEffect(() => {
-    if (activeTab !== 'bookings' || searchTerm.trim() !== '' || !user) {
+    if (!user || (!isBookingsTab && !isMyBookingsTab) || (isBookingsTab && searchTerm.trim() !== '')) {
       return undefined
     }
 
     const pollBookings = async () => {
       try {
-        const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+        const window = getCurrentBookingsWindow()
         const query = new URLSearchParams({
           limit: String(PAGE_SIZE),
           from: window.from,
           to: window.to,
         })
+        if (isMyBookingsTab && myBookingsDriverUserId) {
+          query.set('driver_user_id', myBookingsDriverUserId)
+        }
         const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
         setBookings(data.items || [])
       } catch {
@@ -445,7 +455,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [activeTab, searchTerm, user, apiFetch, pastWeeksVisible, futureWeeksVisible])
+  }, [isBookingsTab, isMyBookingsTab, searchTerm, user, apiFetch, getCurrentBookingsWindow, myBookingsDriverUserId])
 
   async function handleLoginSubmit(event) {
     event.preventDefault()
@@ -498,6 +508,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setUsers([])
     setBookingForm(null)
     setSelectedBookingId('')
+    setActiveTab('bookings')
     setBanner({ type: 'success', message: 'You have been signed out.' })
   }
 
@@ -530,7 +541,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     const window = getBookingWindowDates(nextPastWeeks, futureWeeksVisible)
 
     setPastWeeksVisible(nextPastWeeks)
-    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+    await loadBookings({ q: isBookingsTab ? searchTerm : '', windowFrom: window.from, windowTo: window.to, driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '' })
   }
 
   async function handleShowMoreFuture() {
@@ -538,7 +549,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     const window = getBookingWindowDates(pastWeeksVisible, nextFutureWeeks)
 
     setFutureWeeksVisible(nextFutureWeeks)
-    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+    await loadBookings({ q: isBookingsTab ? searchTerm : '', windowFrom: window.from, windowTo: window.to, driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '' })
   }
 
   async function handleResetWindow() {
@@ -546,13 +557,36 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     setPastWeeksVisible(DEFAULT_PAST_WEEKS)
     setFutureWeeksVisible(DEFAULT_FUTURE_WEEKS)
-    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+    await loadBookings({ q: isBookingsTab ? searchTerm : '', windowFrom: window.from, windowTo: window.to, driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '' })
   }
 
   function handleBackToBookingResults() {
     setSelectedBookingId('')
     setBookingForm(null)
     setBookingDetailLoading(false)
+  }
+
+  function handleMyBookingsTabClick() {
+    const driverUserId = user?.id !== undefined && user?.id !== null ? String(user.id) : ''
+    setActiveTab('my-bookings')
+    setHasExecutedSearch(false)
+    setSearchInput('')
+    setSearchTerm('')
+    setSearchError('')
+    setSelectedBookingId('')
+    setBookingForm(null)
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+    void loadBookings({ q: '', windowFrom: window.from, windowTo: window.to, driverUserId })
+  }
+
+  function handleBookingsTabClick() {
+    setActiveTab('bookings')
+    setHasExecutedSearch(false)
+    setSearchError('')
+    setSelectedBookingId('')
+    setBookingForm(null)
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+    void loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
   }
 
   function handleBookingFieldChange(name, value) {
@@ -859,9 +893,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         )}
 
         <nav className="admin-tabs" aria-label="Admin sections" role="tablist">
-          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>
+          <button type="button" role="tab" aria-selected={isBookingsTab} className={isBookingsTab ? 'is-active' : ''} onClick={handleBookingsTabClick}>
             <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
-            Bookings
+            All Bookings
+          </button>
+          <button type="button" role="tab" aria-selected={isMyBookingsTab} className={isMyBookingsTab ? 'is-active' : ''} onClick={handleMyBookingsTabClick}>
+            <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
+            My Bookings
           </button>
           {isAdmin && (
             <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>
@@ -875,52 +913,71 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           </button>
         </nav>
 
-        {activeTab === 'bookings' && (
+        {(isBookingsTab || isMyBookingsTab) && (
           <section className="admin-section" aria-label="Booking management">
             <div className="admin-section-heading">
               <div>
-                <h2>Bookings</h2>
+                <h2>{isMyBookingsTab ? 'My Bookings' : 'All Bookings'}</h2>
+                {isMyBookingsTab ? (
+                  <p>Bookings assigned to {user.username}.</p>
+                ) : (
+                  <p>All bookings, future and past.</p>
+                )}
               </div>
             </div>
 
             {!selectedBookingId && (
               <>
-
-            <form className="admin-search" onSubmit={handleSearchSubmit}>
-              <input
-                type="search"
-                placeholder="Search all booking fields"
-                value={searchInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value
-                  setSearchInput(nextValue)
-                  if (searchError) {
-                    setSearchError('')
-                  }
-                  if (hasExecutedSearch && nextValue.trim() === '') {
-                    void handleClearSearch()
-                  }
-                }}
-              />
-              <button className="button button-primary" type="submit" disabled={bookingsLoading}>
-                <FontAwesomeIcon icon={faMagnifyingGlass} aria-hidden="true" />
-                Search
-              </button>
-            </form>
-            {searchError && (
-              <p className="admin-search-error" role="alert">{searchError}</p>
+            {isBookingsTab && (
+              <>
+                <form className="admin-search" onSubmit={handleSearchSubmit}>
+                  <input
+                    type="search"
+                    placeholder="Search all booking fields"
+                    value={searchInput}
+                    onChange={(event) => {
+                      const nextValue = event.target.value
+                      setSearchInput(nextValue)
+                      if (searchError) {
+                        setSearchError('')
+                      }
+                      if (hasExecutedSearch && nextValue.trim() === '') {
+                        void handleClearSearch()
+                      }
+                    }}
+                  />
+                  <button className="button button-primary" type="submit" disabled={bookingsLoading}>
+                    <FontAwesomeIcon icon={faMagnifyingGlass} aria-hidden="true" />
+                    Search
+                  </button>
+                </form>
+                {searchError && (
+                  <p className="admin-search-error" role="alert">{searchError}</p>
+                )}
+              </>
             )}
 
             <div className="admin-window-bar">
               <span className="admin-window-label" aria-live="polite">
-                {hasExecutedSearch
+                {isBookingsTab && hasExecutedSearch
                   ? <>Showing {bookings.length} booking{bookings.length !== 1 ? 's' : ''} for: <strong>{searchTerm}</strong></>
                   : (() => {
                       const { from, to } = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
                       return `Showing ${bookings.length} booking${bookings.length !== 1 ? 's' : ''} between ${formatDateWords(from)} and ${formatDateWords(to)}`
                     })()
                 }
-                {!hasExecutedSearch && (pastWeeksVisible !== DEFAULT_PAST_WEEKS || futureWeeksVisible !== DEFAULT_FUTURE_WEEKS) && (
+                {!isBookingsTab && (pastWeeksVisible !== DEFAULT_PAST_WEEKS || futureWeeksVisible !== DEFAULT_FUTURE_WEEKS) && (
+                  <button
+                    className="button button-quiet admin-window-reset"
+                    type="button"
+                    disabled={bookingsLoading}
+                    onClick={handleResetWindow}
+                  >
+                    <FontAwesomeIcon icon={faRotateLeft} aria-hidden="true" />
+                    Reset to default view
+                  </button>
+                )}
+                {isBookingsTab && !hasExecutedSearch && (pastWeeksVisible !== DEFAULT_PAST_WEEKS || futureWeeksVisible !== DEFAULT_FUTURE_WEEKS) && (
                   <button
                     className="button button-quiet admin-window-reset"
                     type="button"
@@ -932,7 +989,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   </button>
                 )}
               </span>
-                {hasExecutedSearch && (
+                {isBookingsTab && hasExecutedSearch && (
                   <button
                     className="button button-quiet admin-search-reset"
                     type="button"
@@ -957,7 +1014,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {!hasExecutedSearch && bookingWindowCounts.futureCount > 0 && (
+                  {(isBookingsTab || isMyBookingsTab) && bookingWindowCounts.futureCount > 0 && (
                     <tr className="admin-table-hint-row">
                       <td colSpan={5}>
                         <div className="admin-table-hint-content">
@@ -998,7 +1055,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <td colSpan={5}>No bookings found.</td>
                     </tr>
                   )}
-                  {!hasExecutedSearch && bookingWindowCounts.pastCount > 0 && (
+                  {(isBookingsTab || isMyBookingsTab) && bookingWindowCounts.pastCount > 0 && (
                     <tr className="admin-table-hint-row">
                       <td colSpan={5}>
                         <div className="admin-table-hint-content">
@@ -1026,13 +1083,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             {selectedBookingId && (
               <section className="admin-editor" aria-label="Booking details">
                 <div className="admin-detail-header">
-                  <button
+                    <button
                     className="button button-quiet"
                     type="button"
                     onClick={handleBackToBookingResults}
                   >
                     <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
-                    Back to {hasExecutedSearch ? 'search results' : 'booking list'}
+                      Back to {isBookingsTab && hasExecutedSearch ? 'search results' : 'booking list'}
                   </button>
                   <h2>Booking Details</h2>
                 </div>
@@ -1442,8 +1499,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
         {activeTab === 'account' && (
           <section className="admin-section" aria-label="My account">
-            <h2>Change Password</h2>
-            <p>Changing your password signs you out of all current sessions.</p>
+            <div className="admin-section-heading">
+              <div>
+                <h2>Change Password</h2>
+                <p>Changing your password signs you out of all current sessions.</p>
+              </div>
+            </div>
 
             <form className="admin-form-grid" onSubmit={handleChangePassword}>
               <label>

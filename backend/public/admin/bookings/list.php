@@ -12,6 +12,7 @@ $q = trim((string)($_GET['q'] ?? ''));
 $limitRaw = trim((string)($_GET['limit'] ?? '250'));
 $fromRaw = trim((string)($_GET['from'] ?? ''));
 $toRaw = trim((string)($_GET['to'] ?? ''));
+$driverUserIdRaw = trim((string)($_GET['driver_user_id'] ?? ''));
 
 $limit = ctype_digit($limitRaw) ? (int)$limitRaw : 250;
 $limit = max(1, min(1000, $limit));
@@ -22,6 +23,7 @@ $defaultTo = $today->modify('+8 weeks')->format('Y-m-d');
 
 $fromDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromRaw) ? $fromRaw : $defaultFrom;
 $toDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $toRaw) ? $toRaw : $defaultTo;
+$driverUserId = $driverUserIdRaw !== '' && ctype_digit($driverUserIdRaw) ? (int)$driverUserIdRaw : null;
 
 if ($fromDate > $toDate) {
     [$fromDate, $toDate] = [$toDate, $fromDate];
@@ -40,6 +42,11 @@ try {
 
     $whereConditions = [];
     $params = [];
+
+    if ($driverUserId !== null) {
+        $whereConditions[] = 'bookings.driver_user_id = :driver_user_id';
+        $params[':driver_user_id'] = $driverUserId;
+    }
 
     // Only apply date window when not doing a text search
     if ($q === '') {
@@ -141,12 +148,26 @@ LIMIT :limit';
     $pastCount = 0;
     $futureCount = 0;
     if ($q === '') {
-        $pastStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE booking_date < :from_date');
-        $pastStmt->execute([':from_date' => $fromDate]);
+        $pastWhereConditions = ['booking_date < :from_date'];
+        $pastParams = [':from_date' => $fromDate];
+        if ($driverUserId !== null) {
+            $pastWhereConditions[] = 'driver_user_id = :driver_user_id';
+            $pastParams[':driver_user_id'] = $driverUserId;
+        }
+
+        $pastStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE ' . implode(' AND ', $pastWhereConditions));
+        $pastStmt->execute($pastParams);
         $pastCount = (int)$pastStmt->fetchColumn();
 
-        $futureStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE booking_date > :to_date');
-        $futureStmt->execute([':to_date' => $toDate]);
+        $futureWhereConditions = ['booking_date > :to_date'];
+        $futureParams = [':to_date' => $toDate];
+        if ($driverUserId !== null) {
+            $futureWhereConditions[] = 'driver_user_id = :driver_user_id';
+            $futureParams[':driver_user_id'] = $driverUserId;
+        }
+
+        $futureStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE ' . implode(' AND ', $futureWhereConditions));
+        $futureStmt->execute($futureParams);
         $futureCount = (int)$futureStmt->fetchColumn();
     }
 
