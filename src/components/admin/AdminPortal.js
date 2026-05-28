@@ -137,6 +137,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [hasExecutedSearch, setHasExecutedSearch] = useState(false)
+  const [searchError, setSearchError] = useState('')
   const [bookingsLoading, setBookingsLoading] = useState(false)
   const [bookings, setBookings] = useState([])
   const [nextOffset, setNextOffset] = useState(0)
@@ -210,15 +212,15 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch])
 
-  const loadBookings = useCallback(async ({ reset = false, q = searchTerm } = {}) => {
+  const loadBookings = useCallback(async ({ reset = false, q = '', offset = 0 } = {}) => {
     if (!user) return
 
     setBookingsLoading(true)
     try {
-      const offset = reset ? 0 : nextOffset
+      const queryOffset = reset ? 0 : Math.max(0, Number(offset) || 0)
       const query = new URLSearchParams({
         limit: String(PAGE_SIZE),
-        offset: String(offset),
+        offset: String(queryOffset),
       })
       if (q.trim()) {
         query.set('q', q.trim())
@@ -228,12 +230,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setBookings((current) => (reset ? data.items : [...current, ...data.items]))
       setNextOffset(data.pagination?.nextOffset || 0)
       setHasMore(Boolean(data.pagination?.hasMore))
+      setSearchError('')
     } catch (error) {
-      setBanner({ type: 'error', message: error.message || 'Could not load bookings.' })
+      const errorMessage = error.message || 'Could not load bookings.'
+      if (q.trim()) {
+        setSearchError(errorMessage)
+      } else {
+        setBanner({ type: 'error', message: errorMessage })
+      }
     } finally {
       setBookingsLoading(false)
     }
-  }, [apiFetch, nextOffset, searchTerm, user])
+  }, [apiFetch, user])
 
   const loadUsers = useCallback(async () => {
     if (!isAdmin) return
@@ -435,11 +443,23 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   async function handleSearchSubmit(event) {
     event.preventDefault()
     const trimmed = searchInput.trim()
+    setHasExecutedSearch(true)
     setSearchTerm(trimmed)
     setSelectedBookingId('')
     setBookingForm(null)
     setNextOffset(0)
     await loadBookings({ reset: true, q: trimmed })
+  }
+
+  async function handleClearSearch() {
+    setSearchInput('')
+    setSearchTerm('')
+    setHasExecutedSearch(false)
+    setSearchError('')
+    setSelectedBookingId('')
+    setBookingForm(null)
+    setNextOffset(0)
+    await loadBookings({ reset: true, q: '' })
   }
 
   function handleBookingFieldChange(name, value) {
@@ -746,10 +766,33 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 type="search"
                 placeholder="Search all booking fields"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
+                onChange={(event) => {
+                  setSearchInput(event.target.value)
+                  if (searchError) {
+                    setSearchError('')
+                  }
+                }}
               />
               <button className="button button-primary" type="submit" disabled={bookingsLoading}>Search</button>
             </form>
+            {searchError && (
+              <p className="admin-search-error" role="alert">{searchError}</p>
+            )}
+            {hasExecutedSearch && searchTerm && (
+              <div className="admin-search-chip-row" aria-live="polite">
+                <p className="admin-search-chip">
+                  Showing results for: <strong>{searchTerm}</strong>
+                </p>
+                <button
+                  className="button button-quiet admin-search-reset"
+                  type="button"
+                  onClick={handleClearSearch}
+                  disabled={bookingsLoading}
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
 
             <div className="admin-table-wrap">
               <table className="admin-table">
@@ -795,7 +838,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 className="button button-quiet"
                 type="button"
                 disabled={bookingsLoading || !hasMore}
-                onClick={() => loadBookings({ reset: false, q: searchTerm })}
+                onClick={() => loadBookings({ reset: false, q: searchTerm, offset: nextOffset })}
               >
                 {bookingsLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Bookings'}
               </button>

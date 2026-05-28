@@ -33,9 +33,43 @@ try {
     $params = [];
 
     if ($q !== '') {
-        $adminNotesSearchSql = $hasAdminNotesColumn ? "\n    IFNULL(bookings.admin_notes, '')," : '';
-        $whereClause = "\nWHERE CONCAT_WS(' ',\n    CAST(bookings.id AS CHAR),\n    bookings.booking_ref,\n    bookings.status,\n    IFNULL(driver.username, ''),\n    DATE_FORMAT(bookings.booking_date, '%Y-%m-%d'),\n    TIME_FORMAT(bookings.pickup_time, '%H:%i'),\n    bookings.organisation,\n    bookings.destination_name,\n    IFNULL(bookings.destination_address, ''),\n    bookings.contact_name,\n    bookings.contact_email,\n    bookings.contact_number,\n    IF(bookings.static_wheelchairs = 1, 'yes', 'no'),\n    IF(bookings.powered_wheelchairs = 1, 'yes', 'no'),\n    IF(bookings.passenger_transfers = 1, 'yes', 'no'),\n    IFNULL(bookings.special_requirements, '')," . $adminNotesSearchSql . "\n    IFNULL(bookings.source_ip, ''),\n    IFNULL(bookings.user_agent, ''),\n    DATE_FORMAT(bookings.created_at, '%Y-%m-%d %H:%i:%s'),\n    DATE_FORMAT(bookings.updated_at, '%Y-%m-%d %H:%i:%s')\n) LIKE :search_term";
-        $params[':search_term'] = '%' . $q . '%';
+        $searchTerm = function_exists('mb_strtolower')
+            ? mb_strtolower($q, 'UTF-8')
+            : strtolower($q);
+
+        $searchColumns = [
+            'CAST(bookings.id AS CHAR)',
+            'bookings.booking_ref',
+            'bookings.status',
+            "IFNULL(driver.username, '')",
+            "DATE_FORMAT(bookings.booking_date, '%Y-%m-%d')",
+            "TIME_FORMAT(bookings.pickup_time, '%H:%i')",
+            'bookings.organisation',
+            'bookings.destination_name',
+            "IFNULL(bookings.destination_address, '')",
+            'bookings.contact_name',
+            'bookings.contact_email',
+            'bookings.contact_number',
+            "IF(bookings.static_wheelchairs = 1, 'yes', 'no')",
+            "IF(bookings.powered_wheelchairs = 1, 'yes', 'no')",
+            "IF(bookings.passenger_transfers = 1, 'yes', 'no')",
+            "IFNULL(bookings.special_requirements, '')",
+            "DATE_FORMAT(bookings.created_at, '%Y-%m-%d %H:%i:%s')",
+            "DATE_FORMAT(bookings.updated_at, '%Y-%m-%d %H:%i:%s')",
+        ];
+
+        if ($hasAdminNotesColumn) {
+            $searchColumns[] = "IFNULL(bookings.admin_notes, '')";
+        }
+
+        $searchConditions = [];
+        foreach ($searchColumns as $index => $expression) {
+            $placeholder = ':search_term_' . $index;
+            $searchConditions[] = 'LOWER(' . $expression . ') LIKE ' . $placeholder;
+            $params[$placeholder] = '%' . $searchTerm . '%';
+        }
+
+        $whereClause = "\nWHERE (\n    " . implode("\n    OR ", $searchConditions) . "\n)";
     }
 
     $adminNotesSelectSql = $hasAdminNotesColumn ? 'bookings.admin_notes' : 'NULL AS admin_notes';

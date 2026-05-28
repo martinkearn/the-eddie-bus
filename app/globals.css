@@ -2903,6 +2903,47 @@ main {
   min-width: 220px;
 }
 
+.admin-search-error {
+  margin: -0.25rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #ffb4ab;
+  background: #ffdad6;
+  color: #93000d;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.admin-search-chip {
+  margin: -0.1rem 0 0;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #c8dcff;
+  border-radius: 999px;
+  background: #f2f7ff;
+  color: #153c8a;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.admin-search-chip-row {
+  margin-top: -0.05rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.admin-search-reset {
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+}
+
 .admin-form,
 .admin-form-grid {
   display: grid;
