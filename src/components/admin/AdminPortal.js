@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { site } from '../../content/site'
 import {
   faArrowLeft,
   faArrowRight,
@@ -13,6 +14,7 @@ import {
   faKey,
   faMagnifyingGlass,
   faPlus,
+  faPenToSquare,
   faRotate,
   faRightFromBracket,
   faRightToBracket,
@@ -161,6 +163,64 @@ function formatDisplayText(value, fallback = 'Not provided') {
   return normalized || fallback
 }
 
+function buildBookingMessageDraft(booking, type) {
+  if (!booking) return ''
+
+  const contactName = formatDisplayText(booking.contactName, 'there')
+  const organisation = formatDisplayText(booking.organisation)
+  const bookingRef = formatDisplayText(booking.bookingRef, '')
+  const bookingDateWords = formatDateWords(booking.bookingDate)
+  const bookingTime = formatPickupTime(booking.pickupTime)
+  const bookingWhen = [bookingDateWords, bookingTime ? `at ${bookingTime}` : '']
+    .filter(Boolean)
+    .join(' ')
+  const destinationName = formatDisplayText(booking.destinationName, '')
+  const driverName = formatDisplayText(booking.driverUsername, 'the assigned driver')
+
+  const signatureLines = [
+    'Best wishes,',
+    '',
+    'The EDDIE Bus team',
+    `Email: ${site.email}`,
+    `Phone: ${site.phone}`,
+  ]
+
+  if (type === 'confirmed') {
+    return [
+      `Hi ${contactName},`,
+      '',
+      `Your booking for ${organisation} to ${destinationName || 'your chosen destination'} on ${bookingWhen || 'your requested date'}, booking reference ${bookingRef || 'not provided'} is now fully confirmed.`,
+      '',
+      `The bus is reserved and ${driverName} will be your driver.`,
+      '',
+      'If anything changes, please reply to this message and we will help you with the next steps.',
+      '',
+      ...signatureLines,
+    ].join('\n')
+  }
+
+  return [
+    `Hi ${contactName},`,
+    '',
+    `Thank you for your booking request for ${organisation} to ${destinationName || 'your chosen destination'} on ${bookingWhen || 'your requested date'}.`,
+    '',
+    bookingRef ? `Booking reference: ${bookingRef}` : '',
+    '',
+    'We have reserved the bus for you but it is not finally confirmed until a driver is matched.',
+    '',
+    'We are actively looking for a driver and will be back in touch as soon as we can confirm the driver.',
+    '',
+    ...signatureLines,
+  ].join('\n')
+}
+
+function buildBookingSubjectDraft(booking) {
+  if (!booking) return ''
+
+  const bookingRef = formatDisplayText(booking.bookingRef, '')
+  return bookingRef ? `Your EDDIE bus booking ${bookingRef} ` : ''
+}
+
 function formatDateForApi(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -209,8 +269,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [selectedBookingId, setSelectedBookingId] = useState('')
   const [bookingForm, setBookingForm] = useState(null)
   const [bookingDetailLoading, setBookingDetailLoading] = useState(false)
+  const [bookingMessageDraft, setBookingMessageDraft] = useState('')
+  const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
   const [bookingSaveLoading, setBookingSaveLoading] = useState(false)
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
+  const [copyFeedbackKey, setCopyFeedbackKey] = useState('')
+  const copyFeedbackTimerRef = useRef(null)
 
   const [users, setUsers] = useState([])
   const [assignableUsers, setAssignableUsers] = useState([])
@@ -356,6 +420,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     setSelectedBookingId(String(id))
     setBookingForm(null)
+    setBookingMessageDraft('')
+    setBookingSubjectDraft('')
     setBookingDetailLoading(true)
     try {
       const data = await apiFetch(`/bookings/get.php?id=${encodeURIComponent(id)}`)
@@ -426,6 +492,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       window.clearTimeout(timeoutId)
     }
   }, [banner])
+
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!user || (!isBookingsTab && !isMyBookingsTab) || (isBookingsTab && searchTerm.trim() !== '')) {
@@ -563,6 +637,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   function handleBackToBookingResults() {
     setSelectedBookingId('')
     setBookingForm(null)
+    setBookingMessageDraft('')
+    setBookingSubjectDraft('')
     setBookingDetailLoading(false)
   }
 
@@ -731,6 +807,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }
 
+  function flashCopyFeedback(key) {
+    if (copyFeedbackTimerRef.current) {
+      window.clearTimeout(copyFeedbackTimerRef.current)
+    }
+
+    setCopyFeedbackKey(key)
+    copyFeedbackTimerRef.current = window.setTimeout(() => {
+      setCopyFeedbackKey('')
+      copyFeedbackTimerRef.current = null
+    }, 1400)
+  }
+
   async function handleCopyTemporaryPassword() {
     if (!resetPasswordResult?.temporaryPassword) return
 
@@ -738,8 +826,37 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       const copyText = `Your username is ${resetPasswordResult.username} and your password is ${resetPasswordResult.temporaryPassword}`
       await navigator.clipboard.writeText(copyText)
       setBanner({ type: 'success', message: 'Login credentials copied to clipboard.' })
+      flashCopyFeedback('temporary-password')
     } catch {
       setBanner({ type: 'error', message: 'Could not copy the login credentials.' })
+    }
+  }
+
+  async function handleDraftBookingMessage(type) {
+    if (!isAdmin || !bookingForm) return
+
+    const draft = buildBookingMessageDraft(bookingForm, type)
+    const subjectDraft = buildBookingSubjectDraft(bookingForm)
+    setBookingMessageDraft(draft)
+    setBookingSubjectDraft(subjectDraft)
+
+    try {
+      await navigator.clipboard.writeText(draft)
+      setBanner({ type: 'success', message: type === 'confirmed' ? 'Booking confirmed message copied to clipboard.' : 'Booking acknowledgment copied to clipboard.' })
+    } catch {
+      setBanner({ type: 'error', message: 'Could not copy the booking message.' })
+    }
+  }
+
+  async function handleCopyDraftText(copyText, successMessage, errorMessage, feedbackKey) {
+    try {
+      await navigator.clipboard.writeText(copyText)
+      setBanner({ type: 'success', message: successMessage })
+      if (feedbackKey) {
+        flashCopyFeedback(feedbackKey)
+      }
+    } catch {
+      setBanner({ type: 'error', message: errorMessage })
     }
   }
 
@@ -1320,6 +1437,75 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   </label>
 
                   {isAdmin && (
+                    <section className="field-full admin-draft-section" aria-label="Booking message drafts">
+                      <div className="admin-draft-section-heading">
+                        <h3>Booking message drafts</h3>
+                        <p>Generate a subject and body you can copy into email or WhatsApp.</p>
+                      </div>
+
+                      <div className="admin-inline-actions admin-draft-action-buttons" style={{ marginTop: '0.6rem', marginBottom: '0.8rem' }}>
+                        <button className="button button-secondary" type="button" onClick={() => handleDraftBookingMessage('acknowledgment')}>
+                          <FontAwesomeIcon icon={faPenToSquare} aria-hidden="true" />
+                          Booking acknowledgment
+                        </button>
+                        <button className="button button-secondary" type="button" onClick={() => handleDraftBookingMessage('confirmed')}>
+                          <FontAwesomeIcon icon={faPenToSquare} aria-hidden="true" />
+                          Booking confirmed
+                        </button>
+                      </div>
+
+                      <div className="field-full">
+                        <span>Subject</span>
+                        <div className="admin-field-with-copy">
+                          <textarea
+                            rows={1}
+                            className="booking-subject-draft-textarea"
+                            readOnly
+                            value={bookingSubjectDraft}
+                            placeholder="Create a draft to see the suggested subject"
+                          />
+                          <button
+                            className={`button button-quiet button-icon-only ${copyFeedbackKey === 'subject-copy' ? 'is-copied' : ''}`}
+                            type="button"
+                            onClick={async () => {
+                              if (!bookingForm) return
+
+                              const subjectDraft = buildBookingSubjectDraft(bookingForm)
+                              setBookingSubjectDraft(subjectDraft)
+                              await handleCopyDraftText(subjectDraft, 'Subject copied to clipboard.', 'Could not copy the subject.', 'subject-copy')
+                            }}
+                            aria-label="Copy subject to clipboard"
+                            title="Copy subject"
+                          >
+                            <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="field-full">
+                        <span>Body</span>
+                        <div className="admin-field-with-copy">
+                          <textarea
+                            rows={8}
+                            readOnly
+                            value={bookingMessageDraft}
+                            placeholder="Create a draft to see a suggested body for email or WhatsApp"
+                          />
+                          <button
+                            className={`button button-quiet button-icon-only ${copyFeedbackKey === 'body-copy' ? 'is-copied' : ''}`}
+                            type="button"
+                            onClick={() => handleCopyDraftText(bookingMessageDraft, 'Booking message copied to clipboard.', 'Could not copy the booking message.', 'body-copy')}
+                            aria-label="Copy booking message to clipboard"
+                            title="Copy message"
+                          >
+                            <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {isAdmin && (
                     <div className="field-full admin-inline-actions">
                       <button className="button button-primary" type="submit" disabled={bookingSaveLoading}>
                         <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
@@ -1365,7 +1551,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   Temporary password: <strong>{resetPasswordResult.temporaryPassword}</strong>
                 </p>
                 <div className="admin-inline-actions">
-                  <button className="button button-primary" type="button" onClick={handleCopyTemporaryPassword}>
+                  <button className={`button button-primary ${copyFeedbackKey === 'temporary-password' ? 'is-copied' : ''}`} type="button" onClick={handleCopyTemporaryPassword}>
                     <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
                     Copy
                   </button>
