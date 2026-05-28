@@ -14,6 +14,9 @@
   --outline: #e7bdb8;
   --shadow: 0 18px 48px rgba(26, 28, 28, 0.1);
   --max: 1280px;
+  --control-height: 2.6rem;
+  --control-padding-y: 0.62rem;
+  --control-padding-x: 0.75rem;
 }
 
 * {
@@ -1455,10 +1458,17 @@ main {
   width: 100%;
   border: 1px solid var(--outline);
   border-radius: 0.72rem;
-  padding: 0.65rem 0.75rem;
+  padding: var(--control-padding-y) var(--control-padding-x);
+  line-height: 1.2;
   color: var(--text);
   background: var(--surface);
   font: inherit;
+}
+
+.booking-form-grid input,
+.booking-form-grid select {
+  height: var(--control-height);
+  min-height: var(--control-height);
 }
 
 .booking-date-statement {
@@ -1647,7 +1657,10 @@ main {
 
 .date-picker-section input[type="date"] {
   width: 100%;
-  padding: 0.75rem;
+  height: var(--control-height);
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  line-height: 1.2;
   border: 1px solid var(--outline);
   border-radius: 0.72rem;
   font-size: 1rem;
@@ -1766,7 +1779,10 @@ main {
 
 .mobile-date-picker-container input[type="date"] {
   width: 100%;
-  padding: 0.75rem;
+  height: var(--control-height);
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  line-height: 1.2;
   border: 1px solid var(--outline);
   border-radius: 0.72rem;
   font-size: 1rem;
@@ -2943,13 +2959,21 @@ main {
 .admin-table input,
 .admin-table select {
   width: 100%;
-  min-height: 2.45rem;
+  height: var(--control-height);
+  min-height: var(--control-height);
   border: 1px solid var(--outline);
   border-radius: 0.7rem;
-  padding: 0.6rem 0.75rem;
+  padding: var(--control-padding-y) var(--control-padding-x);
+  line-height: 1.2;
   color: var(--text);
   background: #ffffff;
   font: inherit;
+}
+
+.admin-form textarea,
+.admin-form-grid textarea {
+  height: auto;
+  min-height: 6.5rem;
 }
 
 .admin-search input {
@@ -3115,12 +3139,16 @@ main {
   min-height: 2.6rem;
 }
 
+.booking-body-draft-textarea {
+  min-height: 19rem;
+}
+
 .admin-draft-section {
-  padding: 1rem;
-  border: 1px solid rgba(186, 0, 19, 0.16);
-  border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(255, 248, 248, 0.9), #ffffff);
-  box-shadow: 0 14px 30px rgba(26, 28, 28, 0.05);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .admin-draft-section-heading {
@@ -3211,6 +3239,25 @@ main {
   border-bottom-color: #b2ccff;
 }
 
+.admin-vehicle-check-badge {
+  display: inline-flex;
+  margin-top: 0.3rem;
+  padding: 0.16rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-vehicle-check-badge.is-complete {
+  background: #def7e8;
+  border-color: #9ed7b6;
+  color: #0f5f31;
+}
+
 .admin-readonly-value {
   width: 100%;
   min-height: 2.45rem;
@@ -3225,6 +3272,42 @@ main {
   min-height: 4.8rem;
   align-items: flex-start;
   white-space: pre-wrap;
+}
+
+.admin-vehicle-checklist-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-vehicle-checklist-intro {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.admin-vehicle-checklist-intro h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.admin-vehicle-checklist-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.admin-vehicle-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-vehicle-checklist-grid .field-full {
+  grid-column: 1 / -1;
 }
 
 .admin-banner {
@@ -3267,6 +3350,55 @@ main {
 
 .admin-detail-header h2 {
   margin: 0;
+  font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+}
+
+.admin-detail-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.25rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow: inset 0 -1px 0 rgba(26, 28, 28, 0.06);
+  overflow-x: auto;
+}
+
+.admin-detail-tabs button {
+  min-height: 2.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 0.48rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-detail-tabs button.is-active {
+  background: #ffffff;
+  border-color: rgba(186, 0, 19, 0.24);
+  color: var(--primary);
+  box-shadow: 0 6px 14px rgba(26, 28, 28, 0.1);
+}
+
+.admin-detail-tabs button:hover {
+  color: var(--primary);
+  background: #fff7f5;
+}
+
+.admin-detail-meta-text {
+  margin: 0;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--outline);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 @media (max-width: 760px) {
@@ -3300,6 +3432,10 @@ main {
   }
 
   .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-vehicle-checklist-grid {
     grid-template-columns: 1fr;
   }
 

@@ -24,6 +24,26 @@ A way to see availability online and to request ad-hoc bookings.
 - A more detailed view on the bookings
 - Ability to add/edit/remove bookings
 - Part of an "admin" section of the site
+- Additional admin-only booking fields (not shown on public booking request form):
+    - Start mileage - number
+    - Finish mileage - number
+    - Non billable mileage - number
+    - Checklist: Lights & indicators - yes/no
+    - Checklist: Tyres - yes/no
+    - Checklist: Wheel nuts - yes/no
+    - Checklist: Bodywork - yes/no
+    - Checklist: Mirrors & glass - yes/no
+    - Checklist: Brakes - yes/no
+    - Checklist: Steering - yes/no
+    - Checklist: Wipers & washers - yes/no
+    - Checklist: Dashboard warning lights - yes/no
+    - Checklist: Seats & seatbelts - yes/no
+    - Checklist: Emergency equipment - yes/no
+    - Checklist: Wheelchair lifts & restraints - yes/no
+    - Checklist: Tail lifts - yes/no
+    - Vehicle check date - date (optional)
+    - Signed - text (optional)
+    - Faults recorded - long text (optional)
 
 ## Driver View
 - As admin view but read only

@@ -4,6 +4,20 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../bootstrap_api.php';
 
+function tri_state_to_nullable_int(mixed $value): ?int
+{
+    $normalized = strtolower(trim((string)$value));
+    if (in_array($normalized, ['1', 'true', 'yes', 'y', 'on'], true)) {
+        return 1;
+    }
+
+    if (in_array($normalized, ['0', 'false', 'no', 'n', 'off'], true)) {
+        return 0;
+    }
+
+    return null;
+}
+
 function bool_to_int(mixed $value): int
 {
     $normalized = strtolower(trim((string)$value));
@@ -47,6 +61,12 @@ $contactEmail = trim((string)($payload['contactEmail'] ?? ''));
 $contactNumber = trim((string)($payload['contactNumber'] ?? ''));
 $specialRequirements = trim((string)($payload['specialRequirements'] ?? ''));
 $adminNotes = trim((string)($payload['adminNotes'] ?? ''));
+$startMileageRaw = trim((string)($payload['startMileage'] ?? ''));
+$finishMileageRaw = trim((string)($payload['finishMileage'] ?? ''));
+$nonBillableMileageRaw = trim((string)($payload['nonBillableMileage'] ?? ''));
+$vehicleCheckDateRaw = trim((string)($payload['vehicleCheckDate'] ?? ''));
+$vehicleCheckSignedBy = trim((string)($payload['vehicleCheckSignedBy'] ?? ''));
+$vehicleFaultsRecorded = trim((string)($payload['vehicleFaultsRecorded'] ?? ''));
 $driverUserIdRaw = trim((string)($payload['driverUserId'] ?? ''));
 
 $allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
@@ -80,11 +100,32 @@ if ($driverUserIdRaw !== '' && !ctype_digit($driverUserIdRaw)) {
     $errors['driverUserId'] = 'Driver must be a valid user selection.';
 }
 
+$isValidMileage = static function (string $value): bool {
+    return preg_match('/^\d+(\.\d{1,2})?$/', $value) === 1;
+};
+
+if ($startMileageRaw !== '' && !$isValidMileage($startMileageRaw)) {
+    $errors['startMileage'] = 'Start mileage must be a valid number with up to 2 decimal places.';
+}
+if ($finishMileageRaw !== '' && !$isValidMileage($finishMileageRaw)) {
+    $errors['finishMileage'] = 'Finish mileage must be a valid number with up to 2 decimal places.';
+}
+if ($nonBillableMileageRaw !== '' && !$isValidMileage($nonBillableMileageRaw)) {
+    $errors['nonBillableMileage'] = 'Non billable mileage must be a valid number with up to 2 decimal places.';
+}
+if ($vehicleCheckDateRaw !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $vehicleCheckDateRaw) !== 1) {
+    $errors['vehicleCheckDate'] = 'Vehicle check date must be in YYYY-MM-DD format.';
+}
+
 if ($errors !== []) {
     fail_json(422, 'Validation failed.', $errors);
 }
 
 $driverUserId = $driverUserIdRaw !== '' ? (int)$driverUserIdRaw : null;
+$startMileage = $startMileageRaw !== '' ? (float)$startMileageRaw : null;
+$finishMileage = $finishMileageRaw !== '' ? (float)$finishMileageRaw : null;
+$nonBillableMileage = $nonBillableMileageRaw !== '' ? (float)$nonBillableMileageRaw : null;
+$vehicleCheckDate = $vehicleCheckDateRaw !== '' ? $vehicleCheckDateRaw : null;
 
 try {
     $pdo = db_connection();
@@ -124,7 +165,26 @@ try {
              static_wheelchairs = :static_wheelchairs,
              powered_wheelchairs = :powered_wheelchairs,
              passenger_transfers = :passenger_transfers,
-             special_requirements = :special_requirements' . $adminNotesUpdateSql . '
+             special_requirements = :special_requirements,
+             start_mileage = :start_mileage,
+             finish_mileage = :finish_mileage,
+             non_billable_mileage = :non_billable_mileage,
+             checklist_lights_indicators = :checklist_lights_indicators,
+             checklist_tyres = :checklist_tyres,
+             checklist_wheel_nuts = :checklist_wheel_nuts,
+             checklist_bodywork = :checklist_bodywork,
+             checklist_mirrors_glass = :checklist_mirrors_glass,
+             checklist_brakes = :checklist_brakes,
+             checklist_steering = :checklist_steering,
+             checklist_wipers_washers = :checklist_wipers_washers,
+             checklist_dashboard_warning_lights = :checklist_dashboard_warning_lights,
+             checklist_seats_seatbelts = :checklist_seats_seatbelts,
+             checklist_emergency_equipment = :checklist_emergency_equipment,
+             checklist_wheelchair_lifts_restraints = :checklist_wheelchair_lifts_restraints,
+             checklist_tail_lifts = :checklist_tail_lifts,
+             vehicle_check_date = :vehicle_check_date,
+             vehicle_check_signed_by = :vehicle_check_signed_by,
+             vehicle_faults_recorded = :vehicle_faults_recorded' . $adminNotesUpdateSql . '
          WHERE id = :id'
     );
 
@@ -144,6 +204,25 @@ try {
         ':powered_wheelchairs' => bool_to_int($payload['poweredWheelchairs'] ?? 0),
         ':passenger_transfers' => bool_to_int($payload['passengerTransfers'] ?? 0),
         ':special_requirements' => $specialRequirements !== '' ? $specialRequirements : null,
+        ':start_mileage' => $startMileage,
+        ':finish_mileage' => $finishMileage,
+        ':non_billable_mileage' => $nonBillableMileage,
+        ':checklist_lights_indicators' => tri_state_to_nullable_int($payload['checklistLightsIndicators'] ?? null),
+        ':checklist_tyres' => tri_state_to_nullable_int($payload['checklistTyres'] ?? null),
+        ':checklist_wheel_nuts' => tri_state_to_nullable_int($payload['checklistWheelNuts'] ?? null),
+        ':checklist_bodywork' => tri_state_to_nullable_int($payload['checklistBodywork'] ?? null),
+        ':checklist_mirrors_glass' => tri_state_to_nullable_int($payload['checklistMirrorsGlass'] ?? null),
+        ':checklist_brakes' => tri_state_to_nullable_int($payload['checklistBrakes'] ?? null),
+        ':checklist_steering' => tri_state_to_nullable_int($payload['checklistSteering'] ?? null),
+        ':checklist_wipers_washers' => tri_state_to_nullable_int($payload['checklistWipersWashers'] ?? null),
+        ':checklist_dashboard_warning_lights' => tri_state_to_nullable_int($payload['checklistDashboardWarningLights'] ?? null),
+        ':checklist_seats_seatbelts' => tri_state_to_nullable_int($payload['checklistSeatsSeatbelts'] ?? null),
+        ':checklist_emergency_equipment' => tri_state_to_nullable_int($payload['checklistEmergencyEquipment'] ?? null),
+        ':checklist_wheelchair_lifts_restraints' => tri_state_to_nullable_int($payload['checklistWheelchairLiftsRestraints'] ?? null),
+        ':checklist_tail_lifts' => tri_state_to_nullable_int($payload['checklistTailLifts'] ?? null),
+        ':vehicle_check_date' => $vehicleCheckDate,
+        ':vehicle_check_signed_by' => $vehicleCheckSignedBy !== '' ? $vehicleCheckSignedBy : null,
+        ':vehicle_faults_recorded' => $vehicleFaultsRecorded !== '' ? $vehicleFaultsRecorded : null,
         ':id' => $bookingId,
     ];
 
