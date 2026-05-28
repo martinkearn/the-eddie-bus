@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 250
+const DEFAULT_PAST_WEEKS = 4
+const DEFAULT_FUTURE_WEEKS = 8
 
 function deriveAdminApiBase(bookingApiEndpoint, explicitAdminApiBase) {
   const explicit = String(explicitAdminApiBase || '').trim()
@@ -118,9 +120,47 @@ function formatBookingDateAndTime(dateStr, timeStr) {
   return date || time || ''
 }
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+function formatDateWords(dateStr) {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr + 'T00:00:00Z')
+    const day = date.getUTCDate()
+    const month = MONTH_NAMES[date.getUTCMonth()]
+    const year = date.getUTCFullYear()
+    return `${day} ${month} ${year}`
+  } catch {
+    return dateStr
+  }
+}
+
 function formatDisplayText(value, fallback = 'Not provided') {
   const normalized = String(value ?? '').trim()
   return normalized || fallback
+}
+
+function formatDateForApi(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getBookingWindowDates(weeksInPast, weeksInFuture) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const fromDate = new Date(today)
+  fromDate.setDate(fromDate.getDate() - (weeksInPast * 7))
+
+  const toDate = new Date(today)
+  toDate.setDate(toDate.getDate() + (weeksInFuture * 7))
+
+  return {
+    from: formatDateForApi(fromDate),
+    to: formatDateForApi(toDate),
+  }
 }
 
 export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
@@ -139,10 +179,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [hasExecutedSearch, setHasExecutedSearch] = useState(false)
   const [searchError, setSearchError] = useState('')
+  const [pastWeeksVisible, setPastWeeksVisible] = useState(DEFAULT_PAST_WEEKS)
+  const [futureWeeksVisible, setFutureWeeksVisible] = useState(DEFAULT_FUTURE_WEEKS)
   const [bookingsLoading, setBookingsLoading] = useState(false)
   const [bookings, setBookings] = useState([])
-  const [nextOffset, setNextOffset] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
+  const [bookingWindowCounts, setBookingWindowCounts] = useState({ pastCount: 0, futureCount: 0 })
 
   const [selectedBookingId, setSelectedBookingId] = useState('')
   const [bookingForm, setBookingForm] = useState(null)
@@ -212,24 +253,30 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch])
 
-  const loadBookings = useCallback(async ({ reset = false, q = '', offset = 0 } = {}) => {
+  const loadBookings = useCallback(async ({ q = '', windowFrom = '', windowTo = '' } = {}) => {
     if (!user) return
 
     setBookingsLoading(true)
     try {
-      const queryOffset = reset ? 0 : Math.max(0, Number(offset) || 0)
+      const fallbackWindow = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
       const query = new URLSearchParams({
         limit: String(PAGE_SIZE),
-        offset: String(queryOffset),
       })
+      // Only send date window when not doing a text search
+      if (!q.trim()) {
+        query.set('from', windowFrom || fallbackWindow.from)
+        query.set('to', windowTo || fallbackWindow.to)
+      }
       if (q.trim()) {
         query.set('q', q.trim())
       }
 
       const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
-      setBookings((current) => (reset ? data.items : [...current, ...data.items]))
-      setNextOffset(data.pagination?.nextOffset || 0)
-      setHasMore(Boolean(data.pagination?.hasMore))
+      setBookings(data.items || [])
+      setBookingWindowCounts({
+        pastCount: data.window?.pastCount ?? 0,
+        futureCount: data.window?.futureCount ?? 0,
+      })
       setSearchError('')
     } catch (error) {
       const errorMessage = error.message || 'Could not load bookings.'
@@ -320,7 +367,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       return
     }
 
-    loadBookings({ reset: true, q: '' })
+    const window = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
+    loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
   }, [user, loadBookings])
 
   useEffect(() => {
@@ -362,18 +410,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     const pollBookings = async () => {
       try {
+        const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
         const query = new URLSearchParams({
           limit: String(PAGE_SIZE),
-          offset: '0',
+          from: window.from,
+          to: window.to,
         })
         const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
-        const newItems = data.items || []
-
-        setBookings((current) => {
-          const existingIds = new Set(current.map((b) => b.id))
-          const genuinelyNew = newItems.filter((b) => !existingIds.has(b.id))
-          return [...genuinelyNew, ...current]
-        })
+        setBookings(data.items || [])
       } catch {
         // Silently fail polling to avoid spamming errors
       }
@@ -384,7 +428,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [activeTab, searchTerm, user, apiFetch])
+  }, [activeTab, searchTerm, user, apiFetch, pastWeeksVisible, futureWeeksVisible])
 
   async function handleLoginSubmit(event) {
     event.preventDefault()
@@ -443,23 +487,49 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   async function handleSearchSubmit(event) {
     event.preventDefault()
     const trimmed = searchInput.trim()
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+
     setHasExecutedSearch(true)
     setSearchTerm(trimmed)
     setSelectedBookingId('')
     setBookingForm(null)
-    setNextOffset(0)
-    await loadBookings({ reset: true, q: trimmed })
+    await loadBookings({ q: trimmed, windowFrom: window.from, windowTo: window.to })
   }
 
   async function handleClearSearch() {
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+
     setSearchInput('')
     setSearchTerm('')
     setHasExecutedSearch(false)
     setSearchError('')
     setSelectedBookingId('')
     setBookingForm(null)
-    setNextOffset(0)
-    await loadBookings({ reset: true, q: '' })
+    await loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleShowMorePast() {
+    const nextPastWeeks = pastWeeksVisible + 8
+    const window = getBookingWindowDates(nextPastWeeks, futureWeeksVisible)
+
+    setPastWeeksVisible(nextPastWeeks)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleShowMoreFuture() {
+    const nextFutureWeeks = futureWeeksVisible + 8
+    const window = getBookingWindowDates(pastWeeksVisible, nextFutureWeeks)
+
+    setFutureWeeksVisible(nextFutureWeeks)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleResetWindow() {
+    const window = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
+
+    setPastWeeksVisible(DEFAULT_PAST_WEEKS)
+    setFutureWeeksVisible(DEFAULT_FUTURE_WEEKS)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
   }
 
   function handleBookingFieldChange(name, value) {
@@ -483,8 +553,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         body: JSON.stringify(bookingForm),
       })
 
+      const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
       setBanner({ type: 'success', message: 'Booking updated successfully.' })
-      await loadBookings({ reset: true, q: searchTerm })
+      await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
       await loadBookingDetail(bookingForm.id)
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not update booking.' })
@@ -736,6 +807,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           </div>
           <div className="admin-topbar-actions">
             <Link className="button button-quiet" href="/">Back To Main Site</Link>
+            <Link className="button button-quiet" href="/bookings/request">Create Booking</Link>
             <button className="button button-quiet" type="button" onClick={handleLogout}>Sign Out</button>
           </div>
         </header>
@@ -758,7 +830,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <div>
                 <h2>Bookings</h2>
               </div>
-              <Link className="button button-primary" href="/bookings/request">Create Booking</Link>
             </div>
 
             <form className="admin-search" onSubmit={handleSearchSubmit}>
@@ -767,9 +838,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 placeholder="Search all booking fields"
                 value={searchInput}
                 onChange={(event) => {
-                  setSearchInput(event.target.value)
+                  const nextValue = event.target.value
+                  setSearchInput(nextValue)
                   if (searchError) {
                     setSearchError('')
+                  }
+                  if (hasExecutedSearch && nextValue.trim() === '') {
+                    void handleClearSearch()
                   }
                 }}
               />
@@ -778,21 +853,38 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             {searchError && (
               <p className="admin-search-error" role="alert">{searchError}</p>
             )}
-            {hasExecutedSearch && searchTerm && (
-              <div className="admin-search-chip-row" aria-live="polite">
-                <p className="admin-search-chip">
-                  Showing results for: <strong>{searchTerm}</strong>
-                </p>
-                <button
-                  className="button button-quiet admin-search-reset"
-                  type="button"
-                  onClick={handleClearSearch}
-                  disabled={bookingsLoading}
-                >
-                  Clear search
-                </button>
+
+            <div className="admin-window-bar">
+              <span className="admin-window-label" aria-live="polite">
+                {hasExecutedSearch
+                  ? <>Showing {bookings.length} booking{bookings.length !== 1 ? 's' : ''} for: <strong>{searchTerm}</strong></>
+                  : (() => {
+                      const { from, to } = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+                      return `Showing ${bookings.length} booking${bookings.length !== 1 ? 's' : ''} between ${formatDateWords(from)} and ${formatDateWords(to)}`
+                    })()
+                }
+                {!hasExecutedSearch && (pastWeeksVisible !== DEFAULT_PAST_WEEKS || futureWeeksVisible !== DEFAULT_FUTURE_WEEKS) && (
+                  <button
+                    className="button button-quiet admin-window-reset"
+                    type="button"
+                    disabled={bookingsLoading}
+                    onClick={handleResetWindow}
+                  >
+                    Reset to default view
+                  </button>
+                )}
+              </span>
+                {hasExecutedSearch && (
+                  <button
+                    className="button button-quiet admin-search-reset"
+                    type="button"
+                    onClick={handleClearSearch}
+                    disabled={bookingsLoading}
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
-            )}
 
             <div className="admin-table-wrap">
               <table className="admin-table">
@@ -806,6 +898,23 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   </tr>
                 </thead>
                 <tbody>
+                  {!hasExecutedSearch && bookingWindowCounts.futureCount > 0 && (
+                    <tr className="admin-table-hint-row">
+                      <td colSpan={5}>
+                        <div className="admin-table-hint-content">
+                          <span>{bookingWindowCounts.futureCount} more future booking{bookingWindowCounts.futureCount !== 1 ? 's' : ''} not shown</span>
+                          <button
+                            className="button button-quiet admin-window-btn"
+                            type="button"
+                            disabled={bookingsLoading}
+                            onClick={handleShowMoreFuture}
+                          >
+                            Show more future bookings →
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {bookings.map((item) => (
                     <tr
                       key={item.id}
@@ -829,19 +938,25 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <td colSpan={5}>No bookings found.</td>
                     </tr>
                   )}
+                  {!hasExecutedSearch && bookingWindowCounts.pastCount > 0 && (
+                    <tr className="admin-table-hint-row">
+                      <td colSpan={5}>
+                        <div className="admin-table-hint-content">
+                          <span>{bookingWindowCounts.pastCount} more past booking{bookingWindowCounts.pastCount !== 1 ? 's' : ''} not shown</span>
+                          <button
+                            className="button button-quiet admin-window-btn"
+                            type="button"
+                            disabled={bookingsLoading}
+                            onClick={handleShowMorePast}
+                          >
+                            ← Show more past bookings
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-            </div>
-
-            <div className="admin-inline-actions">
-              <button
-                className="button button-quiet"
-                type="button"
-                disabled={bookingsLoading || !hasMore}
-                onClick={() => loadBookings({ reset: false, q: searchTerm, offset: nextOffset })}
-              >
-                {bookingsLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Bookings'}
-              </button>
             </div>
 
             <section className="admin-editor" aria-label="Booking details">

@@ -9,14 +9,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 }
 
 $q = trim((string)($_GET['q'] ?? ''));
-$limitRaw = trim((string)($_GET['limit'] ?? '25'));
-$offsetRaw = trim((string)($_GET['offset'] ?? '0'));
+$limitRaw = trim((string)($_GET['limit'] ?? '250'));
+$fromRaw = trim((string)($_GET['from'] ?? ''));
+$toRaw = trim((string)($_GET['to'] ?? ''));
 
-$limit = ctype_digit($limitRaw) ? (int)$limitRaw : 25;
-$offset = ctype_digit($offsetRaw) ? (int)$offsetRaw : 0;
+$limit = ctype_digit($limitRaw) ? (int)$limitRaw : 250;
+$limit = max(1, min(1000, $limit));
 
-$limit = max(1, min(100, $limit));
-$offset = max(0, $offset);
+$today = new DateTimeImmutable('today');
+$defaultFrom = $today->modify('-4 weeks')->format('Y-m-d');
+$defaultTo = $today->modify('+8 weeks')->format('Y-m-d');
+
+$fromDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fromRaw) ? $fromRaw : $defaultFrom;
+$toDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $toRaw) ? $toRaw : $defaultTo;
+
+if ($fromDate > $toDate) {
+    [$fromDate, $toDate] = [$toDate, $fromDate];
+}
 
 try {
     $pdo = db_connection();
@@ -29,8 +38,16 @@ try {
     ]);
     $hasAdminNotesColumn = ((int)$columnCheckStmt->fetchColumn()) > 0;
 
-    $whereClause = '';
+    $whereConditions = [];
     $params = [];
+
+    // Only apply date window when not doing a text search
+    if ($q === '') {
+        $whereConditions[] = 'bookings.booking_date >= :from_date';
+        $whereConditions[] = 'bookings.booking_date <= :to_date';
+        $params[':from_date'] = $fromDate;
+        $params[':to_date'] = $toDate;
+    }
 
     if ($q !== '') {
         $searchTerm = function_exists('mb_strtolower')
@@ -69,8 +86,10 @@ try {
             $params[$placeholder] = '%' . $searchTerm . '%';
         }
 
-        $whereClause = "\nWHERE (\n    " . implode("\n    OR ", $searchConditions) . "\n)";
+        $whereConditions[] = '(' . implode(' OR ', $searchConditions) . ')';
     }
+
+    $whereClause = "\nWHERE\n    " . implode("\n    AND ", $whereConditions);
 
     $adminNotesSelectSql = $hasAdminNotesColumn ? 'bookings.admin_notes' : 'NULL AS admin_notes';
 
@@ -102,7 +121,7 @@ try {
     . $whereClause
     . '
 ORDER BY bookings.booking_date DESC, bookings.pickup_time DESC, bookings.id DESC
-LIMIT :limit_plus OFFSET :offset';
+LIMIT :limit';
 
     $stmt = $pdo->prepare($sql);
 
@@ -110,8 +129,7 @@ LIMIT :limit_plus OFFSET :offset';
         $stmt->bindValue($key, $value, PDO::PARAM_STR);
     }
 
-    $stmt->bindValue(':limit_plus', $limit + 1, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     $rows = $stmt->fetchAll();
@@ -119,19 +137,28 @@ LIMIT :limit_plus OFFSET :offset';
         $rows = [];
     }
 
-    $hasMore = count($rows) > $limit;
-    if ($hasMore) {
-        array_pop($rows);
+    // Count bookings outside the window (only meaningful when a date window is active)
+    $pastCount = 0;
+    $futureCount = 0;
+    if ($q === '') {
+        $pastStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE booking_date < :from_date');
+        $pastStmt->execute([':from_date' => $fromDate]);
+        $pastCount = (int)$pastStmt->fetchColumn();
+
+        $futureStmt = $pdo->prepare('SELECT COUNT(*) FROM bookings WHERE booking_date > :to_date');
+        $futureStmt->execute([':to_date' => $toDate]);
+        $futureCount = (int)$futureStmt->fetchColumn();
     }
 
     respond_json(200, [
         'ok' => true,
         'items' => $rows,
-        'pagination' => [
+        'window' => [
+            'from' => $fromDate,
+            'to' => $toDate,
             'limit' => $limit,
-            'offset' => $offset,
-            'nextOffset' => $offset + count($rows),
-            'hasMore' => $hasMore,
+            'pastCount' => $pastCount,
+            'futureCount' => $futureCount,
         ],
     ]);
 } catch (Throwable $exception) {
