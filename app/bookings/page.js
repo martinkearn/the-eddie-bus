@@ -86,12 +86,12 @@ export default function BookingsPage() {
           <h2>Book in 3 steps</h2>
           <ol className="step-list booking-hero-step-list">
             <li>Check charges, eligibility and trip rules on this page.</li>
-            <li>Open the <Link href="/booking/request/">booking request page</Link> and submit your details.</li>
+            <li>Open the <Link href="/bookings/request">booking request page</Link> and submit your details.</li>
             <li>We confirm availability and contact you with next steps.</li>
           </ol>
         </div>
         <div className="page-intro-actions">
-          <Link className="button button-light" href="/booking/request/"><FontAwesomeIcon icon={faClipboardList} aria-hidden="true" />Start booking request</Link>
+          <Link className="button button-light" href="/bookings/request"><FontAwesomeIcon icon={faClipboardList} aria-hidden="true" />Start booking request</Link>
           <span>Fastest route: submit the form. You can also book by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" /> phone</Link>.</span>
         </div>
       </PageIntro>

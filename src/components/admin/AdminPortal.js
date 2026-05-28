@@ -712,7 +712,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <div>
                 <h2>Bookings</h2>
               </div>
-              <Link className="button button-primary" href="/booking/request/">Create Booking</Link>
+              <Link className="button button-primary" href="/bookings/request">Create Booking</Link>
             </div>
 
             <form className="admin-search" onSubmit={handleSearchSubmit}>
