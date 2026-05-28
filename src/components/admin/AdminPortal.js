@@ -2,6 +2,27 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowLeft,
+  faArrowRight,
+  faArrowUpRightFromSquare,
+  faCalendarCheck,
+  faCopy,
+  faFloppyDisk,
+  faKey,
+  faMagnifyingGlass,
+  faPlus,
+  faRotate,
+  faRightFromBracket,
+  faRightToBracket,
+  faRotateLeft,
+  faTrash,
+  faUsers,
+  faUser,
+  faUserPlus,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 
 const PAGE_SIZE = 250
 const DEFAULT_PAST_WEEKS = 4
@@ -326,23 +347,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const loadBookingDetail = useCallback(async (id) => {
     if (!id) return
 
-    if (String(selectedBookingId) === String(id)) {
-      setSelectedBookingId('')
-      setBookingForm(null)
-      return
-    }
-
+    setSelectedBookingId(String(id))
+    setBookingForm(null)
     setBookingDetailLoading(true)
     try {
       const data = await apiFetch(`/bookings/get.php?id=${encodeURIComponent(id)}`)
-      setSelectedBookingId(String(id))
       setBookingForm(mapBookingToForm(data.item))
     } catch (error) {
+      setSelectedBookingId('')
       setBanner({ type: 'error', message: error.message || 'Could not load booking details.' })
     } finally {
       setBookingDetailLoading(false)
     }
-  }, [apiFetch, selectedBookingId])
+  }, [apiFetch])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -457,7 +474,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
       setUser(data.user)
       setLoginForm({ username: '', password: '' })
-      setBanner({ type: 'success', message: 'Signed in successfully.' })
+      setBanner({ type: 'idle', message: '' })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Login failed.' })
     } finally {
@@ -530,6 +547,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setPastWeeksVisible(DEFAULT_PAST_WEEKS)
     setFutureWeeksVisible(DEFAULT_FUTURE_WEEKS)
     await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  function handleBackToBookingResults() {
+    setSelectedBookingId('')
+    setBookingForm(null)
+    setBookingDetailLoading(false)
   }
 
   function handleBookingFieldChange(name, value) {
@@ -780,6 +803,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               />
             </label>
             <button className="button button-primary" type="submit" disabled={loginLoading}>
+              <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
               {loginLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
@@ -806,9 +830,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             </div>
           </div>
           <div className="admin-topbar-actions">
-            <Link className="button button-quiet" href="/">Back To Main Site</Link>
-            <Link className="button button-quiet" href="/bookings/request">Create Booking</Link>
-            <button className="button button-quiet" type="button" onClick={handleLogout}>Sign Out</button>
+            <Link className="button button-quiet" href="/">
+              <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
+              Back To Main Site
+            </Link>
+            <Link className="button button-quiet" href="/bookings/request">
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Create Booking
+            </Link>
+            <button className="button button-quiet" type="button" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
+              Sign Out
+            </button>
           </div>
         </header>
 
@@ -817,11 +850,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         )}
 
         <nav className="admin-tabs" aria-label="Admin sections" role="tablist">
-          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>Bookings</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>
+            <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
+            Bookings
+          </button>
           {isAdmin && (
-            <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>Users</button>
+            <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>
+              <FontAwesomeIcon icon={faUsers} aria-hidden="true" />
+              Users
+            </button>
           )}
-          <button type="button" role="tab" aria-selected={activeTab === 'account'} className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>My Account</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'account'} className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>
+            <FontAwesomeIcon icon={faUser} aria-hidden="true" />
+            My Account
+          </button>
         </nav>
 
         {activeTab === 'bookings' && (
@@ -831,6 +873,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 <h2>Bookings</h2>
               </div>
             </div>
+
+            {!selectedBookingId && (
+              <>
 
             <form className="admin-search" onSubmit={handleSearchSubmit}>
               <input
@@ -848,7 +893,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   }
                 }}
               />
-              <button className="button button-primary" type="submit" disabled={bookingsLoading}>Search</button>
+              <button className="button button-primary" type="submit" disabled={bookingsLoading}>
+                <FontAwesomeIcon icon={faMagnifyingGlass} aria-hidden="true" />
+                Search
+              </button>
             </form>
             {searchError && (
               <p className="admin-search-error" role="alert">{searchError}</p>
@@ -870,6 +918,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     disabled={bookingsLoading}
                     onClick={handleResetWindow}
                   >
+                    <FontAwesomeIcon icon={faRotateLeft} aria-hidden="true" />
                     Reset to default view
                   </button>
                 )}
@@ -881,6 +930,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     onClick={handleClearSearch}
                     disabled={bookingsLoading}
                   >
+                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                     Clear search
                   </button>
                 )}
@@ -909,7 +959,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                             disabled={bookingsLoading}
                             onClick={handleShowMoreFuture}
                           >
-                            Show more future bookings →
+                            Show more future bookings
+                            <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
                           </button>
                         </div>
                       </td>
@@ -949,7 +1000,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                             disabled={bookingsLoading}
                             onClick={handleShowMorePast}
                           >
-                            ← Show more past bookings
+                            <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                            Show more past bookings
                           </button>
                         </div>
                       </td>
@@ -959,10 +1011,24 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               </table>
             </div>
 
-            <section className="admin-editor" aria-label="Booking details">
-              <h2>Booking Details</h2>
+              </>
+            )}
+
+            {selectedBookingId && (
+              <section className="admin-editor" aria-label="Booking details">
+                <div className="admin-detail-header">
+                  <button
+                    className="button button-quiet"
+                    type="button"
+                    onClick={handleBackToBookingResults}
+                  >
+                    <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                    Back to {hasExecutedSearch ? 'search results' : 'booking list'}
+                  </button>
+                  <h2>Booking Details</h2>
+                </div>
               {bookingDetailLoading && <p>Loading booking details...</p>}
-              {!bookingDetailLoading && !bookingForm && <p>Select a booking row to view details.</p>}
+              {!bookingDetailLoading && !bookingForm && <p>Could not load booking details.</p>}
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
@@ -1190,16 +1256,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   {isAdmin && (
                     <div className="field-full admin-inline-actions">
                       <button className="button button-primary" type="submit" disabled={bookingSaveLoading}>
+                        <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                         {bookingSaveLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                       <button className="button button-danger" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
+                        <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                         {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
                       </button>
                     </div>
                   )}
                 </form>
               )}
-            </section>
+              </section>
+            )}
           </section>
         )}
 
@@ -1215,6 +1284,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 type="button"
                 onClick={() => setShowCreateUserForm((current) => !current)}
               >
+                <FontAwesomeIcon icon={showCreateUserForm ? faXmark : faUserPlus} aria-hidden="true" />
                 {showCreateUserForm ? 'Close Create User' : 'Create User'}
               </button>
             </div>
@@ -1230,9 +1300,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 </p>
                 <div className="admin-inline-actions">
                   <button className="button button-primary" type="button" onClick={handleCopyTemporaryPassword}>
+                    <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
                     Copy
                   </button>
                   <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
+                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                     Close
                   </button>
                 </div>
@@ -1274,9 +1346,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <div className="field-full admin-inline-actions">
                     <button className="button button-primary" type="submit" disabled={newUserLoading}>
+                      <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
                       {newUserLoading ? 'Creating...' : 'Create User'}
                     </button>
                     <button className="button button-quiet" type="button" onClick={() => setShowCreateUserForm(false)}>
+                      <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                       Cancel
                     </button>
                   </div>
@@ -1330,12 +1404,15 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <td>
                           <div className="admin-inline-actions">
                             <button className="button button-quiet" type="button" onClick={() => handleUpdateUser(item.id)} disabled={userSaveLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                               {userSaveLoadingId === String(item.id) ? 'Saving...' : 'Save'}
                             </button>
                             <button className="button button-quiet" type="button" onClick={() => handleResetUserPassword(item.id)} disabled={userResetLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
                               {userResetLoadingId === String(item.id) ? 'Resetting...' : 'Reset Password'}
                             </button>
                             <button className="button button-danger" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={userDeleteLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                               {userDeleteLoadingId === String(item.id) ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
@@ -1383,6 +1460,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
               <div className="field-full admin-inline-actions">
                 <button className="button button-primary" type="submit" disabled={changePasswordLoading}>
+                  <FontAwesomeIcon icon={faKey} aria-hidden="true" />
                   {changePasswordLoading ? 'Updating...' : 'Update Password'}
                 </button>
               </div>

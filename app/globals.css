@@ -2863,6 +2863,9 @@ main {
   min-height: 2.5rem;
   border: 1px solid transparent;
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -3175,6 +3178,18 @@ main {
   border: 1px solid var(--outline);
   border-radius: 0.9rem;
   background: #fcfcfc;
+}
+
+.admin-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.admin-detail-header h2 {
+  margin: 0;
 }
 
 @media (max-width: 760px) {
