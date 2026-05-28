@@ -2,8 +2,31 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowLeft,
+  faArrowRight,
+  faArrowUpRightFromSquare,
+  faCalendarCheck,
+  faCopy,
+  faFloppyDisk,
+  faKey,
+  faMagnifyingGlass,
+  faPlus,
+  faRotate,
+  faRightFromBracket,
+  faRightToBracket,
+  faRotateLeft,
+  faTrash,
+  faUsers,
+  faUser,
+  faUserPlus,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 250
+const DEFAULT_PAST_WEEKS = 4
+const DEFAULT_FUTURE_WEEKS = 8
 
 function deriveAdminApiBase(bookingApiEndpoint, explicitAdminApiBase) {
   const explicit = String(explicitAdminApiBase || '').trim()
@@ -56,8 +79,6 @@ function mapBookingToForm(booking) {
     passengerTransfers: toBooleanFlag(booking.passenger_transfers),
     specialRequirements: String(booking.special_requirements || ''),
     adminNotes: String(booking.admin_notes || ''),
-    sourceIp: String(booking.source_ip || ''),
-    userAgent: String(booking.user_agent || ''),
     createdAt: formatDateTimeUK(booking.created_at),
     updatedAt: formatDateTimeUK(booking.updated_at),
   }
@@ -97,6 +118,72 @@ function formatDateTimeUK(dateTimeStr) {
   }
 }
 
+function formatPickupTime(timeStr) {
+  if (!timeStr) return ''
+
+  const normalized = String(timeStr)
+  const match = normalized.match(/^([01]\d|2[0-3]):([0-5]\d)/)
+  if (match) {
+    return `${match[1]}:${match[2]}`
+  }
+
+  return normalized
+}
+
+function formatBookingDateAndTime(dateStr, timeStr) {
+  const date = formatDateUK(dateStr)
+  const time = formatPickupTime(timeStr)
+
+  if (date && time) {
+    return `${date} ${time}`
+  }
+
+  return date || time || ''
+}
+
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+function formatDateWords(dateStr) {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr + 'T00:00:00Z')
+    const day = date.getUTCDate()
+    const month = MONTH_NAMES[date.getUTCMonth()]
+    const year = date.getUTCFullYear()
+    return `${day} ${month} ${year}`
+  } catch {
+    return dateStr
+  }
+}
+
+function formatDisplayText(value, fallback = 'Not provided') {
+  const normalized = String(value ?? '').trim()
+  return normalized || fallback
+}
+
+function formatDateForApi(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getBookingWindowDates(weeksInPast, weeksInFuture) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const fromDate = new Date(today)
+  fromDate.setDate(fromDate.getDate() - (weeksInPast * 7))
+
+  const toDate = new Date(today)
+  toDate.setDate(toDate.getDate() + (weeksInFuture * 7))
+
+  return {
+    from: formatDateForApi(fromDate),
+    to: formatDateForApi(toDate),
+  }
+}
+
 export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const baseUrl = useMemo(() => deriveAdminApiBase(bookingApiEndpoint, adminApiBase), [bookingApiEndpoint, adminApiBase])
   const [sessionToken, setSessionToken] = useState('')
@@ -111,10 +198,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [hasExecutedSearch, setHasExecutedSearch] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [pastWeeksVisible, setPastWeeksVisible] = useState(DEFAULT_PAST_WEEKS)
+  const [futureWeeksVisible, setFutureWeeksVisible] = useState(DEFAULT_FUTURE_WEEKS)
   const [bookingsLoading, setBookingsLoading] = useState(false)
   const [bookings, setBookings] = useState([])
-  const [nextOffset, setNextOffset] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
+  const [bookingWindowCounts, setBookingWindowCounts] = useState({ pastCount: 0, futureCount: 0 })
 
   const [selectedBookingId, setSelectedBookingId] = useState('')
   const [bookingForm, setBookingForm] = useState(null)
@@ -184,30 +274,42 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch])
 
-  const loadBookings = useCallback(async ({ reset = false, q = searchTerm } = {}) => {
+  const loadBookings = useCallback(async ({ q = '', windowFrom = '', windowTo = '' } = {}) => {
     if (!user) return
 
     setBookingsLoading(true)
     try {
-      const offset = reset ? 0 : nextOffset
+      const fallbackWindow = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
       const query = new URLSearchParams({
         limit: String(PAGE_SIZE),
-        offset: String(offset),
       })
+      // Only send date window when not doing a text search
+      if (!q.trim()) {
+        query.set('from', windowFrom || fallbackWindow.from)
+        query.set('to', windowTo || fallbackWindow.to)
+      }
       if (q.trim()) {
         query.set('q', q.trim())
       }
 
       const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
-      setBookings((current) => (reset ? data.items : [...current, ...data.items]))
-      setNextOffset(data.pagination?.nextOffset || 0)
-      setHasMore(Boolean(data.pagination?.hasMore))
+      setBookings(data.items || [])
+      setBookingWindowCounts({
+        pastCount: data.window?.pastCount ?? 0,
+        futureCount: data.window?.futureCount ?? 0,
+      })
+      setSearchError('')
     } catch (error) {
-      setBanner({ type: 'error', message: error.message || 'Could not load bookings.' })
+      const errorMessage = error.message || 'Could not load bookings.'
+      if (q.trim()) {
+        setSearchError(errorMessage)
+      } else {
+        setBanner({ type: 'error', message: errorMessage })
+      }
     } finally {
       setBookingsLoading(false)
     }
-  }, [apiFetch, nextOffset, searchTerm, user])
+  }, [apiFetch, user])
 
   const loadUsers = useCallback(async () => {
     if (!isAdmin) return
@@ -245,23 +347,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const loadBookingDetail = useCallback(async (id) => {
     if (!id) return
 
-    if (String(selectedBookingId) === String(id)) {
-      setSelectedBookingId('')
-      setBookingForm(null)
-      return
-    }
-
+    setSelectedBookingId(String(id))
+    setBookingForm(null)
     setBookingDetailLoading(true)
     try {
       const data = await apiFetch(`/bookings/get.php?id=${encodeURIComponent(id)}`)
-      setSelectedBookingId(String(id))
       setBookingForm(mapBookingToForm(data.item))
     } catch (error) {
+      setSelectedBookingId('')
       setBanner({ type: 'error', message: error.message || 'Could not load booking details.' })
     } finally {
       setBookingDetailLoading(false)
     }
-  }, [apiFetch, selectedBookingId])
+  }, [apiFetch])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -286,7 +384,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       return
     }
 
-    loadBookings({ reset: true, q: '' })
+    const window = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
+    loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
   }, [user, loadBookings])
 
   useEffect(() => {
@@ -328,18 +427,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     const pollBookings = async () => {
       try {
+        const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
         const query = new URLSearchParams({
           limit: String(PAGE_SIZE),
-          offset: '0',
+          from: window.from,
+          to: window.to,
         })
         const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
-        const newItems = data.items || []
-
-        setBookings((current) => {
-          const existingIds = new Set(current.map((b) => b.id))
-          const genuinelyNew = newItems.filter((b) => !existingIds.has(b.id))
-          return [...genuinelyNew, ...current]
-        })
+        setBookings(data.items || [])
       } catch {
         // Silently fail polling to avoid spamming errors
       }
@@ -350,7 +445,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [activeTab, searchTerm, user, apiFetch])
+  }, [activeTab, searchTerm, user, apiFetch, pastWeeksVisible, futureWeeksVisible])
 
   async function handleLoginSubmit(event) {
     event.preventDefault()
@@ -379,7 +474,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
       setUser(data.user)
       setLoginForm({ username: '', password: '' })
-      setBanner({ type: 'success', message: 'Signed in successfully.' })
+      setBanner({ type: 'idle', message: '' })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Login failed.' })
     } finally {
@@ -409,11 +504,55 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   async function handleSearchSubmit(event) {
     event.preventDefault()
     const trimmed = searchInput.trim()
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+
+    setHasExecutedSearch(true)
     setSearchTerm(trimmed)
     setSelectedBookingId('')
     setBookingForm(null)
-    setNextOffset(0)
-    await loadBookings({ reset: true, q: trimmed })
+    await loadBookings({ q: trimmed, windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleClearSearch() {
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+
+    setSearchInput('')
+    setSearchTerm('')
+    setHasExecutedSearch(false)
+    setSearchError('')
+    setSelectedBookingId('')
+    setBookingForm(null)
+    await loadBookings({ q: '', windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleShowMorePast() {
+    const nextPastWeeks = pastWeeksVisible + 8
+    const window = getBookingWindowDates(nextPastWeeks, futureWeeksVisible)
+
+    setPastWeeksVisible(nextPastWeeks)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleShowMoreFuture() {
+    const nextFutureWeeks = futureWeeksVisible + 8
+    const window = getBookingWindowDates(pastWeeksVisible, nextFutureWeeks)
+
+    setFutureWeeksVisible(nextFutureWeeks)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  async function handleResetWindow() {
+    const window = getBookingWindowDates(DEFAULT_PAST_WEEKS, DEFAULT_FUTURE_WEEKS)
+
+    setPastWeeksVisible(DEFAULT_PAST_WEEKS)
+    setFutureWeeksVisible(DEFAULT_FUTURE_WEEKS)
+    await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
+  }
+
+  function handleBackToBookingResults() {
+    setSelectedBookingId('')
+    setBookingForm(null)
+    setBookingDetailLoading(false)
   }
 
   function handleBookingFieldChange(name, value) {
@@ -437,8 +576,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         body: JSON.stringify(bookingForm),
       })
 
+      const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
       setBanner({ type: 'success', message: 'Booking updated successfully.' })
-      await loadBookings({ reset: true, q: searchTerm })
+      await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
       await loadBookingDetail(bookingForm.id)
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not update booking.' })
@@ -663,6 +803,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               />
             </label>
             <button className="button button-primary" type="submit" disabled={loginLoading}>
+              <FontAwesomeIcon icon={faRightToBracket} aria-hidden="true" />
               {loginLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
@@ -689,8 +830,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             </div>
           </div>
           <div className="admin-topbar-actions">
-            <Link className="button button-quiet" href="/">Back To Main Site</Link>
-            <button className="button button-quiet" type="button" onClick={handleLogout}>Sign Out</button>
+            <Link className="button button-quiet" href="/">
+              <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
+              Back To Main Site
+            </Link>
+            <Link className="button button-quiet" href="/bookings/request">
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Create Booking
+            </Link>
+            <button className="button button-quiet" type="button" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
+              Sign Out
+            </button>
           </div>
         </header>
 
@@ -699,11 +850,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         )}
 
         <nav className="admin-tabs" aria-label="Admin sections" role="tablist">
-          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>Bookings</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'bookings'} className={activeTab === 'bookings' ? 'is-active' : ''} onClick={() => setActiveTab('bookings')}>
+            <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
+            Bookings
+          </button>
           {isAdmin && (
-            <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>Users</button>
+            <button type="button" role="tab" aria-selected={activeTab === 'users'} className={activeTab === 'users' ? 'is-active' : ''} onClick={() => setActiveTab('users')}>
+              <FontAwesomeIcon icon={faUsers} aria-hidden="true" />
+              Users
+            </button>
           )}
-          <button type="button" role="tab" aria-selected={activeTab === 'account'} className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>My Account</button>
+          <button type="button" role="tab" aria-selected={activeTab === 'account'} className={activeTab === 'account' ? 'is-active' : ''} onClick={() => setActiveTab('account')}>
+            <FontAwesomeIcon icon={faUser} aria-hidden="true" />
+            My Account
+          </button>
         </nav>
 
         {activeTab === 'bookings' && (
@@ -712,281 +872,403 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <div>
                 <h2>Bookings</h2>
               </div>
-              <Link className="button button-primary" href="/bookings/request">Create Booking</Link>
             </div>
+
+            {!selectedBookingId && (
+              <>
 
             <form className="admin-search" onSubmit={handleSearchSubmit}>
               <input
                 type="search"
                 placeholder="Search all booking fields"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value
+                  setSearchInput(nextValue)
+                  if (searchError) {
+                    setSearchError('')
+                  }
+                  if (hasExecutedSearch && nextValue.trim() === '') {
+                    void handleClearSearch()
+                  }
+                }}
               />
-              <button className="button button-primary" type="submit" disabled={bookingsLoading}>Search</button>
+              <button className="button button-primary" type="submit" disabled={bookingsLoading}>
+                <FontAwesomeIcon icon={faMagnifyingGlass} aria-hidden="true" />
+                Search
+              </button>
             </form>
+            {searchError && (
+              <p className="admin-search-error" role="alert">{searchError}</p>
+            )}
+
+            <div className="admin-window-bar">
+              <span className="admin-window-label" aria-live="polite">
+                {hasExecutedSearch
+                  ? <>Showing {bookings.length} booking{bookings.length !== 1 ? 's' : ''} for: <strong>{searchTerm}</strong></>
+                  : (() => {
+                      const { from, to } = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+                      return `Showing ${bookings.length} booking${bookings.length !== 1 ? 's' : ''} between ${formatDateWords(from)} and ${formatDateWords(to)}`
+                    })()
+                }
+                {!hasExecutedSearch && (pastWeeksVisible !== DEFAULT_PAST_WEEKS || futureWeeksVisible !== DEFAULT_FUTURE_WEEKS) && (
+                  <button
+                    className="button button-quiet admin-window-reset"
+                    type="button"
+                    disabled={bookingsLoading}
+                    onClick={handleResetWindow}
+                  >
+                    <FontAwesomeIcon icon={faRotateLeft} aria-hidden="true" />
+                    Reset to default view
+                  </button>
+                )}
+              </span>
+                {hasExecutedSearch && (
+                  <button
+                    className="button button-quiet admin-search-reset"
+                    type="button"
+                    onClick={handleClearSearch}
+                    disabled={bookingsLoading}
+                  >
+                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                    Clear search
+                  </button>
+                )}
+              </div>
 
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Booking Ref</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Driver</th>
+                    <th>Date / Pickup time</th>
                     <th>Organisation</th>
                     <th>Destination</th>
+                    <th>Driver</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {!hasExecutedSearch && bookingWindowCounts.futureCount > 0 && (
+                    <tr className="admin-table-hint-row">
+                      <td colSpan={5}>
+                        <div className="admin-table-hint-content">
+                          <span>{bookingWindowCounts.futureCount} more future booking{bookingWindowCounts.futureCount !== 1 ? 's' : ''} not shown</span>
+                          <button
+                            className="button button-quiet admin-window-btn"
+                            type="button"
+                            disabled={bookingsLoading}
+                            onClick={handleShowMoreFuture}
+                          >
+                            Show more future bookings
+                            <FontAwesomeIcon icon={faArrowRight} aria-hidden="true" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {bookings.map((item) => (
                     <tr
                       key={item.id}
-                      className={String(selectedBookingId) === String(item.id) ? 'is-selected' : ''}
+                      className={[
+                        String(selectedBookingId) === String(item.id) ? 'is-selected' : '',
+                        item.driver_username ? '' : 'is-missing-driver',
+                      ].filter(Boolean).join(' ')}
                       onClick={() => loadBookingDetail(item.id)}
                     >
-                      <td>{item.booking_ref}</td>
-                      <td>{formatDateUK(item.booking_date)}</td>
-                      <td>{item.status}</td>
-                      <td>{item.driver_username || 'Unassigned'}</td>
+                      <td>{formatBookingDateAndTime(item.booking_date, item.pickup_time)}</td>
                       <td>{item.organisation}</td>
                       <td>{item.destination_name}</td>
+                      <td>
+                        {item.driver_username ? item.driver_username : <strong>Unassigned</strong>}
+                      </td>
+                      <td>{item.status}</td>
                     </tr>
                   ))}
                   {!bookingsLoading && bookings.length === 0 && (
                     <tr>
-                      <td colSpan={6}>No bookings found.</td>
+                      <td colSpan={5}>No bookings found.</td>
+                    </tr>
+                  )}
+                  {!hasExecutedSearch && bookingWindowCounts.pastCount > 0 && (
+                    <tr className="admin-table-hint-row">
+                      <td colSpan={5}>
+                        <div className="admin-table-hint-content">
+                          <span>{bookingWindowCounts.pastCount} more past booking{bookingWindowCounts.pastCount !== 1 ? 's' : ''} not shown</span>
+                          <button
+                            className="button button-quiet admin-window-btn"
+                            type="button"
+                            disabled={bookingsLoading}
+                            onClick={handleShowMorePast}
+                          >
+                            <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                            Show more past bookings
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
 
-            <div className="admin-inline-actions">
-              <button
-                className="button button-quiet"
-                type="button"
-                disabled={bookingsLoading || !hasMore}
-                onClick={() => loadBookings({ reset: false, q: searchTerm })}
-              >
-                {bookingsLoading ? 'Loading...' : hasMore ? 'Load More' : 'No More Bookings'}
-              </button>
-            </div>
+              </>
+            )}
 
-            <section className="admin-editor" aria-label="Booking details">
-              <h2>Booking Details</h2>
+            {selectedBookingId && (
+              <section className="admin-editor" aria-label="Booking details">
+                <div className="admin-detail-header">
+                  <button
+                    className="button button-quiet"
+                    type="button"
+                    onClick={handleBackToBookingResults}
+                  >
+                    <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                    Back to {hasExecutedSearch ? 'search results' : 'booking list'}
+                  </button>
+                  <h2>Booking Details</h2>
+                </div>
               {bookingDetailLoading && <p>Loading booking details...</p>}
-              {!bookingDetailLoading && !bookingForm && <p>Select a booking row to view details.</p>}
+              {!bookingDetailLoading && !bookingForm && <p>Could not load booking details.</p>}
               {!bookingDetailLoading && bookingForm && (
-                <form className="admin-form-grid" onSubmit={handleBookingSave}>
-                  <label>
-                    <span>Booking reference</span>
-                    <input
-                      value={bookingForm.bookingRef}
-                      onChange={(event) => handleBookingFieldChange('bookingRef', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
-                  </label>
+                <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
                   <label>
                     <span>Status</span>
-                    <select
-                      value={bookingForm.status}
-                      onChange={(event) => handleBookingFieldChange('status', event.target.value)}
-                      disabled={!isAdmin}
-                    >
-                      <option value="pending">pending</option>
-                      <option value="confirmed">confirmed</option>
-                      <option value="cancelled">cancelled</option>
-                      <option value="completed">completed</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.status}
+                        onChange={(event) => handleBookingFieldChange('status', event.target.value)}
+                      >
+                        <option value="pending">pending</option>
+                        <option value="confirmed">confirmed</option>
+                        <option value="cancelled">cancelled</option>
+                        <option value="completed">completed</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.status, 'pending')}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Driver</span>
-                    <select
-                      value={bookingForm.driverUserId}
-                      onChange={(event) => handleBookingFieldChange('driverUserId', event.target.value)}
-                      disabled={!isAdmin}
-                    >
-                      <option value="">Unassigned</option>
-                      {assignableUsers.map((item) => (
-                        <option key={item.id} value={String(item.id)}>{item.username}</option>
-                      ))}
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.driverUserId}
+                        onChange={(event) => handleBookingFieldChange('driverUserId', event.target.value)}
+                      >
+                        <option value="">Unassigned</option>
+                        {assignableUsers.map((item) => (
+                          <option key={item.id} value={String(item.id)}>{item.username}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.driverUsername, 'Unassigned')}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Booking date</span>
-                    <input
-                      type="date"
-                      value={bookingForm.bookingDate}
-                      onChange={(event) => handleBookingFieldChange('bookingDate', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="date"
+                        value={bookingForm.bookingDate}
+                        onChange={(event) => handleBookingFieldChange('bookingDate', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatDateUK(bookingForm.bookingDate))}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Pickup time</span>
-                    <input
-                      type="time"
-                      value={bookingForm.pickupTime}
-                      onChange={(event) => handleBookingFieldChange('pickupTime', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="time"
+                        value={bookingForm.pickupTime}
+                        onChange={(event) => handleBookingFieldChange('pickupTime', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatPickupTime(bookingForm.pickupTime))}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Organisation</span>
-                    <input
-                      value={bookingForm.organisation}
-                      onChange={(event) => handleBookingFieldChange('organisation', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.organisation}
+                        onChange={(event) => handleBookingFieldChange('organisation', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.organisation)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Destination</span>
-                    <input
-                      value={bookingForm.destinationName}
-                      onChange={(event) => handleBookingFieldChange('destinationName', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.destinationName}
+                        onChange={(event) => handleBookingFieldChange('destinationName', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.destinationName)}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Destination address</span>
-                    <input
-                      value={bookingForm.destinationAddress}
-                      onChange={(event) => handleBookingFieldChange('destinationAddress', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.destinationAddress}
+                        onChange={(event) => handleBookingFieldChange('destinationAddress', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.destinationAddress)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact name</span>
-                    <input
-                      value={bookingForm.contactName}
-                      onChange={(event) => handleBookingFieldChange('contactName', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.contactName}
+                        onChange={(event) => handleBookingFieldChange('contactName', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactName)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact email</span>
-                    <input
-                      type="email"
-                      value={bookingForm.contactEmail}
-                      onChange={(event) => handleBookingFieldChange('contactEmail', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="email"
+                        value={bookingForm.contactEmail}
+                        onChange={(event) => handleBookingFieldChange('contactEmail', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactEmail)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact number</span>
-                    <input
-                      value={bookingForm.contactNumber}
-                      onChange={(event) => handleBookingFieldChange('contactNumber', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.contactNumber}
+                        onChange={(event) => handleBookingFieldChange('contactNumber', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactNumber)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Static wheelchairs</span>
-                    <select
-                      value={bookingForm.staticWheelchairs ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('staticWheelchairs', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.staticWheelchairs ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('staticWheelchairs', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.staticWheelchairs ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Powered wheelchairs</span>
-                    <select
-                      value={bookingForm.poweredWheelchairs ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('poweredWheelchairs', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.poweredWheelchairs ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('poweredWheelchairs', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.poweredWheelchairs ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Passenger transfers</span>
-                    <select
-                      value={bookingForm.passengerTransfers ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('passengerTransfers', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.passengerTransfers ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('passengerTransfers', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.passengerTransfers ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Special requirements</span>
-                    <textarea
-                      rows={4}
-                      value={bookingForm.specialRequirements}
-                      onChange={(event) => handleBookingFieldChange('specialRequirements', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <textarea
+                        rows={4}
+                        value={bookingForm.specialRequirements}
+                        onChange={(event) => handleBookingFieldChange('specialRequirements', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value admin-readonly-value-multiline">{formatDisplayText(bookingForm.specialRequirements)}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Admin Notes</span>
                     <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Internal notes only shown to admin portal users</small>
-                    <textarea
-                      rows={4}
-                      value={bookingForm.adminNotes}
-                      onChange={(event) => handleBookingFieldChange('adminNotes', event.target.value)}
-                      disabled={!isAdmin}
-                    />
-                  </label>
-
-                  <label className="field-full">
-                    <span>Source IP</span>
-                    <input value={bookingForm.sourceIp} disabled />
-                  </label>
-
-                  <label className="field-full">
-                    <span>User agent</span>
-                    <textarea value={bookingForm.userAgent} rows={2} disabled />
+                    {isAdmin ? (
+                      <textarea
+                        rows={4}
+                        value={bookingForm.adminNotes}
+                        onChange={(event) => handleBookingFieldChange('adminNotes', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value admin-readonly-value-multiline">{formatDisplayText(bookingForm.adminNotes)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Created at</span>
-                    <input value={bookingForm.createdAt} disabled />
+                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.createdAt)}</div>
                   </label>
 
                   <label>
                     <span>Updated at</span>
-                    <input value={bookingForm.updatedAt} disabled />
+                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.updatedAt)}</div>
                   </label>
 
                   {isAdmin && (
                     <div className="field-full admin-inline-actions">
                       <button className="button button-primary" type="submit" disabled={bookingSaveLoading}>
+                        <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                         {bookingSaveLoading ? 'Saving...' : 'Save Changes'}
                       </button>
                       <button className="button button-danger" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
+                        <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                         {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
                       </button>
                     </div>
                   )}
                 </form>
               )}
-            </section>
+              </section>
+            )}
           </section>
         )}
 
@@ -1002,6 +1284,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 type="button"
                 onClick={() => setShowCreateUserForm((current) => !current)}
               >
+                <FontAwesomeIcon icon={showCreateUserForm ? faXmark : faUserPlus} aria-hidden="true" />
                 {showCreateUserForm ? 'Close Create User' : 'Create User'}
               </button>
             </div>
@@ -1017,9 +1300,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 </p>
                 <div className="admin-inline-actions">
                   <button className="button button-primary" type="button" onClick={handleCopyTemporaryPassword}>
+                    <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
                     Copy
                   </button>
                   <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
+                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                     Close
                   </button>
                 </div>
@@ -1061,9 +1346,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <div className="field-full admin-inline-actions">
                     <button className="button button-primary" type="submit" disabled={newUserLoading}>
+                      <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
                       {newUserLoading ? 'Creating...' : 'Create User'}
                     </button>
                     <button className="button button-quiet" type="button" onClick={() => setShowCreateUserForm(false)}>
+                      <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
                       Cancel
                     </button>
                   </div>
@@ -1117,12 +1404,15 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <td>
                           <div className="admin-inline-actions">
                             <button className="button button-quiet" type="button" onClick={() => handleUpdateUser(item.id)} disabled={userSaveLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                               {userSaveLoadingId === String(item.id) ? 'Saving...' : 'Save'}
                             </button>
                             <button className="button button-quiet" type="button" onClick={() => handleResetUserPassword(item.id)} disabled={userResetLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
                               {userResetLoadingId === String(item.id) ? 'Resetting...' : 'Reset Password'}
                             </button>
                             <button className="button button-danger" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={userDeleteLoadingId === String(item.id)}>
+                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                               {userDeleteLoadingId === String(item.id) ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
@@ -1170,6 +1460,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
               <div className="field-full admin-inline-actions">
                 <button className="button button-primary" type="submit" disabled={changePasswordLoading}>
+                  <FontAwesomeIcon icon={faKey} aria-hidden="true" />
                   {changePasswordLoading ? 'Updating...' : 'Update Password'}
                 </button>
               </div>

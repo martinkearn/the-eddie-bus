@@ -2823,6 +2823,21 @@ main {
   justify-content: flex-end;
 }
 
+.admin-topbar-actions .button-quiet {
+  background: transparent;
+  border-color: var(--outline);
+  color: color-mix(in srgb, var(--secondary) 78%, var(--text) 22%);
+  box-shadow: none;
+  font-weight: 600;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+}
+
+.admin-topbar-actions .button-quiet:hover {
+  background: var(--surface-soft);
+  border-color: color-mix(in srgb, var(--secondary-soft) 70%, var(--outline) 30%);
+}
+
 .admin-eyebrow {
   margin-bottom: 0.35rem;
   font-size: 0.78rem;
@@ -2848,6 +2863,9 @@ main {
   min-height: 2.5rem;
   border: 1px solid transparent;
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   background: transparent;
   color: var(--text);
   font: inherit;
@@ -2901,6 +2919,114 @@ main {
 .admin-search input {
   flex: 1;
   min-width: 220px;
+}
+
+.admin-search-error {
+  margin: -0.25rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid #ffb4ab;
+  background: #ffdad6;
+  color: #93000d;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.admin-search-chip {
+  margin: -0.1rem 0 0;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #c8dcff;
+  border-radius: 999px;
+  background: #f2f7ff;
+  color: #153c8a;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.admin-search-chip-row {
+  margin-top: -0.05rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.admin-search-reset {
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+}
+
+.admin-window-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.7rem;
+  background: var(--surface-soft);
+}
+
+.admin-window-bar-bottom {
+  justify-content: flex-start;
+}
+
+.admin-table-hint-row td {
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-style: italic;
+  text-align: left;
+  cursor: default;
+  border-bottom-color: var(--outline);
+  width: 100%;
+}
+
+.admin-table-hint-row {
+  cursor: default;
+}
+
+.admin-table-hint-content {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-window-label {
+  flex: 1;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: normal;
+}
+
+.admin-window-btn {
+  min-height: 2rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.admin-window-reset {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  margin-left: 0.6rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  vertical-align: middle;
 }
 
 .admin-form,
@@ -2985,11 +3111,43 @@ main {
 }
 
 .admin-table tbody tr.is-selected {
-  background: #e7f8ee;
+  background: #e8f1ff;
 }
 
 .admin-table tbody tr.is-selected td {
-  border-bottom-color: #b7e6cc;
+  border-bottom-color: #b9d1ff;
+}
+
+.admin-table tbody tr.is-missing-driver {
+  background: #fff1ef;
+}
+
+.admin-table tbody tr.is-missing-driver:hover {
+  background: #ffe4e0;
+}
+
+.admin-table tbody tr.is-selected.is-missing-driver {
+  background: #dbe9ff;
+}
+
+.admin-table tbody tr.is-selected.is-missing-driver td {
+  border-bottom-color: #b2ccff;
+}
+
+.admin-readonly-value {
+  width: 100%;
+  min-height: 2.45rem;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.admin-readonly-value-multiline {
+  min-height: 4.8rem;
+  align-items: flex-start;
+  white-space: pre-wrap;
 }
 
 .admin-banner {
@@ -3020,6 +3178,18 @@ main {
   border: 1px solid var(--outline);
   border-radius: 0.9rem;
   background: #fcfcfc;
+}
+
+.admin-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.admin-detail-header h2 {
+  margin: 0;
 }
 
 @media (max-width: 760px) {
