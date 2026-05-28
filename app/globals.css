@@ -2992,6 +2992,38 @@ main {
   border-bottom-color: #b7e6cc;
 }
 
+.admin-table tbody tr.is-missing-driver {
+  background: #fff1ef;
+}
+
+.admin-table tbody tr.is-missing-driver:hover {
+  background: #ffe4e0;
+}
+
+.admin-table tbody tr.is-selected.is-missing-driver {
+  background: #ffdcd6;
+}
+
+.admin-table tbody tr.is-selected.is-missing-driver td {
+  border-bottom-color: #f2b6ab;
+}
+
+.admin-readonly-value {
+  width: 100%;
+  min-height: 2.45rem;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.admin-readonly-value-multiline {
+  min-height: 4.8rem;
+  align-items: flex-start;
+  white-space: pre-wrap;
+}
+
 .admin-banner {
   margin: 0;
   padding: 0.75rem 0.9rem;

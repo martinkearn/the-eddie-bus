@@ -56,8 +56,6 @@ function mapBookingToForm(booking) {
     passengerTransfers: toBooleanFlag(booking.passenger_transfers),
     specialRequirements: String(booking.special_requirements || ''),
     adminNotes: String(booking.admin_notes || ''),
-    sourceIp: String(booking.source_ip || ''),
-    userAgent: String(booking.user_agent || ''),
     createdAt: formatDateTimeUK(booking.created_at),
     updatedAt: formatDateTimeUK(booking.updated_at),
   }
@@ -95,6 +93,34 @@ function formatDateTimeUK(dateTimeStr) {
   } catch {
     return String(dateTimeStr)
   }
+}
+
+function formatPickupTime(timeStr) {
+  if (!timeStr) return ''
+
+  const normalized = String(timeStr)
+  const match = normalized.match(/^([01]\d|2[0-3]):([0-5]\d)/)
+  if (match) {
+    return `${match[1]}:${match[2]}`
+  }
+
+  return normalized
+}
+
+function formatBookingDateAndTime(dateStr, timeStr) {
+  const date = formatDateUK(dateStr)
+  const time = formatPickupTime(timeStr)
+
+  if (date && time) {
+    return `${date} ${time}`
+  }
+
+  return date || time || ''
+}
+
+function formatDisplayText(value, fallback = 'Not provided') {
+  const normalized = String(value ?? '').trim()
+  return normalized || fallback
 }
 
 export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
@@ -729,32 +755,35 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Booking Ref</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Driver</th>
+                    <th>Date / Pickup time</th>
                     <th>Organisation</th>
                     <th>Destination</th>
+                    <th>Driver</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bookings.map((item) => (
                     <tr
                       key={item.id}
-                      className={String(selectedBookingId) === String(item.id) ? 'is-selected' : ''}
+                      className={[
+                        String(selectedBookingId) === String(item.id) ? 'is-selected' : '',
+                        item.driver_username ? '' : 'is-missing-driver',
+                      ].filter(Boolean).join(' ')}
                       onClick={() => loadBookingDetail(item.id)}
                     >
-                      <td>{item.booking_ref}</td>
-                      <td>{formatDateUK(item.booking_date)}</td>
-                      <td>{item.status}</td>
-                      <td>{item.driver_username || 'Unassigned'}</td>
+                      <td>{formatBookingDateAndTime(item.booking_date, item.pickup_time)}</td>
                       <td>{item.organisation}</td>
                       <td>{item.destination_name}</td>
+                      <td>
+                        {item.driver_username ? item.driver_username : <strong>Unassigned</strong>}
+                      </td>
+                      <td>{item.status}</td>
                     </tr>
                   ))}
                   {!bookingsLoading && bookings.length === 0 && (
                     <tr>
-                      <td colSpan={6}>No bookings found.</td>
+                      <td colSpan={5}>No bookings found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -777,201 +806,227 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               {bookingDetailLoading && <p>Loading booking details...</p>}
               {!bookingDetailLoading && !bookingForm && <p>Select a booking row to view details.</p>}
               {!bookingDetailLoading && bookingForm && (
-                <form className="admin-form-grid" onSubmit={handleBookingSave}>
-                  <label>
-                    <span>Booking reference</span>
-                    <input
-                      value={bookingForm.bookingRef}
-                      onChange={(event) => handleBookingFieldChange('bookingRef', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
-                  </label>
+                <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
                   <label>
                     <span>Status</span>
-                    <select
-                      value={bookingForm.status}
-                      onChange={(event) => handleBookingFieldChange('status', event.target.value)}
-                      disabled={!isAdmin}
-                    >
-                      <option value="pending">pending</option>
-                      <option value="confirmed">confirmed</option>
-                      <option value="cancelled">cancelled</option>
-                      <option value="completed">completed</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.status}
+                        onChange={(event) => handleBookingFieldChange('status', event.target.value)}
+                      >
+                        <option value="pending">pending</option>
+                        <option value="confirmed">confirmed</option>
+                        <option value="cancelled">cancelled</option>
+                        <option value="completed">completed</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.status, 'pending')}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Driver</span>
-                    <select
-                      value={bookingForm.driverUserId}
-                      onChange={(event) => handleBookingFieldChange('driverUserId', event.target.value)}
-                      disabled={!isAdmin}
-                    >
-                      <option value="">Unassigned</option>
-                      {assignableUsers.map((item) => (
-                        <option key={item.id} value={String(item.id)}>{item.username}</option>
-                      ))}
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.driverUserId}
+                        onChange={(event) => handleBookingFieldChange('driverUserId', event.target.value)}
+                      >
+                        <option value="">Unassigned</option>
+                        {assignableUsers.map((item) => (
+                          <option key={item.id} value={String(item.id)}>{item.username}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.driverUsername, 'Unassigned')}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Booking date</span>
-                    <input
-                      type="date"
-                      value={bookingForm.bookingDate}
-                      onChange={(event) => handleBookingFieldChange('bookingDate', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="date"
+                        value={bookingForm.bookingDate}
+                        onChange={(event) => handleBookingFieldChange('bookingDate', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatDateUK(bookingForm.bookingDate))}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Pickup time</span>
-                    <input
-                      type="time"
-                      value={bookingForm.pickupTime}
-                      onChange={(event) => handleBookingFieldChange('pickupTime', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="time"
+                        value={bookingForm.pickupTime}
+                        onChange={(event) => handleBookingFieldChange('pickupTime', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatPickupTime(bookingForm.pickupTime))}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Organisation</span>
-                    <input
-                      value={bookingForm.organisation}
-                      onChange={(event) => handleBookingFieldChange('organisation', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.organisation}
+                        onChange={(event) => handleBookingFieldChange('organisation', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.organisation)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Destination</span>
-                    <input
-                      value={bookingForm.destinationName}
-                      onChange={(event) => handleBookingFieldChange('destinationName', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.destinationName}
+                        onChange={(event) => handleBookingFieldChange('destinationName', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.destinationName)}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Destination address</span>
-                    <input
-                      value={bookingForm.destinationAddress}
-                      onChange={(event) => handleBookingFieldChange('destinationAddress', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.destinationAddress}
+                        onChange={(event) => handleBookingFieldChange('destinationAddress', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.destinationAddress)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact name</span>
-                    <input
-                      value={bookingForm.contactName}
-                      onChange={(event) => handleBookingFieldChange('contactName', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.contactName}
+                        onChange={(event) => handleBookingFieldChange('contactName', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactName)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact email</span>
-                    <input
-                      type="email"
-                      value={bookingForm.contactEmail}
-                      onChange={(event) => handleBookingFieldChange('contactEmail', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        type="email"
+                        value={bookingForm.contactEmail}
+                        onChange={(event) => handleBookingFieldChange('contactEmail', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactEmail)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Contact number</span>
-                    <input
-                      value={bookingForm.contactNumber}
-                      onChange={(event) => handleBookingFieldChange('contactNumber', event.target.value)}
-                      disabled={!isAdmin}
-                      required
-                    />
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.contactNumber}
+                        onChange={(event) => handleBookingFieldChange('contactNumber', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactNumber)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Static wheelchairs</span>
-                    <select
-                      value={bookingForm.staticWheelchairs ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('staticWheelchairs', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.staticWheelchairs ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('staticWheelchairs', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.staticWheelchairs ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Powered wheelchairs</span>
-                    <select
-                      value={bookingForm.poweredWheelchairs ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('poweredWheelchairs', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.poweredWheelchairs ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('poweredWheelchairs', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.poweredWheelchairs ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Passenger transfers</span>
-                    <select
-                      value={bookingForm.passengerTransfers ? 'yes' : 'no'}
-                      onChange={(event) => handleBookingFieldChange('passengerTransfers', event.target.value === 'yes')}
-                      disabled={!isAdmin}
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.passengerTransfers ? 'yes' : 'no'}
+                        onChange={(event) => handleBookingFieldChange('passengerTransfers', event.target.value === 'yes')}
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{bookingForm.passengerTransfers ? 'Yes' : 'No'}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Special requirements</span>
-                    <textarea
-                      rows={4}
-                      value={bookingForm.specialRequirements}
-                      onChange={(event) => handleBookingFieldChange('specialRequirements', event.target.value)}
-                      disabled={!isAdmin}
-                    />
+                    {isAdmin ? (
+                      <textarea
+                        rows={4}
+                        value={bookingForm.specialRequirements}
+                        onChange={(event) => handleBookingFieldChange('specialRequirements', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value admin-readonly-value-multiline">{formatDisplayText(bookingForm.specialRequirements)}</div>
+                    )}
                   </label>
 
                   <label className="field-full">
                     <span>Admin Notes</span>
                     <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Internal notes only shown to admin portal users</small>
-                    <textarea
-                      rows={4}
-                      value={bookingForm.adminNotes}
-                      onChange={(event) => handleBookingFieldChange('adminNotes', event.target.value)}
-                      disabled={!isAdmin}
-                    />
-                  </label>
-
-                  <label className="field-full">
-                    <span>Source IP</span>
-                    <input value={bookingForm.sourceIp} disabled />
-                  </label>
-
-                  <label className="field-full">
-                    <span>User agent</span>
-                    <textarea value={bookingForm.userAgent} rows={2} disabled />
+                    {isAdmin ? (
+                      <textarea
+                        rows={4}
+                        value={bookingForm.adminNotes}
+                        onChange={(event) => handleBookingFieldChange('adminNotes', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value admin-readonly-value-multiline">{formatDisplayText(bookingForm.adminNotes)}</div>
+                    )}
                   </label>
 
                   <label>
                     <span>Created at</span>
-                    <input value={bookingForm.createdAt} disabled />
+                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.createdAt)}</div>
                   </label>
 
                   <label>
                     <span>Updated at</span>
-                    <input value={bookingForm.updatedAt} disabled />
+                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.updatedAt)}</div>
                   </label>
 
                   {isAdmin && (
