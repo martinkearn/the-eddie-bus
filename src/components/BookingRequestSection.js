@@ -348,6 +348,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const selectedDay = selectedDate ? days.find((day) => day.iso === selectedDate) : null
   const selectedDayStatus = selectedDay?.status || 'unknown'
   const isSelectedDateUnavailable = Boolean(selectedDate && !isAvailable(selectedDate))
+  const canShowBookingForm = Boolean(selectedDate && !isSelectedDateUnavailable)
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -473,11 +474,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
             <h3>Pick a date</h3>
-            <p>Use the date picker or calendar below to select your preferred date.</p>
+            <p>On mobile, use the date picker. On desktop, use the calendar view.</p>
           </div>
 
-          {/* Shared Date Picker */}
-          <div className="date-picker-section">
+          {/* Mobile date picker only */}
+          <div className="date-picker-section" aria-label="Mobile date picker">
             <label htmlFor="date-input">
               <span>Select date</span>
               <input
@@ -520,7 +521,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             )}
           </div>
 
-          {/* Desktop Calendar View */}
+          {/* Desktop calendar only */}
           <div className="calendar-desktop-view">
             {availabilityError ? (
               <p className="booking-status error" role="alert">{availabilityError}</p>
@@ -598,9 +599,15 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
             {/* Removed "Show more dates" button as it is now redundant */}
           </div>
+
+          {selectedDate && isSelectedDateUnavailable ? (
+            <p className="booking-status error" role="alert">
+              The selected date is not available. Please choose an available date to continue.
+            </p>
+          ) : null}
         </div>
 
-        {selectedDate ? (
+        {canShowBookingForm ? (
           <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
           <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
@@ -611,9 +618,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <p aria-live="polite">
                 You are booking: <strong>{selectedDateLabel}</strong>
               </p>
-              {isSelectedDateUnavailable ? (
-                <p className="booking-status error" role="alert">Warning: this date is not available. Please choose an available date to continue.</p>
-              ) : null}
             </div>
 
             <label>
@@ -711,14 +715,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             <button 
               type="submit" 
               className="button button-primary" 
-              disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
-              aria-disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
+              disabled={isSubmitting || !selectedDate}
+              aria-disabled={isSubmitting || !selectedDate}
             >
               {isSubmitting ? 'Sending...' : 'Send booking request'}
             </button>
-            {isSelectedDateUnavailable ? (
-              <p className="booking-status error" role="alert">The selected date is not available. You cannot submit this booking request until you choose an available date.</p>
-            ) : null}
           </div>
 
           {submitState.message ? (

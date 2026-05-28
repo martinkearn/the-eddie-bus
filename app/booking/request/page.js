@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { BookingRequestSection } from '../../../src/components/BookingRequestSection'
 import { PageIntro } from '../../../src/components/PageIntro'
 import { SiteLayout } from '../../../src/components/SiteLayout'
@@ -18,7 +20,7 @@ export default function BookingRequestPage() {
   const bookingAvailabilityEndpoint = process.env.NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT || ''
 
   return (
-    <SiteLayout currentPath="/bookings/">
+    <SiteLayout currentPath="/how-to-book/">
       <PageIntro
         title="Booking request form"
         intro={[
@@ -39,7 +41,7 @@ export default function BookingRequestPage() {
           </ol>
         </div>
         <div className="page-intro-actions">
-          <Link className="button button-light" href="/bookings/">Back to booking information</Link>
+          <Link className="button button-light" href="/bookings/"><FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />Back to booking information</Link>
           <span>Need charges, eligibility or policy details first? See the booking information page.</span>
         </div>
       </PageIntro>

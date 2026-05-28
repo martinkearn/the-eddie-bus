@@ -1598,7 +1598,7 @@ main {
 }
 
 .date-picker-section {
-  display: grid;
+  display: none;
   gap: 0.75rem;
 }
 
@@ -2738,6 +2738,10 @@ main {
   /* On mobile, hide the full calendar view */
   .calendar-desktop-view {
     display: none;
+  }
+
+  .date-picker-section {
+    display: grid;
   }
 }
 
