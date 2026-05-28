@@ -1,3 +1,11 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faBusSimple,
+  faCircleExclamation,
+  faPersonWalking,
+  faWheelchair,
+  faWheelchairMove,
+} from '@fortawesome/free-solid-svg-icons'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, CheckList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
@@ -17,7 +25,12 @@ export default function PassengerAccessibilityPolicyPage() {
       <section className="section-band capacity-band" aria-label="Passenger capacity">
         <CardGrid>
           {accessibilityPage.capacities.map((capacity) => (
-            <InfoCard key={capacity.title} title={capacity.title} accent={capacity.title === 'Standard seating'}>
+            <InfoCard
+              key={capacity.title}
+              title={capacity.title}
+              accent={capacity.title === 'Standard seating'}
+              icon={<FontAwesomeIcon icon={capacityIcon(capacity.title)} />}
+            >
               <p className="capacity-label">Maximum capacity</p>
               <p className="capacity-value">{capacity.capacity}</p>
               <Paragraphs items={capacity.paragraphs} />
@@ -33,7 +46,7 @@ export default function PassengerAccessibilityPolicyPage() {
           <p>The rear tail lift helps wheelchair users and passengers with limited mobility board the vehicle safely with support from carers and the driver.</p>
         </div>
       </section>
-      <Callout title="Important safety note"><Paragraphs items={accessibilityPage.safety} /></Callout>
+      <Callout title="Important safety note"><p><FontAwesomeIcon icon={faCircleExclamation} aria-hidden="true" /> Please review before travel.</p><Paragraphs items={accessibilityPage.safety} /></Callout>
       <Section title="Driver responsibilities" className="driver-responsibilities-section">
         <div className="driver-responsibilities-layout">
           <img src={images.busRearLiftUp.src} alt={images.busRearLiftUp.alt} />
@@ -52,4 +65,11 @@ export default function PassengerAccessibilityPolicyPage() {
       <ContactPanel title="Contact Us" text={['Whether you are enquiring about transport for your group, interested in volunteering as a driver or helper, or would simply like to find out more, we would love to hear from you.']} />
     </SiteLayout>
   )
+}
+
+function capacityIcon(title) {
+  if (title === 'Standard seating') return faBusSimple
+  if (title === 'Wheelchair transfers') return faPersonWalking
+  if (title === 'Static wheelchairs') return faWheelchair
+  return faWheelchairMove
 }

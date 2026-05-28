@@ -1,4 +1,15 @@
 import Link from 'next/link'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faCalendarDays,
+  faCalendarXmark,
+  faEnvelope,
+  faMapLocationDot,
+  faMoneyBillWave,
+  faPhone,
+  faRoute,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { Callout, CardGrid, DefinitionList, InfoCard, Paragraphs, Section } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
@@ -44,8 +55,8 @@ export default function HowToBookPage() {
           <p>{bookingStepNote}</p>
         </div>
         <div className="page-intro-actions">
-          <Link className="button button-light" href={site.emailHref}>Email booking request</Link>
-          <span>Prefer to talk? Call <Link href={site.phoneHref}>{site.phone}</Link>.</span>
+          <Link className="button button-light" href={site.emailHref}><FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />Email booking request</Link>
+          <span>Prefer to talk? Call <Link href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" /> {site.phone}</Link>.</span>
         </div>
       </PageIntro>
 
@@ -57,11 +68,11 @@ export default function HowToBookPage() {
 
       <section className="section-band" aria-label="Charges and payment">
         <CardGrid>
-          <InfoCard title="Payment">
+          <InfoCard title="Payment" icon={<FontAwesomeIcon icon={faMoneyBillWave} />}>
             <Paragraphs items={bookingPage.payment} />
           </InfoCard>
-          <InfoCard title="Cancellations"><Paragraphs items={bookingPage.cancellations} /></InfoCard>
-          <InfoCard title="Who can book">
+          <InfoCard title="Cancellations" icon={<FontAwesomeIcon icon={faCalendarXmark} />}><Paragraphs items={bookingPage.cancellations} /></InfoCard>
+          <InfoCard title="Who can book" icon={<FontAwesomeIcon icon={faUsers} />}>
             {whoCanBookText ? <p>{whoCanBookText}</p> : null}
             <DefinitionList items={whoCanBookDefinitions} />
           </InfoCard>
@@ -69,13 +80,13 @@ export default function HowToBookPage() {
       </section>
 
       <section className="detail-pair section-band" aria-label="Travel and availability">
-        <InfoCard title="Where the bus can travel">
+        <InfoCard title="Where the bus can travel" icon={<FontAwesomeIcon icon={faRoute} />}>
           <Paragraphs items={bookingPage.travel} />
         </InfoCard>
-        <InfoCard title="When the bus is available"><Paragraphs items={bookingPage.availability} /></InfoCard>
+        <InfoCard title="When the bus is available" icon={<FontAwesomeIcon icon={faCalendarDays} />}><Paragraphs items={bookingPage.availability} /></InfoCard>
       </section>
       <Callout title="Looking for trip ideas?">
-        <p>Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
+        <p><FontAwesomeIcon icon={faMapLocationDot} aria-hidden="true" /> Visit the <Link href="/places-to-visit/">Places to Visit</Link> page for suggestions for your next group outing.</p>
       </Callout>
       <ContactPanel title="Contact Us" text={['Contact us if you need transport for your group and would like to discuss your plans. We’d love to hear from you.']} />
     </SiteLayout>

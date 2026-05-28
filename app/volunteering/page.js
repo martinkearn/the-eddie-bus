@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHandshake, faIdBadge, faShieldHeart, faUserGroup } from '@fortawesome/free-solid-svg-icons'
 import { ContactPanel } from '../../src/components/ContactPanel'
 import { CardGrid, CheckList, InfoCard, Paragraphs } from '../../src/components/ContentBlocks'
 import { PageIntro } from '../../src/components/PageIntro'
@@ -17,7 +19,7 @@ export default function VolunteeringPage() {
 
       <section className="volunteer-driver section-band" aria-label="Volunteer driver information">
         <div className="volunteer-driver-intro">
-          <p className="eyebrow">Driver volunteers needed</p>
+          <p className="eyebrow"><FontAwesomeIcon icon={faUserGroup} aria-hidden="true" /> Driver volunteers needed</p>
           <h2>Become a volunteer driver</h2>
           <Paragraphs items={volunteeringPage.driverText.slice(0, 1)} />
         </div>
@@ -36,9 +38,9 @@ export default function VolunteeringPage() {
 
       <section className="section-band" aria-label="Volunteer checks and helper roles">
         <CardGrid>
-          <InfoCard title="Driver checks and training"><Paragraphs items={volunteeringPage.checks} /></InfoCard>
-          <InfoCard title="Become a volunteer helper"><p>{volunteeringPage.helper}</p></InfoCard>
-          <InfoCard title="Why volunteer?" accent><p>{volunteeringPage.why}</p></InfoCard>
+          <InfoCard title="Driver checks and training" icon={<FontAwesomeIcon icon={faIdBadge} />}><Paragraphs items={volunteeringPage.checks} /></InfoCard>
+          <InfoCard title="Become a volunteer helper" icon={<FontAwesomeIcon icon={faHandshake} />}><p>{volunteeringPage.helper}</p></InfoCard>
+          <InfoCard title="Why volunteer?" icon={<FontAwesomeIcon icon={faShieldHeart} />} accent><p>{volunteeringPage.why}</p></InfoCard>
         </CardGrid>
       </section>
       <ContactPanel title="Get involved" text={volunteeringPage.getInvolved} />

@@ -1,4 +1,9 @@
 import './globals.css'
+import '@fortawesome/fontawesome-svg-core/styles.css'
+import Script from 'next/script'
+import { config } from '@fortawesome/fontawesome-svg-core'
+
+config.autoAddCss = false
 
 export const metadata = {
   title: 'The EDDIE Bus | Accessible group transport in Bromsgrove',
@@ -14,7 +19,21 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-R5HT8303RQ"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-R5HT8303RQ');
+          `}
+        </Script>
+      </body>
     </html>
   )
 }

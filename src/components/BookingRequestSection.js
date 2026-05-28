@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 
 // Availability is fetched live from the API. When no endpoint is set, a sensible default is used (all days available except Sundays).
 
@@ -348,6 +350,27 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
   const selectedDay = selectedDate ? days.find((day) => day.iso === selectedDate) : null
   const selectedDayStatus = selectedDay?.status || 'unknown'
   const isSelectedDateUnavailable = Boolean(selectedDate && !isAvailable(selectedDate))
+  const canShowBookingForm = Boolean(selectedDate && !isSelectedDateUnavailable)
+  const unavailableDateFeedback = (() => {
+    if (selectedDayStatus === 'past') {
+      return {
+        label: 'Past date',
+        message: 'This date has already passed. Please select a future date.',
+      }
+    }
+
+    if (selectedDayStatus === 'booked') {
+      return {
+        label: 'Date booked',
+        message: 'This date is already booked. Please select another date.',
+      }
+    }
+
+    return {
+      label: 'Date unavailable',
+      message: 'This date is unavailable. Please choose another date.',
+    }
+  })()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -473,11 +496,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
             <h3>Pick a date</h3>
-            <p>Use the date picker or calendar below to select your preferred date.</p>
           </div>
 
-          {/* Shared Date Picker */}
-          <div className="date-picker-section">
+          {/* Mobile date picker only */}
+          <div className="date-picker-section" aria-label="Mobile date picker">
             <label htmlFor="date-input">
               <span>Select date</span>
               <input
@@ -499,20 +521,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
                       <p className="status-label">✓ Available</p>
                       <p className="status-date">{formatReadableDate(parseISODateLocal(selectedDate))}</p>
                     </>
-                  ) : selectedDayStatus === 'booked' ? (
-                    <>
-                      <p className="status-label">⚠ Booked</p>
-                      <p className="status-message">This date is already booked. Please select another date.</p>
-                    </>
-                  ) : selectedDayStatus === 'past' ? (
-                    <>
-                      <p className="status-label">Past date</p>
-                      <p className="status-message">This date has already passed. Please select a future date.</p>
-                    </>
                   ) : (
                     <>
-                      <p className="status-label">⚠ Booked</p>
-                      <p className="status-message">This date is already booked. Please select another date.</p>
+                      <p className="status-label">{unavailableDateFeedback.label}</p>
+                      <p className="status-message">{unavailableDateFeedback.message}</p>
                     </>
                   )}
                 </div>
@@ -520,16 +532,12 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             )}
           </div>
 
-          {/* Desktop Calendar View */}
+          {/* Desktop calendar only */}
           <div className="calendar-desktop-view">
-            {availabilityError ? (
-              <p className="booking-status error" role="alert">{availabilityError}</p>
-            ) : null}
             <div className="booking-calendar-legend" role="list" aria-label="Calendar legend">
               <span role="listitem"><strong className="calendar-dot available" aria-hidden="true" />Available</span>
               <span role="listitem"><strong className="calendar-dot booked" aria-hidden="true" />Booked</span>
               <span role="listitem"><strong className="calendar-dot past" aria-hidden="true" />Past</span>
-              <span role="listitem"><strong className="calendar-dot selected" aria-hidden="true" />Selected</span>
             </div>
 
             <div className="calendar-months" role="list" aria-label="Upcoming availability by month">
@@ -596,11 +604,19 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               ) : null}
             </div>
 
+            {availabilityError ? (
+              <p className="booking-status error" role="alert">{availabilityError}</p>
+            ) : null}
+            {selectedDate && isSelectedDateUnavailable ? (
+              <p className="booking-status error" role="alert">{unavailableDateFeedback.message}</p>
+            ) : null}
+
             {/* Removed "Show more dates" button as it is now redundant */}
           </div>
+
         </div>
 
-        {selectedDate ? (
+        {canShowBookingForm ? (
           <form className="booking-form-card" onSubmit={handleSubmit} noValidate>
           <h2>Booking request form</h2>
           <p className="booking-form-intro">Fields marked required must be completed before sending your request.</p>
@@ -611,9 +627,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <p aria-live="polite">
                 You are booking: <strong>{selectedDateLabel}</strong>
               </p>
-              {isSelectedDateUnavailable ? (
-                <p className="booking-status error" role="alert">Warning: this date is not available. Please choose an available date to continue.</p>
-              ) : null}
             </div>
 
             <label>
@@ -711,14 +724,11 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
             <button 
               type="submit" 
               className="button button-primary" 
-              disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
-              aria-disabled={isSubmitting || !selectedDate || isSelectedDateUnavailable}
+              disabled={isSubmitting || !selectedDate}
+              aria-disabled={isSubmitting || !selectedDate}
             >
-              {isSubmitting ? 'Sending...' : 'Send booking request'}
+              <FontAwesomeIcon icon={faPaperPlane} aria-hidden="true" /> {isSubmitting ? 'Sending...' : 'Send booking request'}
             </button>
-            {isSelectedDateUnavailable ? (
-              <p className="booking-status error" role="alert">The selected date is not available. You cannot submit this booking request until you choose an available date.</p>
-            ) : null}
           </div>
 
           {submitState.message ? (
