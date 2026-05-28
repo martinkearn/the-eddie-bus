@@ -60,6 +60,25 @@ function toBooleanFlag(value) {
   return false
 }
 
+function toTriStateSelection(value) {
+  if (value === true || value === 1 || value === '1') return 'yes'
+  if (value === false || value === 0 || value === '0') return 'no'
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (['yes', 'true', '1', 'y', 'on'].includes(normalized)) return 'yes'
+    if (['no', 'false', '0', 'n', 'off'].includes(normalized)) return 'no'
+  }
+
+  return 'not-entered'
+}
+
+function triStateLabel(value) {
+  if (value === 'yes') return 'Yes'
+  if (value === 'no') return 'No'
+  return 'Not entered'
+}
+
 function mapBookingToForm(booking) {
   if (!booking) return null
   return {
@@ -80,10 +99,55 @@ function mapBookingToForm(booking) {
     poweredWheelchairs: toBooleanFlag(booking.powered_wheelchairs),
     passengerTransfers: toBooleanFlag(booking.passenger_transfers),
     specialRequirements: String(booking.special_requirements || ''),
+    startMileage: booking.start_mileage !== null && booking.start_mileage !== undefined ? String(booking.start_mileage) : '',
+    finishMileage: booking.finish_mileage !== null && booking.finish_mileage !== undefined ? String(booking.finish_mileage) : '',
+    nonBillableMileage: booking.non_billable_mileage !== null && booking.non_billable_mileage !== undefined ? String(booking.non_billable_mileage) : '',
+    checklistLightsIndicators: toTriStateSelection(booking.checklist_lights_indicators),
+    checklistTyres: toTriStateSelection(booking.checklist_tyres),
+    checklistWheelNuts: toTriStateSelection(booking.checklist_wheel_nuts),
+    checklistBodywork: toTriStateSelection(booking.checklist_bodywork),
+    checklistMirrorsGlass: toTriStateSelection(booking.checklist_mirrors_glass),
+    checklistBrakes: toTriStateSelection(booking.checklist_brakes),
+    checklistSteering: toTriStateSelection(booking.checklist_steering),
+    checklistWipersWashers: toTriStateSelection(booking.checklist_wipers_washers),
+    checklistDashboardWarningLights: toTriStateSelection(booking.checklist_dashboard_warning_lights),
+    checklistSeatsSeatbelts: toTriStateSelection(booking.checklist_seats_seatbelts),
+    checklistEmergencyEquipment: toTriStateSelection(booking.checklist_emergency_equipment),
+    checklistWheelchairLiftsRestraints: toTriStateSelection(booking.checklist_wheelchair_lifts_restraints),
+    checklistTailLifts: toTriStateSelection(booking.checklist_tail_lifts),
+    vehicleCheckDate: String(booking.vehicle_check_date || ''),
+    vehicleCheckSignedBy: String(booking.vehicle_check_signed_by || ''),
+    vehicleFaultsRecorded: String(booking.vehicle_faults_recorded || ''),
     adminNotes: String(booking.admin_notes || ''),
     createdAt: formatDateTimeUK(booking.created_at),
     updatedAt: formatDateTimeUK(booking.updated_at),
   }
+}
+
+const VEHICLE_CHECK_KEYS = [
+  'checklist_lights_indicators',
+  'checklist_tyres',
+  'checklist_wheel_nuts',
+  'checklist_bodywork',
+  'checklist_mirrors_glass',
+  'checklist_brakes',
+  'checklist_steering',
+  'checklist_wipers_washers',
+  'checklist_dashboard_warning_lights',
+  'checklist_seats_seatbelts',
+  'checklist_emergency_equipment',
+  'checklist_wheelchair_lifts_restraints',
+  'checklist_tail_lifts',
+]
+
+function isVehicleCheckComplete(booking) {
+  if (!booking) return false
+
+  const hasDate = String(booking.vehicle_check_date || '').trim() !== ''
+  const hasSignature = String(booking.vehicle_check_signed_by || '').trim() !== ''
+  const hasAllChecks = VEHICLE_CHECK_KEYS.every((key) => toBooleanFlag(booking[key]))
+
+  return hasDate && hasSignature && hasAllChecks
 }
 
 function formatDateUK(dateStr) {
@@ -268,6 +332,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
   const [selectedBookingId, setSelectedBookingId] = useState('')
   const [bookingForm, setBookingForm] = useState(null)
+  const [bookingDetailTab, setBookingDetailTab] = useState('main')
   const [bookingDetailLoading, setBookingDetailLoading] = useState(false)
   const [bookingMessageDraft, setBookingMessageDraft] = useState('')
   const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
@@ -420,6 +485,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     setSelectedBookingId(String(id))
     setBookingForm(null)
+    setBookingDetailTab('main')
     setBookingMessageDraft('')
     setBookingSubjectDraft('')
     setBookingDetailLoading(true)
@@ -637,6 +703,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   function handleBackToBookingResults() {
     setSelectedBookingId('')
     setBookingForm(null)
+    setBookingDetailTab('main')
     setBookingMessageDraft('')
     setBookingSubjectDraft('')
     setBookingDetailLoading(false)
@@ -1164,7 +1231,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <td>
                         {item.driver_username ? item.driver_username : <strong>Unassigned</strong>}
                       </td>
-                      <td>{item.status}</td>
+                      <td>
+                        <div>{item.status}</div>
+                        {isVehicleCheckComplete(item) ? (
+                          <span className="admin-vehicle-check-badge is-complete">Vehicle check complete</span>
+                        ) : null}
+                      </td>
                     </tr>
                   ))}
                   {!bookingsLoading && bookings.length === 0 && (
@@ -1208,12 +1280,29 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
                       Back to {isBookingsTab && hasExecutedSearch ? 'search results' : 'booking list'}
                   </button>
-                  <h2>Booking Details</h2>
+                  <h2>
+                    Booking Details{bookingForm?.bookingRef ? ` - ${bookingForm.bookingRef}` : ''}
+                  </h2>
                 </div>
               {bookingDetailLoading && <p>Loading booking details...</p>}
               {!bookingDetailLoading && !bookingForm && <p>Could not load booking details.</p>}
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
+
+                  <nav className="field-full admin-detail-tabs" aria-label="Booking detail tabs" role="tablist">
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => setBookingDetailTab('main')}>
+                      Main booking
+                    </button>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => setBookingDetailTab('checklist')}>
+                      Checklist
+                    </button>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'messages'} className={bookingDetailTab === 'messages' ? 'is-active' : ''} onClick={() => setBookingDetailTab('messages')}>
+                      Messages
+                    </button>
+                  </nav>
+
+                  {bookingDetailTab === 'main' && (
+                    <>
 
                   <label>
                     <span>Status</span>
@@ -1426,17 +1515,316 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     )}
                   </label>
 
+                    </>
+                  )}
+
+                  {bookingDetailTab === 'checklist' && (
+                  <section className="field-full admin-vehicle-checklist-panel" aria-label="Vehicle checklist section">
+                    <div className="admin-vehicle-checklist-intro">
+                      <h3>Pre-drive vehicle checklist</h3>
+                      <p>Use this section to record mileage and all safety checks before the trip.</p>
+                    </div>
+
+                    <div className="admin-vehicle-checklist-grid">
                   <label>
-                    <span>Created at</span>
-                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.createdAt)}</div>
+                    <span>Start mileage</span>
+                    {isAdmin ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={bookingForm.startMileage}
+                        onChange={(event) => handleBookingFieldChange('startMileage', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.startMileage)}</div>
+                    )}
                   </label>
 
                   <label>
-                    <span>Updated at</span>
-                    <div className="admin-readonly-value">{formatDisplayText(bookingForm.updatedAt)}</div>
+                    <span>Finish mileage</span>
+                    {isAdmin ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={bookingForm.finishMileage}
+                        onChange={(event) => handleBookingFieldChange('finishMileage', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.finishMileage)}</div>
+                    )}
                   </label>
 
-                  {isAdmin && (
+                  <label>
+                    <span>Non billable mileage</span>
+                    {isAdmin ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={bookingForm.nonBillableMileage}
+                        onChange={(event) => handleBookingFieldChange('nonBillableMileage', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.nonBillableMileage)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Lights & indicators</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistLightsIndicators}
+                        onChange={(event) => handleBookingFieldChange('checklistLightsIndicators', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistLightsIndicators)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Tyres</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistTyres}
+                        onChange={(event) => handleBookingFieldChange('checklistTyres', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTyres)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Wheel nuts</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistWheelNuts}
+                        onChange={(event) => handleBookingFieldChange('checklistWheelNuts', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelNuts)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Bodywork</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistBodywork}
+                        onChange={(event) => handleBookingFieldChange('checklistBodywork', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBodywork)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Mirrors & glass</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistMirrorsGlass}
+                        onChange={(event) => handleBookingFieldChange('checklistMirrorsGlass', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistMirrorsGlass)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Brakes</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistBrakes}
+                        onChange={(event) => handleBookingFieldChange('checklistBrakes', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBrakes)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Steering</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistSteering}
+                        onChange={(event) => handleBookingFieldChange('checklistSteering', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSteering)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Wipers & washers</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistWipersWashers}
+                        onChange={(event) => handleBookingFieldChange('checklistWipersWashers', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWipersWashers)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Dashboard warning lights</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistDashboardWarningLights}
+                        onChange={(event) => handleBookingFieldChange('checklistDashboardWarningLights', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistDashboardWarningLights)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Seats & seatbelts</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistSeatsSeatbelts}
+                        onChange={(event) => handleBookingFieldChange('checklistSeatsSeatbelts', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSeatsSeatbelts)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Emergency equipment</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistEmergencyEquipment}
+                        onChange={(event) => handleBookingFieldChange('checklistEmergencyEquipment', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistEmergencyEquipment)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Wheelchair lifts & restraints</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistWheelchairLiftsRestraints}
+                        onChange={(event) => handleBookingFieldChange('checklistWheelchairLiftsRestraints', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelchairLiftsRestraints)}</div>
+                    )}
+                  </label>
+
+                  <label className="admin-vehicle-checklist-item">
+                    <span>Tail lifts</span>
+                    {isAdmin ? (
+                      <select
+                        value={bookingForm.checklistTailLifts}
+                        onChange={(event) => handleBookingFieldChange('checklistTailLifts', event.target.value)}
+                      >
+                        <option value="not-entered">Not entered</option>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    ) : (
+                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTailLifts)}</div>
+                    )}
+                  </label>
+
+                  <label className="field-full admin-vehicle-checklist-item">
+                    <span>Vehicle check date</span>
+                    {isAdmin ? (
+                      <input
+                        type="date"
+                        value={bookingForm.vehicleCheckDate}
+                        onChange={(event) => handleBookingFieldChange('vehicleCheckDate', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatDateUK(bookingForm.vehicleCheckDate))}</div>
+                    )}
+                  </label>
+
+                  <label className="field-full admin-vehicle-checklist-item">
+                    <span>Signed</span>
+                    {isAdmin ? (
+                      <>
+                        <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Simply type your name</small>
+                        <input
+                          value={bookingForm.vehicleCheckSignedBy}
+                          placeholder="Type your name"
+                          onChange={(event) => handleBookingFieldChange('vehicleCheckSignedBy', event.target.value)}
+                        />
+                      </>
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.vehicleCheckSignedBy)}</div>
+                    )}
+                  </label>
+
+                  <label className="field-full admin-vehicle-checklist-item">
+                    <span>Faults recorded</span>
+                    {isAdmin ? (
+                      <textarea
+                        rows={3}
+                        value={bookingForm.vehicleFaultsRecorded}
+                        onChange={(event) => handleBookingFieldChange('vehicleFaultsRecorded', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value admin-readonly-value-multiline">{formatDisplayText(bookingForm.vehicleFaultsRecorded)}</div>
+                    )}
+                  </label>
+                    </div>
+                  </section>
+                  )}
+
+                  {bookingDetailTab === 'messages' && isAdmin && (
                     <section className="field-full admin-draft-section" aria-label="Booking message drafts">
                       <div className="admin-draft-section-heading">
                         <h3>Booking message drafts</h3>
@@ -1486,7 +1874,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <span>Body</span>
                         <div className="admin-field-with-copy">
                           <textarea
-                            rows={8}
+                            rows={15}
+                            className="booking-body-draft-textarea"
                             readOnly
                             value={bookingMessageDraft}
                             placeholder="Create a draft to see a suggested body for email or WhatsApp"
@@ -1504,6 +1893,16 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       </div>
                     </section>
                   )}
+
+                  {bookingDetailTab === 'messages' && !isAdmin && (
+                    <section className="field-full admin-editor" aria-label="Messages">
+                      <p>Message drafting is available to admin users only.</p>
+                    </section>
+                  )}
+
+                  <p className="field-full admin-detail-meta-text" aria-label="Booking metadata">
+                    Created: {formatDisplayText(bookingForm.createdAt)} | Updated: {formatDisplayText(bookingForm.updatedAt)}
+                  </p>
 
                   {isAdmin && (
                     <div className="field-full admin-inline-actions">
