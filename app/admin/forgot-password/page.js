@@ -11,7 +11,7 @@ export default function AdminForgotPasswordPage() {
       <section className="admin-auth-card">
         <h1>Forgot Password</h1>
         <p>Please email bookings@theeddiebus.org.uk to request a password reset.</p>
-        <p>Include your username and a brief note so an administrator can verify and reset your account.</p>
+        <p>Include your username (or name) and a brief note so an administrator can verify and reset your account.</p>
 
         <div className="admin-inline-actions">
           <a className="button button-primary" href="mailto:bookings@theeddiebus.org.uk">Email bookings@theeddiebus.org.uk</a>

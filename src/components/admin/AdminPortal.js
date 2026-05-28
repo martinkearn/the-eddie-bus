@@ -811,6 +811,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           <p>
             Forgot your password? <Link href="/admin/forgot-password/">Request a reset</Link>
           </p>
+
+          <div className="admin-inline-actions">
+            <Link className="button button-quiet" href="/">
+              <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+              Back to main site
+            </Link>
+          </div>
         </section>
       </main>
     )

@@ -1,25 +1,36 @@
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faBookOpen,
   faCalendarCheck,
-  faCircleInfo,
   faEnvelope,
+  faHandshake,
+  faHouse,
   faMapLocationDot,
+  faKey,
   faPhone,
   faShieldHeart,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import { primaryNavigation, site } from '../content/site'
 
-const footerPages = primaryNavigation.filter((item) => item.href !== '/passenger-accessibility-policy/')
+const footerPages = [
+  { label: 'Home', href: '/' },
+  { label: 'Book', href: '/how-to-book/' },
+  { label: 'About', href: '/about-us/' },
+  { label: 'Places', href: '/places-to-visit/' },
+  { label: 'Policies', href: '/passenger-accessibility-policy/' },
+  { label: 'Volunteer', href: '/volunteering/' },
+  { label: 'Admin Portal', href: '/admin' },
+]
 
 const footerPageIcons = {
-  '/': faCircleInfo,
+  '/': faHouse,
   '/how-to-book/': faCalendarCheck,
   '/about-us/': faUsers,
   '/places-to-visit/': faMapLocationDot,
-  '/volunteering/': faBookOpen,
+  '/passenger-accessibility-policy/': faShieldHeart,
+  '/volunteering/': faHandshake,
+  '/admin': faKey,
 }
 
 export function Footer() {
@@ -38,17 +49,16 @@ export function Footer() {
           <p><a href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" />{site.phone}</a></p>
         </div>
         <div>
-          <h2><FontAwesomeIcon icon={faShieldHeart} aria-hidden="true" />Pages</h2>
+          <h2>Pages</h2>
           <ul className="footer-links">
             {footerPages.map((item) => (
-              <li key={item.href}><Link href={item.href}><FontAwesomeIcon icon={footerPageIcons[item.href] ?? faCircleInfo} aria-hidden="true" />{item.label}</Link></li>
+              <li key={item.href}><Link href={item.href}><FontAwesomeIcon icon={footerPageIcons[item.href]} aria-hidden="true" />{item.label}</Link></li>
             ))}
           </ul>
         </div>
       </div>
       <div className="footer-legal">
         <p>© {site.charityName} (Registered Charity No. {site.charityNumber}). All rights reserved.</p>
-        <p>Last updated: 15-05-2026, 13:20 BST</p>
       </div>
     </footer>
   )

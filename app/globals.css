@@ -2445,7 +2445,7 @@ main {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(12rem, 0.7fr) minmax(12rem, 0.7fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: clamp(1.5rem, 4vw, 4rem);
 }
 
@@ -2504,6 +2504,10 @@ main {
   .category-grid,
   .footer-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer-grid > div:first-child {
+    grid-column: 1 / -1;
   }
 
   .card-grid.booking-info-grid {
