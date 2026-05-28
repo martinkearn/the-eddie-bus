@@ -254,6 +254,38 @@ main {
   box-shadow: 0 8px 18px rgba(26, 28, 28, 0.06);
 }
 
+.button-icon-only {
+  width: 2.35rem;
+  min-width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.button-icon-only .svg-inline--fa {
+  font-size: 0.9rem;
+}
+
+.button.is-copied {
+  background: #d7f5e1;
+  border-color: #6bcf8a;
+  color: #145a31;
+  box-shadow: 0 10px 18px rgba(20, 90, 49, 0.18);
+}
+
+.button.is-copied:hover {
+  background: #c9efd6;
+  color: #145a31;
+}
+
+.button-icon-only.is-copied .svg-inline--fa {
+  color: #145a31;
+}
+
 .button-light {
   background: #ffffff;
   color: var(--primary);
@@ -3065,6 +3097,47 @@ main {
   flex-wrap: wrap;
   gap: 0.6rem;
   align-items: center;
+}
+
+.admin-field-with-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.admin-field-with-copy textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.booking-subject-draft-textarea {
+  height: 2.6rem;
+  min-height: 2.6rem;
+}
+
+.admin-draft-section {
+  padding: 1rem;
+  border: 1px solid rgba(186, 0, 19, 0.16);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 248, 248, 0.9), #ffffff);
+  box-shadow: 0 14px 30px rgba(26, 28, 28, 0.05);
+}
+
+.admin-draft-section-heading {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.admin-draft-section-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.admin-draft-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .admin-section-heading {
