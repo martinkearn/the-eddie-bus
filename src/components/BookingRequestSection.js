@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faCircleXmark, faClock, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 
 // Availability is fetched live from the API. When no endpoint is set, a sensible default is used (all days available except Sundays).
 
@@ -54,6 +54,18 @@ function parseISODateLocal(value) {
   }
 
   return new Date(parts[0], parts[1] - 1, parts[2])
+}
+
+function getStatusIcon(status) {
+  if (status === 'available') {
+    return faCircleCheck
+  }
+
+  if (status === 'past') {
+    return faClock
+  }
+
+  return faCircleXmark
 }
 
 const INITIAL_DAYS = 365 * 10; // Allow 10 years of days initially
@@ -495,7 +507,8 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       <div className="booking-request-layout">
         <div className="booking-calendar-card" aria-label="Booking availability calendar">
           <div className="booking-calendar-head">
-            <h3>Pick a date</h3>
+            <h3>Pick your preferred date</h3>
+            <p>Choose the preferred date for your outing to see if it is available.</p>
           </div>
 
           {/* Mobile date picker only */}
@@ -514,12 +527,13 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
 
             {selectedDate && (
               <div className={`date-status date-status-${selectedDayStatus}`} role="status" aria-live="polite">
-                <div className="status-dot" />
+                <FontAwesomeIcon className="status-icon" icon={getStatusIcon(selectedDayStatus)} aria-hidden="true" />
                 <div className="status-text">
                   {selectedDayStatus === 'available' ? (
                     <>
-                      <p className="status-label">✓ Available</p>
+                      <p className="status-label">Available</p>
                       <p className="status-date">{formatReadableDate(parseISODateLocal(selectedDate))}</p>
+                      <p className="status-message">Fill in the form below to start your booking.</p>
                     </>
                   ) : (
                     <>

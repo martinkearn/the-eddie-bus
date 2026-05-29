@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { BookingRequestSection } from '../../../src/components/BookingRequestSection'
 import { PageIntro } from '../../../src/components/PageIntro'
 import { SiteLayout } from '../../../src/components/SiteLayout'
@@ -29,7 +28,7 @@ export default function BookingRequestPage() {
 				]}
 				image={images.busSide}
 				label="Booking Request"
-				className="booking-hero"
+				className="booking-hero booking-request-hero"
 			>
 				<div className="booking-hero-process" aria-label="Booking request guidance">
 					<p className="booking-process-kicker">Before you begin</p>
@@ -41,8 +40,7 @@ export default function BookingRequestPage() {
 					</ol>
 				</div>
 				<div className="page-intro-actions">
-					<Link className="button button-light" href="/bookings/"><FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />Back to booking information</Link>
-					<span>Need charges, eligibility or policy details first? See the booking information page.</span>
+					<span>See the <Link href="/bookings/">booking information page</Link> for information on charges, eligibility and policies.</span>
 				</div>
 			</PageIntro>
 

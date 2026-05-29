@@ -1675,7 +1675,7 @@ main {
 
 .date-status {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
   border-radius: 0.65rem;
@@ -1704,28 +1704,26 @@ main {
   border: 1px solid #d6d6d6;
 }
 
-.date-status .status-dot {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 999px;
+.date-status .status-icon {
+  font-size: 1rem;
   flex-shrink: 0;
-  margin-top: 0.2rem;
+  margin-top: 0;
 }
 
-.date-status.date-status-available .status-dot {
-  background: #1d8f4d;
+.date-status.date-status-available .status-icon {
+  color: #1d8f4d;
 }
 
-.date-status.date-status-unavailable .status-dot {
-  background: #f57c00;
+.date-status.date-status-unavailable .status-icon {
+  color: #f57c00;
 }
 
-.date-status.date-status-booked .status-dot {
-  background: #d32f2f;
+.date-status.date-status-booked .status-icon {
+  color: #d32f2f;
 }
 
-.date-status.date-status-past .status-dot {
-  background: #9e9e9e;
+.date-status.date-status-past .status-icon {
+  color: #9e9e9e;
 }
 
 .date-status .status-text {
@@ -1759,6 +1757,10 @@ main {
   color: #93000d;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.date-status.date-status-available .status-message {
+  color: #0f5f31;
 }
 
 .mobile-date-picker-container {
@@ -2776,6 +2778,15 @@ main {
   .booking-hero-process {
     padding: 1rem;
     gap: 0.8rem;
+  }
+
+  .booking-hero .page-intro-content > h1 + p,
+  .booking-hero .page-intro-content > h1 + p + p {
+    display: none;
+  }
+
+  .booking-request-hero .booking-hero-process {
+    display: none;
   }
 
   .booking-hero .page-intro-actions {

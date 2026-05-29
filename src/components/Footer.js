@@ -21,6 +21,7 @@ const footerPages = [
   { label: 'Policies', href: '/passenger-accessibility-policy/' },
   { label: 'Volunteer', href: '/volunteering/' },
   { label: 'Admin Portal', href: '/admin' },
+  { label: 'Bookings Form', href: '/bookings/' },
 ]
 
 const footerPageIcons = {
@@ -31,6 +32,7 @@ const footerPageIcons = {
   '/passenger-accessibility-policy/': faShieldHeart,
   '/volunteering/': faHandshake,
   '/admin': faKey,
+  '/bookings/': faCalendarCheck,
 }
 
 export function Footer() {

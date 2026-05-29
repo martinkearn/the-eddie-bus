@@ -28,8 +28,8 @@ export const metadata = {
 
 export default function BookingsPage() {
   const bookingIntro = [
-    'For eligible Bromsgrove groups needing accessible transport for outings and community trips.',
-    'Review key booking details below, then submit your request on the dedicated booking form page.',
+    'Accessible group transport for eligible Bromsgrove bookings.',
+    'Check the essentials, then send your request.',
   ]
 
   const paymentHighlights = [
@@ -75,7 +75,7 @@ export default function BookingsPage() {
   return (
     <SiteLayout currentPath="/bookings/">
       <PageIntro
-        title={bookingPage.title}
+        title="Book the EDDIE Bus"
         intro={bookingIntro}
         image={images.busSide}
         label="Bookings"
@@ -83,16 +83,16 @@ export default function BookingsPage() {
       >
         <div className="booking-hero-process" aria-label="Booking process">
           <p className="booking-process-kicker">How to book</p>
-          <h2>Book in 3 steps</h2>
+          <h2>3 quick steps</h2>
           <ol className="step-list booking-hero-step-list">
-            <li>Check charges, eligibility and trip rules on this page.</li>
-            <li>Open the <Link href="/bookings/request">booking request page</Link> and submit your details.</li>
-            <li>We confirm availability and contact you with next steps.</li>
+            <li>Check the key booking details on this page.</li>
+            <li>Start <Link href="/bookings/request">booking request</Link> to send your details.</li>
+            <li>We check availability and get back to you.</li>
           </ol>
         </div>
         <div className="page-intro-actions">
           <Link className="button button-light" href="/bookings/request"><FontAwesomeIcon icon={faClipboardList} aria-hidden="true" />Start booking request</Link>
-          <span>Fastest route: submit the form. You can also book by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" /> phone</Link>.</span>
+          <span>You can also book by <Link href={site.emailHref}>email</Link> or <Link href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" /> phone</Link>.</span>
         </div>
       </PageIntro>
 
