@@ -56,6 +56,28 @@ CREATE TABLE IF NOT EXISTS admin_users (
   UNIQUE KEY uq_admin_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS booking_driver_mappings (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  booking_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  mapping_status ENUM('available', 'maybe_available', 'not_available', 'confirmed') NOT NULL,
+  confirmed_booking_id BIGINT UNSIGNED GENERATED ALWAYS AS (
+    CASE
+      WHEN mapping_status = 'confirmed' THEN booking_id
+      ELSE NULL
+    END
+  ) STORED,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_booking_driver_mappings_booking_user (booking_id, user_id),
+  UNIQUE KEY uq_booking_driver_mappings_confirmed_booking (confirmed_booking_id),
+  KEY idx_booking_driver_mappings_user_id (user_id),
+  KEY idx_booking_driver_mappings_booking_status (booking_id, mapping_status),
+  CONSTRAINT fk_booking_driver_mappings_booking_id FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+  CONSTRAINT fk_booking_driver_mappings_user_id FOREIGN KEY (user_id) REFERENCES admin_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CALL ensure_booking_column('driver_user_id', 'BIGINT UNSIGNED NULL', 'status');
 CALL ensure_booking_column('admin_notes', 'TEXT NULL', 'special_requirements');
 CALL ensure_booking_column('start_mileage', 'DECIMAL(8,2) NULL', 'admin_notes');

@@ -149,6 +149,8 @@ try {
 
     $adminNotesUpdateSql = $hasAdminNotesColumn ? ",\n             admin_notes = :admin_notes" : '';
 
+    $pdo->beginTransaction();
+
     $stmt = $pdo->prepare(
         'UPDATE bookings
          SET booking_ref = :booking_ref,
@@ -241,11 +243,47 @@ try {
         }
     }
 
+    if ($driverUserId !== null) {
+        $clearConfirmedStmt = $pdo->prepare(
+            "UPDATE booking_driver_mappings
+             SET mapping_status = 'available'
+             WHERE booking_id = :booking_id
+               AND mapping_status = 'confirmed'
+               AND user_id <> :user_id"
+        );
+        $clearConfirmedStmt->execute([
+            ':booking_id' => $bookingId,
+            ':user_id' => $driverUserId,
+        ]);
+
+        $upsertConfirmedStmt = $pdo->prepare(
+            'INSERT INTO booking_driver_mappings (booking_id, user_id, mapping_status)
+             VALUES (:booking_id, :user_id, :mapping_status)
+             ON DUPLICATE KEY UPDATE
+               mapping_status = VALUES(mapping_status),
+               updated_at = CURRENT_TIMESTAMP'
+        );
+        $upsertConfirmedStmt->execute([
+            ':booking_id' => $bookingId,
+            ':user_id' => $driverUserId,
+            ':mapping_status' => 'confirmed',
+        ]);
+    } else {
+        $clearConfirmedStmt = $pdo->prepare("DELETE FROM booking_driver_mappings WHERE booking_id = :booking_id AND mapping_status = 'confirmed'");
+        $clearConfirmedStmt->execute([':booking_id' => $bookingId]);
+    }
+
+    $pdo->commit();
+
     respond_json(200, [
         'ok' => true,
         'message' => 'Booking updated.',
     ]);
 } catch (PDOException $pdoException) {
+    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     $sqlState = $pdoException->errorInfo[0] ?? '';
     if ($sqlState === '23000') {
         fail_json(422, 'Booking reference must be unique.');
@@ -254,6 +292,10 @@ try {
     error_log('Admin booking update failed: ' . $pdoException->getMessage());
     fail_json(500, 'Could not update booking right now.');
 } catch (Throwable $exception) {
+    if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     error_log('Admin booking update failed: ' . $exception->getMessage());
     fail_json(500, 'Could not update booking right now.');
 }

@@ -53,6 +53,29 @@ const STANDARD_BOOKING_STATUS_VALUES = new Set([
 
 const STANDARD_BOOKING_STATUS_OPTIONS = BOOKING_STATUS_OPTIONS.filter((option) => STANDARD_BOOKING_STATUS_VALUES.has(option.value))
 
+const DRIVER_MAPPING_OPTIONS_SELF = [
+  { value: 'available', label: 'Available' },
+  { value: 'maybe_available', label: 'Maybe Available' },
+  { value: 'not_available', label: 'Not Available' },
+]
+
+const DRIVER_MAPPING_OPTIONS_ADMIN = [
+  ...DRIVER_MAPPING_OPTIONS_SELF,
+  { value: 'confirmed', label: 'Confirmed' },
+]
+
+const DRIVER_MAPPING_LABELS = {
+  available: 'Available',
+  maybe_available: 'Maybe Available',
+  not_available: 'Not Available',
+  confirmed: 'Confirmed',
+}
+
+function formatDriverMappingStatus(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+  return DRIVER_MAPPING_LABELS[normalized] || 'No response yet'
+}
+
 const LEGACY_BOOKING_STATUS_ALIASES = {
   cancelled: 'cancelled_by_customer',
   completed: 'journey_completed',
@@ -392,6 +415,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [bookingForm, setBookingForm] = useState(null)
   const [bookingDetailTab, setBookingDetailTab] = useState('main')
   const [bookingDetailLoading, setBookingDetailLoading] = useState(false)
+  const [driverMappingsLoading, setDriverMappingsLoading] = useState(false)
+  const [driverMappingsSaveLoading, setDriverMappingsSaveLoading] = useState(false)
+  const [driverMappings, setDriverMappings] = useState([])
+  const [myDriverMappingDraft, setMyDriverMappingDraft] = useState('')
+  const [adminConfirmUserIdDraft, setAdminConfirmUserIdDraft] = useState('')
   const [bookingMessageDraft, setBookingMessageDraft] = useState('')
   const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
   const [bookingSaveLoading, setBookingSaveLoading] = useState(false)
@@ -418,6 +446,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const isBookingsTab = activeTab === 'bookings'
   const isMyBookingsTab = activeTab === 'my-bookings'
   const myBookingsDriverUserId = isMyBookingsTab && user?.id !== undefined && user?.id !== null ? String(user.id) : ''
+  const currentUserDriverMappingStatus = useMemo(() => {
+    if (!user?.id) return ''
+    const match = driverMappings.find((item) => String(item.user_id) === String(user.id))
+    return String(match?.mapping_status || '')
+  }, [driverMappings, user])
   const getCurrentBookingsWindow = useCallback(() => getBookingWindowDates(pastWeeksVisible, futureWeeksVisible), [pastWeeksVisible, futureWeeksVisible])
 
   const apiFetch = useCallback(async (path, options = {}) => {
@@ -538,6 +571,32 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch, user])
 
+  const loadDriverMappings = useCallback(async (bookingId) => {
+    if (!user || !bookingId) {
+      setDriverMappings([])
+      setMyDriverMappingDraft('')
+      setAdminConfirmUserIdDraft('')
+      return
+    }
+
+    setDriverMappingsLoading(true)
+    try {
+      const data = await apiFetch(`/bookings/driver-mappings/get.php?booking_id=${encodeURIComponent(String(bookingId))}`)
+      const mappings = data.mappings || []
+      setDriverMappings(mappings)
+      const selfMapping = mappings.find((item) => String(item.user_id) === String(user.id))
+      setMyDriverMappingDraft(String(selfMapping?.mapping_status || ''))
+      setAdminConfirmUserIdDraft(data.driverUserId !== null && data.driverUserId !== undefined ? String(data.driverUserId) : '')
+    } catch (error) {
+      setDriverMappings([])
+      setMyDriverMappingDraft('')
+      setAdminConfirmUserIdDraft('')
+      setBanner({ type: 'error', message: error.message || 'Could not load driver availability right now.' })
+    } finally {
+      setDriverMappingsLoading(false)
+    }
+  }, [apiFetch, user])
+
   const loadBookingDetail = useCallback(async (id) => {
     if (!id) return
 
@@ -546,17 +605,21 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setBookingDetailTab('main')
     setBookingMessageDraft('')
     setBookingSubjectDraft('')
+    setDriverMappings([])
+    setMyDriverMappingDraft('')
+    setAdminConfirmUserIdDraft('')
     setBookingDetailLoading(true)
     try {
       const data = await apiFetch(`/bookings/get.php?id=${encodeURIComponent(id)}`)
       setBookingForm(mapBookingToForm(data.item))
+      await loadDriverMappings(id)
     } catch (error) {
       setSelectedBookingId('')
       setBanner({ type: 'error', message: error.message || 'Could not load booking details.' })
     } finally {
       setBookingDetailLoading(false)
     }
-  }, [apiFetch])
+  }, [apiFetch, loadDriverMappings])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -578,6 +641,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setBookings([])
       setBookingForm(null)
       setSelectedBookingId('')
+      setDriverMappings([])
+      setMyDriverMappingDraft('')
+      setAdminConfirmUserIdDraft('')
       return
     }
 
@@ -624,6 +690,22 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       }
     }
   }, [])
+
+  useEffect(() => {
+    setMyDriverMappingDraft(currentUserDriverMappingStatus)
+  }, [currentUserDriverMappingStatus])
+
+  useEffect(() => {
+    if (!isAdmin) return
+    if (adminConfirmUserIdDraft) return
+    if (bookingForm?.driverUserId) {
+      setAdminConfirmUserIdDraft(String(bookingForm.driverUserId))
+      return
+    }
+    if (assignableUsers.length > 0) {
+      setAdminConfirmUserIdDraft(String(assignableUsers[0].id))
+    }
+  }, [isAdmin, adminConfirmUserIdDraft, bookingForm, assignableUsers])
 
   useEffect(() => {
     if (!user || (!isBookingsTab && !isMyBookingsTab) || (isBookingsTab && searchTerm.trim() !== '')) {
@@ -706,6 +788,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setUsers([])
     setBookingForm(null)
     setSelectedBookingId('')
+    setDriverMappings([])
+    setMyDriverMappingDraft('')
+    setAdminConfirmUserIdDraft('')
     setActiveTab('bookings')
     setBanner({ type: 'success', message: 'You have been signed out.' })
   }
@@ -762,6 +847,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setSelectedBookingId('')
     setBookingForm(null)
     setBookingDetailTab('main')
+    setDriverMappings([])
+    setMyDriverMappingDraft('')
+    setAdminConfirmUserIdDraft('')
     setBookingMessageDraft('')
     setBookingSubjectDraft('')
     setBookingDetailLoading(false)
@@ -821,6 +909,44 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setBanner({ type: 'error', message: error.message || 'Could not update booking.' })
     } finally {
       setBookingSaveLoading(false)
+    }
+  }
+
+  async function handleUpdateDriverMapping(mappingStatus, targetUserId = '') {
+    if (!bookingForm?.id || !user?.id) return
+
+    setDriverMappingsSaveLoading(true)
+    setBanner({ type: 'idle', message: '' })
+
+    try {
+      await apiFetch('/bookings/driver-mappings/update.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: bookingForm.id,
+          userId: targetUserId || user.id,
+          mappingStatus,
+        }),
+      })
+
+      await loadDriverMappings(bookingForm.id)
+      const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+      await loadBookings({
+        q: isBookingsTab ? searchTerm : '',
+        windowFrom: window.from,
+        windowTo: window.to,
+        driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '',
+      })
+      await loadBookingDetail(bookingForm.id)
+
+      const baseMessage = mappingStatus === 'confirmed'
+        ? 'Driver confirmed for booking.'
+        : 'Your availability has been updated.'
+      setBanner({ type: 'success', message: baseMessage })
+    } catch (error) {
+      setBanner({ type: 'error', message: error.message || 'Could not update availability right now.' })
+    } finally {
+      setDriverMappingsSaveLoading(false)
     }
   }
 
@@ -1431,9 +1557,26 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
+                  <label className="field-full admin-detail-tabs-mobile">
+                    <span>Select view</span>
+                    <select
+                      value={bookingDetailTab}
+                      onChange={(event) => setBookingDetailTab(event.target.value)}
+                      aria-label="Select booking detail view"
+                    >
+                      <option value="main">Main booking</option>
+                      <option value="driver-assignment">Driver Assignment</option>
+                      <option value="checklist">Checklist</option>
+                      <option value="messages">Messages</option>
+                    </select>
+                  </label>
+
                   <nav className="field-full admin-detail-tabs" aria-label="Booking detail tabs" role="tablist">
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => setBookingDetailTab('main')}>
                       Main booking
+                    </button>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => setBookingDetailTab('driver-assignment')}>
+                      Driver Assignment
                     </button>
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => setBookingDetailTab('checklist')}>
                       Checklist
@@ -1445,6 +1588,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   {bookingDetailTab === 'main' && (
                     <>
+
+                  <section className="field-full admin-detail-tab-heading" aria-label="Main booking heading">
+                    <h3>Main booking</h3>
+                    <p>Booking details, contact details, and status updates.</p>
+                  </section>
 
                   <label className="field-full">
                     <span>Status</span>
@@ -1694,10 +1842,99 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     </>
                   )}
 
+                  {bookingDetailTab === 'driver-assignment' && (
+                    <section className="field-full admin-driver-mapping-panel" aria-label="Driver assignment">
+                      <div className="admin-detail-tab-heading">
+                        <h3>Driver assignment</h3>
+                        <p>Set your own availability for this booking. Admin users can confirm one driver.</p>
+                      </div>
+
+                      <div className="admin-driver-mapping-self">
+                        <label>
+                          <span>Your availability</span>
+                          <select
+                            value={myDriverMappingDraft}
+                            onChange={(event) => setMyDriverMappingDraft(event.target.value)}
+                            disabled={driverMappingsSaveLoading}
+                          >
+                            <option value="" disabled>Select availability</option>
+                            {DRIVER_MAPPING_OPTIONS_SELF.map((option) => (
+                              <option key={option.value || 'none'} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          className="button button-secondary"
+                          type="button"
+                          disabled={driverMappingsSaveLoading || myDriverMappingDraft === currentUserDriverMappingStatus}
+                          onClick={() => handleUpdateDriverMapping(myDriverMappingDraft, user.id)}
+                        >
+                          {driverMappingsSaveLoading ? 'Saving...' : 'Save availability'}
+                        </button>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="admin-driver-mapping-admin-actions">
+                          <label>
+                            <span>Confirm driver</span>
+                            <select
+                              value={adminConfirmUserIdDraft}
+                              onChange={(event) => setAdminConfirmUserIdDraft(event.target.value)}
+                              disabled={driverMappingsSaveLoading}
+                            >
+                              <option value="">Select driver</option>
+                              {assignableUsers.map((item) => (
+                                <option key={item.id} value={String(item.id)}>{item.username}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <button
+                            className="button button-primary"
+                            type="button"
+                            disabled={driverMappingsSaveLoading || !adminConfirmUserIdDraft}
+                            onClick={() => handleUpdateDriverMapping('confirmed', adminConfirmUserIdDraft)}
+                          >
+                            Confirm selected driver
+                          </button>
+                          <button
+                            className="button button-quiet"
+                            type="button"
+                            disabled={driverMappingsSaveLoading || !bookingForm.driverUserId}
+                            onClick={() => handleUpdateDriverMapping('', bookingForm.driverUserId)}
+                          >
+                            Clear confirmed driver
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="admin-driver-mapping-list-wrap">
+                        {driverMappingsLoading ? (
+                          <p>Loading mappings...</p>
+                        ) : driverMappings.length === 0 ? (
+                          <p>No availability responses yet.</p>
+                        ) : (
+                          <ul className="admin-driver-mapping-list">
+                            {driverMappings.map((item) => (
+                              <li key={`${item.user_id}-${item.mapping_status}`}>
+                                <strong>{item.username}</strong>
+                                <span className={`admin-driver-mapping-badge status-${item.mapping_status}`}>{formatDriverMappingStatus(item.mapping_status)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
                   {bookingDetailTab === 'checklist' && (
                   <section className="field-full admin-vehicle-checklist-panel" aria-label="Vehicle checklist section">
+                    <div className="admin-detail-tab-heading">
+                      <h3>Checklist</h3>
+                      <p>Record mileage and complete the pre-drive safety checklist.</p>
+                    </div>
+
                     <div className="admin-vehicle-checklist-intro">
-                      <h3>Pre-drive vehicle checklist</h3>
+                      <h4>Pre-drive vehicle checklist</h4>
                       <p>Use this section to record mileage and all safety checks before the trip.</p>
                     </div>
 
@@ -2002,8 +2239,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   {bookingDetailTab === 'messages' && isAdmin && (
                     <section className="field-full admin-draft-section" aria-label="Booking message drafts">
+                      <div className="admin-detail-tab-heading">
+                        <h3>Messages</h3>
+                        <p>Create and copy customer-ready booking messages.</p>
+                      </div>
+
                       <div className="admin-draft-section-heading">
-                        <h3>Booking message drafts</h3>
+                        <h4>Message drafts</h4>
                         <p>Generate a subject and body you can copy into email or WhatsApp.</p>
                       </div>
 
@@ -2071,7 +2313,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   )}
 
                   {bookingDetailTab === 'messages' && !isAdmin && (
-                    <section className="field-full admin-editor" aria-label="Messages">
+                    <section className="field-full admin-draft-section" aria-label="Messages">
+                      <div className="admin-detail-tab-heading">
+                        <h3>Messages</h3>
+                        <p>Message drafting tools are available to admin users.</p>
+                      </div>
                       <p>Message drafting is available to admin users only.</p>
                     </section>
                   )}
