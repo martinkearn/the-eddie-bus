@@ -11,6 +11,7 @@ import {
   faCalendarCheck,
   faCopy,
   faFloppyDisk,
+  faHourglassHalf,
   faKey,
   faMagnifyingGlass,
   faPlus,
@@ -25,10 +26,65 @@ import {
   faUserPlus,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck } from '@fortawesome/free-regular-svg-icons'
 
 const PAGE_SIZE = 250
 const DEFAULT_PAST_WEEKS = 4
 const DEFAULT_FUTURE_WEEKS = 8
+
+const BOOKING_STATUS_OPTIONS = [
+  { value: 'pending', label: '1. Pending', description: 'This is a new booking. Next step is to match a driver and confirm to the customer.' },
+  { value: 'confirmed', label: '2. Confirmed', description: 'This booking now has driver and has been confirmed with customer. Next step is to complete the journey.' },
+  { value: 'journey_completed', label: '3. Journey Completed', description: 'This journey has been completed and mileage has been recorded. Next step is to invoice the customer.' },
+  { value: 'customer_billed', label: '4. Customer Billed', description: 'The customer has been invoiced for the journey but has not yet paid. Next step is to receive payment.' },
+  { value: 'booking_completed', label: '5. Booking Completed', description: 'Customer has paid and booking is completed.' },
+  { value: 'cancelled_by_customer', label: 'Cancelled by Customer', description: 'Customer has cancelled the booking. Use admin notes to explain why.' },
+  { value: 'cancelled_by_us', label: 'Cancelled by Us', description: 'We have cancelled the booking. Use admin notes to explain why.' },
+]
+
+const STANDARD_BOOKING_STATUS_VALUES = new Set([
+  'pending',
+  'confirmed',
+  'journey_completed',
+  'customer_billed',
+  'booking_completed',
+])
+
+const STANDARD_BOOKING_STATUS_OPTIONS = BOOKING_STATUS_OPTIONS.filter((option) => STANDARD_BOOKING_STATUS_VALUES.has(option.value))
+
+const LEGACY_BOOKING_STATUS_ALIASES = {
+  cancelled: 'cancelled_by_customer',
+  completed: 'journey_completed',
+}
+
+function normalizeBookingStatus(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (!normalized) return 'pending'
+  return LEGACY_BOOKING_STATUS_ALIASES[normalized] || normalized
+}
+
+function getBookingStatusMeta(value) {
+  const normalized = normalizeBookingStatus(value)
+  return BOOKING_STATUS_OPTIONS.find((option) => option.value === normalized) || BOOKING_STATUS_OPTIONS[0]
+}
+
+function formatBookingStatusLabel(value) {
+  return getBookingStatusMeta(value).label
+}
+
+function formatBookingStatusDescription(value) {
+  return getBookingStatusMeta(value).description
+}
+
+function isStandardBookingStatus(value) {
+  return STANDARD_BOOKING_STATUS_VALUES.has(value)
+}
+
+function getStandardWorkflowStepNumber(value) {
+  const normalized = normalizeBookingStatus(value)
+  const index = STANDARD_BOOKING_STATUS_OPTIONS.findIndex((option) => option.value === normalized)
+  return index >= 0 ? index + 1 : null
+}
 
 function deriveAdminApiBase(bookingApiEndpoint, explicitAdminApiBase) {
   const explicit = String(explicitAdminApiBase || '').trim()
@@ -84,7 +140,7 @@ function mapBookingToForm(booking) {
   return {
     id: String(booking.id || ''),
     bookingRef: String(booking.booking_ref || ''),
-    status: String(booking.status || 'pending'),
+    status: normalizeBookingStatus(booking.status),
     driverUserId: booking.driver_user_id !== null && booking.driver_user_id !== undefined ? String(booking.driver_user_id) : '',
     driverUsername: String(booking.driver_username || ''),
     bookingDate: String(booking.booking_date || ''),
@@ -1232,7 +1288,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         {item.driver_username ? item.driver_username : <strong>Unassigned</strong>}
                       </td>
                       <td>
-                        <div>{item.status}</div>
+                        <div>{formatBookingStatusLabel(item.status)}</div>
                         {isVehicleCheckComplete(item) ? (
                           <span className="admin-vehicle-check-badge is-complete">Vehicle check complete</span>
                         ) : null}
@@ -1304,20 +1360,54 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   {bookingDetailTab === 'main' && (
                     <>
 
-                  <label>
+                  <label className="field-full">
                     <span>Status</span>
                     {isAdmin ? (
-                      <select
-                        value={bookingForm.status}
-                        onChange={(event) => handleBookingFieldChange('status', event.target.value)}
-                      >
-                        <option value="pending">pending</option>
-                        <option value="confirmed">confirmed</option>
-                        <option value="cancelled">cancelled</option>
-                        <option value="completed">completed</option>
-                      </select>
+                      <>
+                        <select
+                          value={normalizeBookingStatus(bookingForm.status)}
+                          onChange={(event) => handleBookingFieldChange('status', event.target.value)}
+                        >
+                          {BOOKING_STATUS_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        {isStandardBookingStatus(normalizeBookingStatus(bookingForm.status)) ? (
+                          <div className="admin-status-workflow" aria-label="Booking status workflow">
+                            <ol className="admin-status-process" role="list">
+                              {STANDARD_BOOKING_STATUS_OPTIONS.map((option, index) => {
+                                const stepNumber = index + 1
+                                const currentStep = getStandardWorkflowStepNumber(bookingForm.status)
+                                const isCompleted = currentStep !== null && stepNumber <= currentStep
+                                const isNext = currentStep !== null && stepNumber === (currentStep + 1)
+                                const stateClass = isCompleted ? 'is-complete' : (isNext ? 'is-next is-upcoming' : 'is-upcoming')
+                                const stateIcon = isCompleted ? faCircleCheck : (isNext ? faHourglassHalf : null)
+
+                                return (
+                                  <li key={option.value} className={`admin-status-process-step ${stateClass}`}>
+                                    <button
+                                      className="admin-status-process-step-button"
+                                      type="button"
+                                      onClick={() => handleBookingFieldChange('status', option.value)}
+                                      aria-pressed={normalizeBookingStatus(bookingForm.status) === option.value}
+                                    >
+                                      <span className="admin-status-process-content">
+                                        {stateIcon ? (
+                                          <span className="admin-status-process-icon" aria-hidden="true"><FontAwesomeIcon icon={stateIcon} /></span>
+                                        ) : null}
+                                        <span className="admin-status-process-label">{option.label}</span>
+                                      </span>
+                                    </button>
+                                  </li>
+                                )
+                              })}
+                            </ol>
+                          </div>
+                        ) : null}
+                        <small className="admin-field-help">{formatBookingStatusDescription(bookingForm.status)}</small>
+                      </>
                     ) : (
-                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.status, 'pending')}</div>
+                      <div className="admin-readonly-value">{formatBookingStatusLabel(bookingForm.status)}</div>
                     )}
                   </label>
 
@@ -1845,8 +1935,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <div className="field-full">
                         <span>Subject</span>
                         <div className="admin-field-with-copy">
-                          <textarea
-                            rows={1}
+                          <input
+                            type="text"
                             className="booking-subject-draft-textarea"
                             readOnly
                             value={bookingSubjectDraft}

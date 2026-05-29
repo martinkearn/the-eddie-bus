@@ -3129,7 +3129,8 @@ main {
   gap: 0.55rem;
 }
 
-.admin-field-with-copy textarea {
+.admin-field-with-copy textarea,
+.admin-field-with-copy input {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -3272,6 +3273,116 @@ main {
   min-height: 4.8rem;
   align-items: flex-start;
   white-space: pre-wrap;
+}
+
+.admin-field-help {
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.3;
+}
+
+.admin-status-workflow {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.admin-status-process {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.admin-status-process-step {
+  --status-step-bg: #d3d5d9;
+  --status-step-text: #0f0f10;
+  background: var(--status-step-bg);
+  color: var(--status-step-text);
+  flex: 1 1 0;
+  min-width: 0;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%, 14px 50%);
+  border-radius: 0.55rem;
+}
+
+.admin-status-process-step:first-child {
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%);
+  border-top-left-radius: 0.55rem;
+  border-bottom-left-radius: 0.55rem;
+}
+
+.admin-status-process-step:last-child {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%);
+  border-top-right-radius: 0.55rem;
+  border-bottom-right-radius: 0.55rem;
+}
+
+.admin-status-process-label {
+  color: inherit;
+  font-size: clamp(0.86rem, 1.1vw, 1rem);
+  font-weight: 800;
+  line-height: 1.14;
+}
+
+.admin-status-process-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.admin-status-process-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.admin-status-process-step.is-complete {
+  --status-step-bg: #6fbf54;
+  --status-step-text: #ffffff;
+}
+
+.admin-status-process-step.is-upcoming {
+  --status-step-bg: #e6e9ee;
+  --status-step-text: #4f5b68;
+}
+
+.admin-status-process-step.is-upcoming .admin-status-process-label {
+  font-weight: 600;
+}
+
+.admin-status-process-step-button {
+  width: 100%;
+  min-height: 4.15rem;
+  border: 0;
+  margin: 0;
+  padding: 0.55rem 1.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  cursor: pointer;
+}
+
+.admin-status-process-step-button:focus-visible {
+  outline: 3px solid #0b69bb;
+  outline-offset: -2px;
+}
+
+@media (max-width: 820px) {
+  .admin-status-process {
+    display: none;
+  }
 }
 
 .admin-vehicle-checklist-panel {

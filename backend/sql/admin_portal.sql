@@ -1,7 +1,15 @@
 -- Admin portal schema updates
 
+UPDATE bookings
+SET status = 'cancelled_by_customer'
+WHERE status = 'cancelled';
+
+UPDATE bookings
+SET status = 'journey_completed'
+WHERE status = 'completed';
+
 ALTER TABLE bookings
-  MODIFY status ENUM('pending', 'confirmed', 'cancelled', 'completed') NOT NULL DEFAULT 'pending';
+  MODIFY status ENUM('pending', 'confirmed', 'journey_completed', 'customer_billed', 'booking_completed', 'cancelled_by_customer', 'cancelled_by_us') NOT NULL DEFAULT 'pending';
 
 DROP PROCEDURE IF EXISTS ensure_booking_column;
 DELIMITER //

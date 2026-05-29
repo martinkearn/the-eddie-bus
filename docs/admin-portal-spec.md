@@ -50,7 +50,7 @@ This document records the agreed requirements for the bookings admin portal befo
 
 - Default list view: all bookings.
 - Default sort: newest booking date first.
-- Status values include: `pending`, `confirmed`, `cancelled`, `completed`.
+- Status values include: `pending`, `confirmed`, `journey_completed`, `customer_billed`, `booking_completed`, `cancelled_by_customer`, `cancelled_by_us`.
 - Search model:
   - Primary interaction is global search (not a heavy filter UI)
   - Partial/fuzzy matching

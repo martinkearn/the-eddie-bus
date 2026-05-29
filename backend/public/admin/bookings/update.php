@@ -69,7 +69,7 @@ $vehicleCheckSignedBy = trim((string)($payload['vehicleCheckSignedBy'] ?? ''));
 $vehicleFaultsRecorded = trim((string)($payload['vehicleFaultsRecorded'] ?? ''));
 $driverUserIdRaw = trim((string)($payload['driverUserId'] ?? ''));
 
-$allowedStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+$allowedStatuses = ['pending', 'confirmed', 'journey_completed', 'customer_billed', 'booking_completed', 'cancelled_by_customer', 'cancelled_by_us'];
 $errors = [];
 
 if ($bookingRef === '') {
