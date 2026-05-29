@@ -8,6 +8,7 @@ import {
   faArrowLeft,
   faArrowRight,
   faArrowUpRightFromSquare,
+  faBars,
   faCalendarCheck,
   faCopy,
   faFloppyDisk,
@@ -367,6 +368,7 @@ function getBookingWindowDates(weeksInPast, weeksInFuture) {
 export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const baseUrl = useMemo(() => deriveAdminApiBase(bookingApiEndpoint, adminApiBase), [bookingApiEndpoint, adminApiBase])
   const [sessionToken, setSessionToken] = useState('')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const [sessionLoading, setSessionLoading] = useState(true)
   const [user, setUser] = useState(null)
@@ -767,6 +769,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
   function handleMyBookingsTabClick() {
     const driverUserId = user?.id !== undefined && user?.id !== null ? String(user.id) : ''
+    setIsMobileMenuOpen(false)
     setActiveTab('my-bookings')
     setHasExecutedSearch(false)
     setSearchInput('')
@@ -779,6 +782,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   }
 
   function handleBookingsTabClick() {
+    setIsMobileMenuOpen(false)
     setActiveTab('bookings')
     setHasExecutedSearch(false)
     setSearchError('')
@@ -1110,6 +1114,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <p>Welcome {user.username}</p>
             </div>
           </div>
+
+          <button
+            className="button button-quiet admin-mobile-menu-toggle"
+            type="button"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="admin-mobile-nav"
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+          >
+            <FontAwesomeIcon icon={faBars} aria-hidden="true" />
+            <span className="admin-mobile-menu-label">Menu</span>
+          </button>
+
           <div className="admin-topbar-actions">
             <Link className="button button-quiet" href="/">
               <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
@@ -1127,6 +1144,75 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             </button>
           </div>
         </header>
+
+        <section id="admin-mobile-nav" className={`admin-mobile-nav ${isMobileMenuOpen ? 'is-open' : ''}`} aria-label="Admin mobile navigation">
+          <div className="admin-mobile-nav-group">
+            <button
+              type="button"
+              className={`button button-quiet admin-mobile-tab-button ${isBookingsTab ? 'is-active' : ''}`}
+              onClick={handleBookingsTabClick}
+            >
+              <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
+              All Bookings
+            </button>
+            <button
+              type="button"
+              className={`button button-quiet admin-mobile-tab-button ${isMyBookingsTab ? 'is-active' : ''}`}
+              onClick={handleMyBookingsTabClick}
+            >
+              <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
+              My Bookings
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                className={`button button-quiet admin-mobile-tab-button ${activeTab === 'users' ? 'is-active' : ''}`}
+                onClick={() => {
+                  setActiveTab('users')
+                  setIsMobileMenuOpen(false)
+                }}
+              >
+                <FontAwesomeIcon icon={faUsers} aria-hidden="true" />
+                Users
+              </button>
+            )}
+            <button
+              type="button"
+              className={`button button-quiet admin-mobile-tab-button ${activeTab === 'account' ? 'is-active' : ''}`}
+              onClick={() => {
+                setActiveTab('account')
+                setIsMobileMenuOpen(false)
+              }}
+            >
+              <FontAwesomeIcon icon={faUser} aria-hidden="true" />
+              My Account
+            </button>
+          </div>
+
+          <div className="admin-mobile-nav-group">
+            <Link className="button button-quiet" href="/" onClick={() => setIsMobileMenuOpen(false)}>
+              <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
+              Back To Main Site
+            </Link>
+            {isAdmin && (
+              <Link className="button button-quiet" href="/bookings/request" onClick={() => setIsMobileMenuOpen(false)}>
+                <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                Create Booking
+              </Link>
+            )}
+            <button
+              className="button button-quiet"
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false)
+                void handleLogout()
+              }}
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} aria-hidden="true" />
+              Sign Out
+            </button>
+          </div>
+        </section>
 
         {banner.type !== 'idle' && (
           <p className={`admin-banner admin-banner-${banner.type}`}>{banner.message}</p>
