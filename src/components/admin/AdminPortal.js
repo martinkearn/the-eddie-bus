@@ -10,6 +10,7 @@ import {
   faArrowUpRightFromSquare,
   faBars,
   faCalendarCheck,
+  faCheck,
   faCopy,
   faFloppyDisk,
   faHourglassHalf,
@@ -1557,6 +1558,51 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
+                  {!isAdmin && (
+                    <div className="field-full admin-viewer-availability">
+                      <p className="admin-viewer-availability-label">
+                        {currentUserDriverMappingStatus
+                          ? `You are ${formatDriverMappingStatus(currentUserDriverMappingStatus).toLowerCase()} for this booking`
+                          : 'Please let us know your availability for this booking'}
+                      </p>
+                      <div className="admin-viewer-availability-actions">
+                        <button
+                          className={`button admin-availability-btn admin-availability-btn-available${currentUserDriverMappingStatus === 'available' ? ' is-active' : ''}`}
+                          type="button"
+                          disabled={driverMappingsSaveLoading}
+                          onClick={() => handleUpdateDriverMapping('available', user.id)}
+                        >
+                          <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
+                          I&apos;m available
+                        </button>
+                        <button
+                          className={`button admin-availability-btn admin-availability-btn-maybe${currentUserDriverMappingStatus === 'maybe_available' ? ' is-active' : ''}`}
+                          type="button"
+                          disabled={driverMappingsSaveLoading}
+                          onClick={() => handleUpdateDriverMapping('maybe_available', user.id)}
+                        >
+                          <FontAwesomeIcon icon={faHourglassHalf} aria-hidden="true" />
+                          I&apos;m maybe available
+                        </button>
+                        <button
+                          className={`button admin-availability-btn admin-availability-btn-unavailable${currentUserDriverMappingStatus === 'not_available' ? ' is-active' : ''}`}
+                          type="button"
+                          disabled={driverMappingsSaveLoading}
+                          onClick={() => handleUpdateDriverMapping('not_available', user.id)}
+                        >
+                          <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                          I&apos;m not available
+                        </button>
+                      </div>
+                      {currentUserDriverMappingStatus === 'available' && (
+                        <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
+                      )}
+                      {currentUserDriverMappingStatus === 'maybe_available' && (
+                        <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please let us know your availability as soon as you can.</p>
+                      )}
+                    </div>
+                  )}
+
                   <label className="field-full admin-detail-tabs-mobile">
                     <span>Select view</span>
                     <select
@@ -1565,9 +1611,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       aria-label="Select booking detail view"
                     >
                       <option value="main">Main booking</option>
-                      <option value="driver-assignment">Driver Assignment</option>
+                      {isAdmin && <option value="driver-assignment">Driver Assignment</option>}
                       <option value="checklist">Checklist</option>
-                      <option value="messages">Messages</option>
+                      {isAdmin && <option value="messages">Messages</option>}
                     </select>
                   </label>
 
@@ -1575,15 +1621,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => setBookingDetailTab('main')}>
                       Main booking
                     </button>
-                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => setBookingDetailTab('driver-assignment')}>
-                      Driver Assignment
-                    </button>
+                    {isAdmin && (
+                      <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => setBookingDetailTab('driver-assignment')}>
+                        Driver Assignment
+                      </button>
+                    )}
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => setBookingDetailTab('checklist')}>
                       Checklist
                     </button>
-                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'messages'} className={bookingDetailTab === 'messages' ? 'is-active' : ''} onClick={() => setBookingDetailTab('messages')}>
-                      Messages
-                    </button>
+                    {isAdmin && (
+                      <button type="button" role="tab" aria-selected={bookingDetailTab === 'messages'} className={bookingDetailTab === 'messages' ? 'is-active' : ''} onClick={() => setBookingDetailTab('messages')}>
+                        Messages
+                      </button>
+                    )}
                   </nav>
 
                   {bookingDetailTab === 'main' && (

@@ -3557,6 +3557,108 @@ main {
   color: #0d4fa6;
 }
 
+.admin-viewer-availability {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.75rem;
+  background: #f8f9fa;
+}
+
+.admin-viewer-availability-label {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-viewer-availability-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-availability-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1.5px solid transparent;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.admin-availability-btn-available {
+  background: #f0faf1;
+  border-color: #b8e0ba;
+  color: #235c28;
+}
+
+.admin-availability-btn-available:hover {
+  background: #ddf3df;
+  border-color: #7ec882;
+}
+
+.admin-availability-btn-available.is-active {
+  background: #2e7d32;
+  border-color: #1b5e20;
+  color: #ffffff;
+}
+
+.admin-availability-btn-maybe {
+  background: #fffbee;
+  border-color: #f0d87a;
+  color: #6f5200;
+}
+
+.admin-availability-btn-maybe:hover {
+  background: #fff3c4;
+  border-color: #d4a800;
+}
+
+.admin-availability-btn-maybe.is-active {
+  background: #f59e0b;
+  border-color: #b45309;
+  color: #ffffff;
+}
+
+.admin-availability-btn-unavailable {
+  background: #fff5f5;
+  border-color: #f5b8b8;
+  color: #7a1f1f;
+}
+
+.admin-availability-btn-unavailable:hover {
+  background: #ffe0e0;
+  border-color: #e57373;
+}
+
+.admin-availability-btn-unavailable.is-active {
+  background: #c62828;
+  border-color: #8e0000;
+  color: #ffffff;
+}
+
+.admin-viewer-availability-note {
+  margin: 0;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid transparent;
+}
+
+.admin-viewer-availability-note-available {
+  background: #f0faf1;
+  border-left-color: #2e7d32;
+  color: #235c28;
+}
+
+.admin-viewer-availability-note-maybe {
+  background: #fffbee;
+  border-left-color: #f59e0b;
+  color: #6f5200;
+}
+
 @media (max-width: 820px) {
   .admin-driver-mapping-self,
   .admin-driver-mapping-admin-actions {
