@@ -232,17 +232,7 @@ function isVehicleCheckComplete(booking) {
 }
 
 function formatDateUK(dateStr) {
-  if (!dateStr) return ''
-  try {
-    const date = new Date(dateStr + 'T00:00:00Z')
-    const day = String(date.getUTCDate()).padStart(2, '0')
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-    const year = date.getUTCFullYear()
-
-    return `${day}-${month}-${year}`
-  } catch {
-    return dateStr
-  }
+  return formatDateWords(dateStr)
 }
 
 function formatDateTimeUK(dateTimeStr) {
@@ -253,13 +243,11 @@ function formatDateTimeUK(dateTimeStr) {
       return String(dateTimeStr)
     }
 
-    const day = String(parsed.getDate()).padStart(2, '0')
-    const month = String(parsed.getMonth() + 1).padStart(2, '0')
-    const year = parsed.getFullYear()
+    const dateWords = formatDateWords(parsed.toISOString().slice(0, 10))
     const hours = String(parsed.getHours()).padStart(2, '0')
     const minutes = String(parsed.getMinutes()).padStart(2, '0')
 
-    return `${day}-${month}-${year} ${hours}:${minutes}`
+    return `${dateWords} ${hours}:${minutes}`
   } catch {
     return String(dateTimeStr)
   }
@@ -288,16 +276,38 @@ function formatBookingDateAndTime(dateStr, timeStr) {
   return date || time || ''
 }
 
+const WEEKDAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+function toOrdinalDay(day) {
+  const absDay = Math.abs(Number(day))
+  const remainderHundred = absDay % 100
+  if (remainderHundred >= 11 && remainderHundred <= 13) {
+    return `${absDay}th`
+  }
+
+  const remainderTen = absDay % 10
+  if (remainderTen === 1) return `${absDay}st`
+  if (remainderTen === 2) return `${absDay}nd`
+  if (remainderTen === 3) return `${absDay}rd`
+  return `${absDay}th`
+}
 
 function formatDateWords(dateStr) {
   if (!dateStr) return ''
   try {
     const date = new Date(dateStr + 'T00:00:00Z')
+    if (Number.isNaN(date.getTime())) {
+      return String(dateStr)
+    }
+
+    const weekday = WEEKDAY_NAMES_SHORT[date.getUTCDay()]
     const day = date.getUTCDate()
+    const dayOrdinal = toOrdinalDay(day)
     const month = MONTH_NAMES[date.getUTCMonth()]
     const year = date.getUTCFullYear()
-    return `${day} ${month} ${year}`
+
+    return `${weekday} ${dayOrdinal} ${month} ${year}`
   } catch {
     return dateStr
   }
@@ -424,6 +434,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [bookingMessageDraft, setBookingMessageDraft] = useState('')
   const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
   const [bookingSaveLoading, setBookingSaveLoading] = useState(false)
+  const [checklistSaveLoading, setChecklistSaveLoading] = useState(false)
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
   const [copyFeedbackKey, setCopyFeedbackKey] = useState('')
   const copyFeedbackTimerRef = useRef(null)
@@ -444,6 +455,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [changePasswordLoading, setChangePasswordLoading] = useState(false)
 
   const isAdmin = user?.role === 'admin'
+  const isAssignedDriver = !!bookingForm?.driverUserId && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
+  const canEditChecklist = isAdmin || isAssignedDriver
+  const hasConfirmedDriver = !!bookingForm?.driverUserId
+  const isCurrentUserConfirmedDriver = hasConfirmedDriver && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
   const isBookingsTab = activeTab === 'bookings'
   const isMyBookingsTab = activeTab === 'my-bookings'
   const myBookingsDriverUserId = isMyBookingsTab && user?.id !== undefined && user?.id !== null ? String(user.id) : ''
@@ -948,6 +963,49 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setBanner({ type: 'error', message: error.message || 'Could not update availability right now.' })
     } finally {
       setDriverMappingsSaveLoading(false)
+    }
+  }
+
+  async function handleChecklistSave() {
+    if (!bookingForm || !canEditChecklist) return
+
+    setChecklistSaveLoading(true)
+    setBanner({ type: 'idle', message: '' })
+
+    try {
+      await apiFetch('/bookings/update-checklist.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: bookingForm.id,
+          startMileage: bookingForm.startMileage,
+          finishMileage: bookingForm.finishMileage,
+          nonBillableMileage: bookingForm.nonBillableMileage,
+          checklistLightsIndicators: bookingForm.checklistLightsIndicators,
+          checklistTyres: bookingForm.checklistTyres,
+          checklistWheelNuts: bookingForm.checklistWheelNuts,
+          checklistBodywork: bookingForm.checklistBodywork,
+          checklistMirrorsGlass: bookingForm.checklistMirrorsGlass,
+          checklistBrakes: bookingForm.checklistBrakes,
+          checklistSteering: bookingForm.checklistSteering,
+          checklistWipersWashers: bookingForm.checklistWipersWashers,
+          checklistDashboardWarningLights: bookingForm.checklistDashboardWarningLights,
+          checklistSeatsSeatbelts: bookingForm.checklistSeatsSeatbelts,
+          checklistEmergencyEquipment: bookingForm.checklistEmergencyEquipment,
+          checklistWheelchairLiftsRestraints: bookingForm.checklistWheelchairLiftsRestraints,
+          checklistTailLifts: bookingForm.checklistTailLifts,
+          vehicleCheckDate: bookingForm.vehicleCheckDate,
+          vehicleCheckSignedBy: bookingForm.vehicleCheckSignedBy,
+          vehicleFaultsRecorded: bookingForm.vehicleFaultsRecorded,
+        }),
+      })
+
+      setBanner({ type: 'success', message: 'Checklist saved successfully.' })
+      await loadBookingDetail(bookingForm.id)
+    } catch (error) {
+      setBanner({ type: 'error', message: error.message || 'Could not save checklist.' })
+    } finally {
+      setChecklistSaveLoading(false)
     }
   }
 
@@ -1558,50 +1616,60 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
-                  {!isAdmin && (
-                    <div className="field-full admin-viewer-availability">
-                      <p className="admin-viewer-availability-label">
-                        {currentUserDriverMappingStatus
-                          ? `You are ${formatDriverMappingStatus(currentUserDriverMappingStatus).toLowerCase()} for this booking`
-                          : 'Please let us know your availability for this booking'}
-                      </p>
-                      <div className="admin-viewer-availability-actions">
-                        <button
-                          className={`button admin-availability-btn admin-availability-btn-available${currentUserDriverMappingStatus === 'available' ? ' is-active' : ''}`}
-                          type="button"
-                          disabled={driverMappingsSaveLoading}
-                          onClick={() => handleUpdateDriverMapping('available', user.id)}
-                        >
-                          <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
-                          I&apos;m available
-                        </button>
-                        <button
-                          className={`button admin-availability-btn admin-availability-btn-maybe${currentUserDriverMappingStatus === 'maybe_available' ? ' is-active' : ''}`}
-                          type="button"
-                          disabled={driverMappingsSaveLoading}
-                          onClick={() => handleUpdateDriverMapping('maybe_available', user.id)}
-                        >
-                          <FontAwesomeIcon icon={faHourglassHalf} aria-hidden="true" />
-                          I&apos;m maybe available
-                        </button>
-                        <button
-                          className={`button admin-availability-btn admin-availability-btn-unavailable${currentUserDriverMappingStatus === 'not_available' ? ' is-active' : ''}`}
-                          type="button"
-                          disabled={driverMappingsSaveLoading}
-                          onClick={() => handleUpdateDriverMapping('not_available', user.id)}
-                        >
-                          <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
-                          I&apos;m not available
-                        </button>
-                      </div>
-                      {currentUserDriverMappingStatus === 'available' && (
-                        <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
-                      )}
-                      {currentUserDriverMappingStatus === 'maybe_available' && (
-                        <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please let us know your availability as soon as you can.</p>
+                  <div className="field-full admin-viewer-availability">
+                      {isCurrentUserConfirmedDriver ? (
+                        <>
+                          <p className="admin-viewer-confirmed-label">You are confirmed for this booking</p>
+                          <p className="admin-viewer-confirmed-note">Contact us right away if your situation changes and you cannot do the booking.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="admin-viewer-availability-label">
+                            {hasConfirmedDriver
+                              ? `${formatDisplayText(bookingForm.driverUsername, 'Another driver')} is already the confirmed driver for this booking but it is still useful to know your availability in case anything changes.`
+                              : (currentUserDriverMappingStatus
+                                ? `You are ${formatDriverMappingStatus(currentUserDriverMappingStatus).toLowerCase()} for this booking`
+                                : 'Please let us know your availability for this booking')}
+                          </p>
+                          <div className="admin-viewer-availability-actions">
+                            <button
+                              className={`button admin-availability-btn admin-availability-btn-available${currentUserDriverMappingStatus === 'available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('available', user.id)}
+                            >
+                              <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
+                              I&apos;m available
+                            </button>
+                            <button
+                              className={`button admin-availability-btn admin-availability-btn-maybe${currentUserDriverMappingStatus === 'maybe_available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('maybe_available', user.id)}
+                            >
+                              <FontAwesomeIcon icon={faHourglassHalf} aria-hidden="true" />
+                              I&apos;m maybe available
+                            </button>
+                            <button
+                              className={`button admin-availability-btn admin-availability-btn-unavailable${currentUserDriverMappingStatus === 'not_available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('not_available', user.id)}
+                            >
+                              <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                              I&apos;m not available
+                            </button>
+                          </div>
+                          {currentUserDriverMappingStatus === 'available' && (
+                            <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
+                          )}
+                          {currentUserDriverMappingStatus === 'maybe_available' && (
+                            <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please let us know your availability as soon as you can.</p>
+                          )}
+                        </>
                       )}
                     </div>
-                  )}
+                  
 
                   <label className="field-full admin-detail-tabs-mobile">
                     <span>Select view</span>
@@ -1896,66 +1964,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <section className="field-full admin-driver-mapping-panel" aria-label="Driver assignment">
                       <div className="admin-detail-tab-heading">
                         <h3>Driver assignment</h3>
-                        <p>Set your own availability for this booking. Admin users can confirm one driver.</p>
+                        <p>Admin users can confirm one driver.</p>
                       </div>
-
-                      <div className="admin-driver-mapping-self">
-                        <label>
-                          <span>Your availability</span>
-                          <select
-                            value={myDriverMappingDraft}
-                            onChange={(event) => setMyDriverMappingDraft(event.target.value)}
-                            disabled={driverMappingsSaveLoading}
-                          >
-                            <option value="" disabled>Select availability</option>
-                            {DRIVER_MAPPING_OPTIONS_SELF.map((option) => (
-                              <option key={option.value || 'none'} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          className="button button-secondary"
-                          type="button"
-                          disabled={driverMappingsSaveLoading || myDriverMappingDraft === currentUserDriverMappingStatus}
-                          onClick={() => handleUpdateDriverMapping(myDriverMappingDraft, user.id)}
-                        >
-                          {driverMappingsSaveLoading ? 'Saving...' : 'Save availability'}
-                        </button>
-                      </div>
-
-                      {isAdmin && (
-                        <div className="admin-driver-mapping-admin-actions">
-                          <label>
-                            <span>Confirm driver</span>
-                            <select
-                              value={adminConfirmUserIdDraft}
-                              onChange={(event) => setAdminConfirmUserIdDraft(event.target.value)}
-                              disabled={driverMappingsSaveLoading}
-                            >
-                              <option value="">Select driver</option>
-                              {assignableUsers.map((item) => (
-                                <option key={item.id} value={String(item.id)}>{item.username}</option>
-                              ))}
-                            </select>
-                          </label>
-                          <button
-                            className="button button-primary"
-                            type="button"
-                            disabled={driverMappingsSaveLoading || !adminConfirmUserIdDraft}
-                            onClick={() => handleUpdateDriverMapping('confirmed', adminConfirmUserIdDraft)}
-                          >
-                            Confirm selected driver
-                          </button>
-                          <button
-                            className="button button-quiet"
-                            type="button"
-                            disabled={driverMappingsSaveLoading || !bookingForm.driverUserId}
-                            onClick={() => handleUpdateDriverMapping('', bookingForm.driverUserId)}
-                          >
-                            Clear confirmed driver
-                          </button>
-                        </div>
-                      )}
 
                       <div className="admin-driver-mapping-list-wrap">
                         {driverMappingsLoading ? (
@@ -1966,8 +1976,33 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                           <ul className="admin-driver-mapping-list">
                             {driverMappings.map((item) => (
                               <li key={`${item.user_id}-${item.mapping_status}`}>
-                                <strong>{item.username}</strong>
-                                <span className={`admin-driver-mapping-badge status-${item.mapping_status}`}>{formatDriverMappingStatus(item.mapping_status)}</span>
+                                <div className="admin-driver-mapping-item-main">
+                                  <strong>{item.username}</strong>
+                                  <span className={`admin-driver-mapping-badge status-${item.mapping_status}`}>{formatDriverMappingStatus(item.mapping_status)}</span>
+                                  <span className="admin-driver-mapping-updated-at">Last updated: {formatDisplayText(formatDateTimeUK(item.updated_at), 'Not available')}</span>
+                                </div>
+                                {isAdmin && !bookingForm.driverUserId && item.mapping_status === 'available' && (
+                                  <button
+                                    className="button button-secondary admin-driver-mapping-action-btn"
+                                    type="button"
+                                    disabled={driverMappingsSaveLoading}
+                                    onClick={() => handleUpdateDriverMapping('confirmed', String(item.user_id))}
+                                  >
+                                    <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" />
+                                    Confirm {item.username} as driver
+                                  </button>
+                                )}
+                                {isAdmin && bookingForm.driverUserId && String(bookingForm.driverUserId) === String(item.user_id) && (
+                                  <button
+                                    className="button button-quiet admin-driver-mapping-action-btn"
+                                    type="button"
+                                    disabled={driverMappingsSaveLoading}
+                                    onClick={() => handleUpdateDriverMapping('', String(item.user_id))}
+                                  >
+                                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                                    Remove {item.username} as driver
+                                  </button>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -1991,7 +2026,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <div className="admin-vehicle-checklist-grid">
                   <label>
                     <span>Start mileage</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <input
                         type="number"
                         min="0"
@@ -2006,7 +2041,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label>
                     <span>Finish mileage</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <input
                         type="number"
                         min="0"
@@ -2021,7 +2056,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label>
                     <span>Non billable mileage</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <input
                         type="number"
                         min="0"
@@ -2036,7 +2071,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Lights & indicators</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistLightsIndicators}
                         onChange={(event) => handleBookingFieldChange('checklistLightsIndicators', event.target.value)}
@@ -2052,7 +2087,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Tyres</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistTyres}
                         onChange={(event) => handleBookingFieldChange('checklistTyres', event.target.value)}
@@ -2068,7 +2103,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheel nuts</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistWheelNuts}
                         onChange={(event) => handleBookingFieldChange('checklistWheelNuts', event.target.value)}
@@ -2084,7 +2119,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Bodywork</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistBodywork}
                         onChange={(event) => handleBookingFieldChange('checklistBodywork', event.target.value)}
@@ -2100,7 +2135,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Mirrors & glass</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistMirrorsGlass}
                         onChange={(event) => handleBookingFieldChange('checklistMirrorsGlass', event.target.value)}
@@ -2116,7 +2151,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Brakes</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistBrakes}
                         onChange={(event) => handleBookingFieldChange('checklistBrakes', event.target.value)}
@@ -2132,7 +2167,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Steering</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistSteering}
                         onChange={(event) => handleBookingFieldChange('checklistSteering', event.target.value)}
@@ -2148,7 +2183,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wipers & washers</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistWipersWashers}
                         onChange={(event) => handleBookingFieldChange('checklistWipersWashers', event.target.value)}
@@ -2164,7 +2199,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Dashboard warning lights</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistDashboardWarningLights}
                         onChange={(event) => handleBookingFieldChange('checklistDashboardWarningLights', event.target.value)}
@@ -2180,7 +2215,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Seats & seatbelts</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistSeatsSeatbelts}
                         onChange={(event) => handleBookingFieldChange('checklistSeatsSeatbelts', event.target.value)}
@@ -2196,7 +2231,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Emergency equipment</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistEmergencyEquipment}
                         onChange={(event) => handleBookingFieldChange('checklistEmergencyEquipment', event.target.value)}
@@ -2212,7 +2247,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheelchair lifts & restraints</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistWheelchairLiftsRestraints}
                         onChange={(event) => handleBookingFieldChange('checklistWheelchairLiftsRestraints', event.target.value)}
@@ -2228,7 +2263,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Tail lifts</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <select
                         value={bookingForm.checklistTailLifts}
                         onChange={(event) => handleBookingFieldChange('checklistTailLifts', event.target.value)}
@@ -2244,7 +2279,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="field-full admin-vehicle-checklist-item">
                     <span>Vehicle check date</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <input
                         type="date"
                         value={bookingForm.vehicleCheckDate}
@@ -2257,7 +2292,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="field-full admin-vehicle-checklist-item">
                     <span>Signed</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <>
                         <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Simply type your name</small>
                         <input
@@ -2273,7 +2308,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
                   <label className="field-full admin-vehicle-checklist-item">
                     <span>Faults recorded</span>
-                    {isAdmin ? (
+                    {canEditChecklist ? (
                       <textarea
                         rows={3}
                         value={bookingForm.vehicleFaultsRecorded}
@@ -2284,6 +2319,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     )}
                   </label>
                     </div>
+
+                  {isAssignedDriver && (
+                    <div className="admin-inline-actions" style={{ marginTop: '0.75rem' }}>
+                      <button
+                        className="button button-primary"
+                        type="button"
+                        disabled={checklistSaveLoading}
+                        onClick={handleChecklistSave}
+                      >
+                        <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
+                        {checklistSaveLoading ? 'Saving...' : 'Save Checklist'}
+                      </button>
+                    </div>
+                  )}
                   </section>
                   )}
 
@@ -2376,16 +2425,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     Created: {formatDisplayText(bookingForm.createdAt)} | Updated: {formatDisplayText(bookingForm.updatedAt)}
                   </p>
 
-                  {isAdmin && (
+                  {isAdmin && (bookingDetailTab === 'main' || bookingDetailTab === 'checklist') && (
                     <div className="field-full admin-inline-actions">
                       <button className="button button-primary" type="submit" disabled={bookingSaveLoading}>
                         <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                         {bookingSaveLoading ? 'Saving...' : 'Save Changes'}
                       </button>
-                      <button className="button button-danger" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
-                        <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-                        {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
-                      </button>
+                      {bookingDetailTab === 'main' && (
+                        <button className="button button-danger" type="button" disabled={bookingDeleteLoading} onClick={handleBookingDelete}>
+                          <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                          {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
+                        </button>
+                      )}
                     </div>
                   )}
                 </form>
