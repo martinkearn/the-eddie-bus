@@ -17,7 +17,6 @@ import {
   faKey,
   faMagnifyingGlass,
   faPlus,
-  faPenToSquare,
   faRotate,
   faRightFromBracket,
   faRightToBracket,
@@ -380,6 +379,36 @@ function buildBookingMessageDraft(booking, type) {
     ].join('\n')
   }
 
+  if (type === 'driver_confirmed') {
+    const destinationAddress = formatDisplayText(booking.destinationAddress)
+    const driverContactName = formatDisplayText(booking.driverUsername, 'there')
+
+    return [
+      `Hi ${driverContactName},`,
+      '',
+      'Thank you for taking this booking. You are now confirmed as the driver.',
+      '',
+      `Booking reference: ${bookingRef || 'Not provided'}`,
+      `Date and pickup time: ${bookingWhen || 'Not provided'}`,
+      `Organisation: ${organisation}`,
+      `Destination: ${destinationName || 'Not provided'}`,
+      `Destination address: ${destinationAddress}`,
+      '',
+      'Customer contact details:',
+      `Name: ${formatDisplayText(booking.contactName)}`,
+      `Email: ${formatDisplayText(booking.contactEmail)}`,
+      `Phone: ${formatDisplayText(booking.contactNumber)}`,
+      '',
+      `Special requirements: ${formatDisplayText(booking.specialRequirements)}`,
+      '',
+      'Please complete the vehicle checklist in the admin portal after the journey.',
+      '',
+      'Go to https://theeddiebus.org.uk/admin/ to see more details of the booking and update the checklist.',
+      '',
+      ...signatureLines,
+    ].join('\n')
+  }
+
   return [
     `Hi ${contactName},`,
     '',
@@ -459,6 +488,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [adminConfirmUserIdDraft, setAdminConfirmUserIdDraft] = useState('')
   const [bookingMessageDraft, setBookingMessageDraft] = useState('')
   const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
+  const [messageDraftType, setMessageDraftType] = useState('')
   const [bookingSaveLoading, setBookingSaveLoading] = useState(false)
   const [checklistSaveLoading, setChecklistSaveLoading] = useState(false)
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
@@ -1180,7 +1210,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     try {
       await navigator.clipboard.writeText(draft)
-      setBanner({ type: 'success', message: type === 'confirmed' ? 'Booking confirmed message copied to clipboard.' : 'Booking acknowledgment copied to clipboard.' })
+      setBanner({
+        type: 'success',
+        message: type === 'confirmed'
+          ? 'Booking confirmed message copied to clipboard.'
+          : (type === 'driver_confirmed'
+            ? 'Driver confirmed message copied to clipboard.'
+            : 'Booking acknowledgment copied to clipboard.'),
+      })
     } catch {
       setBanner({ type: 'error', message: 'Could not copy the booking message.' })
     }
@@ -1988,7 +2025,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <section className="field-full admin-driver-mapping-panel" aria-label="Driver assignment">
                       <div className="admin-detail-tab-heading">
                         <h3>Driver assignment</h3>
-                        <p>Admin users can confirm one driver.</p>
+                        <p>Manage drivers for this booking</p>
                       </div>
 
                       <div className="admin-driver-mapping-list-wrap">
@@ -2039,12 +2076,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <section className="field-full admin-vehicle-checklist-panel" aria-label="Vehicle checklist section">
                     <div className="admin-detail-tab-heading">
                       <h3>Checklist</h3>
-                      <p>Record mileage and complete the pre-drive safety checklist.</p>
-                    </div>
-
-                    <div className="admin-vehicle-checklist-intro">
-                      <h4>Pre-drive vehicle checklist</h4>
-                      <p>Use this section to record mileage and all safety checks before the trip.</p>
+                      <p>Record mileage and complete the post-journey checklist.</p>
                     </div>
 
                     <div className="admin-vehicle-checklist-grid">
@@ -2318,20 +2350,28 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <p>Create and copy customer-ready booking messages.</p>
                       </div>
 
-                      <div className="admin-draft-section-heading">
-                        <h4>Message drafts</h4>
-                        <p>Generate a subject and body you can copy into email or WhatsApp.</p>
-                      </div>
-
-                      <div className="admin-inline-actions admin-draft-action-buttons" style={{ marginTop: '0.6rem', marginBottom: '0.8rem' }}>
-                        <button className="button button-secondary" type="button" onClick={() => handleDraftBookingMessage('acknowledgment')}>
-                          <FontAwesomeIcon icon={faPenToSquare} aria-hidden="true" />
-                          Booking acknowledgment
-                        </button>
-                        <button className="button button-secondary" type="button" onClick={() => handleDraftBookingMessage('confirmed')}>
-                          <FontAwesomeIcon icon={faPenToSquare} aria-hidden="true" />
-                          Booking confirmed
-                        </button>
+                      <div className="field-full" style={{ marginTop: '0.6rem', marginBottom: '0.8rem', display: 'grid', gap: '0.6rem', maxWidth: '22rem' }}>
+                        <label>
+                          <span>Message type</span>
+                          <select
+                            value={messageDraftType}
+                            onChange={(event) => {
+                              const nextType = event.target.value
+                              setMessageDraftType(nextType)
+                              if (!nextType) {
+                                setBookingMessageDraft('')
+                                setBookingSubjectDraft('')
+                                return
+                              }
+                              void handleDraftBookingMessage(nextType)
+                            }}
+                          >
+                            <option value="">Choose draft</option>
+                            <option value="acknowledgment">Booking acknowledgment</option>
+                            <option value="confirmed">Booking confirmed</option>
+                            <option value="driver_confirmed">Driver confirmed</option>
+                          </select>
+                        </label>
                       </div>
 
                       <div className="field-full">
