@@ -147,7 +147,10 @@ try {
 
     $pdo->commit();
 
-    ok_json(['message' => 'Checklist updated successfully.']);
+    respond_json(200, [
+        'ok' => true,
+        'message' => 'Checklist updated successfully.',
+    ]);
 } catch (Throwable $exception) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

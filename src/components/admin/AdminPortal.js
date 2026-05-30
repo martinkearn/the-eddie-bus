@@ -160,6 +160,32 @@ function triStateLabel(value) {
   return 'Not entered'
 }
 
+const TRI_STATE_CHECKLIST_OPTIONS = [
+  { value: 'not-entered', label: 'Not entered' },
+  { value: 'no', label: 'No' },
+  { value: 'yes', label: 'Yes' },
+]
+
+function TriStateButtonGroup({ value, onChange }) {
+  const normalizedValue = String(value || 'not-entered')
+
+  return (
+    <div className="admin-tri-state-buttons" role="group" aria-label="Checklist response options">
+      {TRI_STATE_CHECKLIST_OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className={`button admin-tri-state-btn${normalizedValue === option.value ? ' is-active' : ''}`}
+          onClick={() => onChange(option.value)}
+          aria-pressed={normalizedValue === option.value}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function mapBookingToForm(booking) {
   if (!booking) return null
   return {
@@ -1240,8 +1266,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           <h1>Admin sign in</h1>
           <p>Use your admin portal username and password to continue.</p>
 
-          {banner.type !== 'idle' && (
-            <p className={`admin-banner admin-banner-${banner.type}`}>{banner.message}</p>
+          {banner.type === 'error' && (
+            <p className="admin-banner admin-banner-error" role="alert">{banner.message}</p>
           )}
 
           <form className="admin-form" onSubmit={handleLoginSubmit}>
@@ -1399,10 +1425,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           </div>
         </section>
 
-        {banner.type !== 'idle' && (
-          <p className={`admin-banner admin-banner-${banner.type}`}>{banner.message}</p>
-        )}
-
         <nav className="admin-tabs" aria-label="Admin sections" role="tablist">
           <button type="button" role="tab" aria-selected={isBookingsTab} className={isBookingsTab ? 'is-active' : ''} onClick={handleBookingsTabClick}>
             <FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />
@@ -1426,10 +1448,25 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
         {(isBookingsTab || isMyBookingsTab) && (
           <section className="admin-section" aria-label="Booking management">
+            {selectedBookingId && (
+              <div className="admin-inline-actions" style={{ marginBottom: '0.75rem' }}>
+                <button
+                  className="button button-quiet"
+                  type="button"
+                  onClick={handleBackToBookingResults}
+                >
+                  <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
+                  Back to {isBookingsTab && hasExecutedSearch ? 'search results' : 'booking list'}
+                </button>
+              </div>
+            )}
+
             <div className="admin-section-heading">
               <div>
-                <h2>{isMyBookingsTab ? 'My Bookings' : 'All Bookings'}</h2>
-                {isMyBookingsTab ? (
+                <h2>{selectedBookingId ? formatDisplayText(bookingForm?.bookingRef, 'Booking details') : (isMyBookingsTab ? 'My Bookings' : 'All Bookings')}</h2>
+                {selectedBookingId ? (
+                  <p>Everything you need to know about this booking.</p>
+                ) : isMyBookingsTab ? (
                   <p>Bookings assigned to {user.username}.</p>
                 ) : (
                   <p>All bookings, future and past.</p>
@@ -1597,20 +1634,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             )}
 
             {selectedBookingId && (
-              <section className="admin-editor" aria-label="Booking details">
-                <div className="admin-detail-header">
-                    <button
-                    className="button button-quiet"
-                    type="button"
-                    onClick={handleBackToBookingResults}
-                  >
-                    <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
-                      Back to {isBookingsTab && hasExecutedSearch ? 'search results' : 'booking list'}
-                  </button>
-                  <h2>
-                    Booking Details{bookingForm?.bookingRef ? ` - ${bookingForm.bookingRef}` : ''}
-                  </h2>
-                </div>
+              <section className="admin-editor admin-editor-booking" aria-label="Booking details">
               {bookingDetailLoading && <p>Loading booking details...</p>}
               {!bookingDetailLoading && !bookingForm && <p>Could not load booking details.</p>}
               {!bookingDetailLoading && bookingForm && (
@@ -2072,14 +2096,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Lights & indicators</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistLightsIndicators}
-                        onChange={(event) => handleBookingFieldChange('checklistLightsIndicators', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistLightsIndicators', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistLightsIndicators)}</div>
                     )}
@@ -2088,14 +2108,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Tyres</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistTyres}
-                        onChange={(event) => handleBookingFieldChange('checklistTyres', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistTyres', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTyres)}</div>
                     )}
@@ -2104,14 +2120,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheel nuts</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistWheelNuts}
-                        onChange={(event) => handleBookingFieldChange('checklistWheelNuts', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistWheelNuts', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelNuts)}</div>
                     )}
@@ -2120,14 +2132,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Bodywork</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistBodywork}
-                        onChange={(event) => handleBookingFieldChange('checklistBodywork', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistBodywork', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBodywork)}</div>
                     )}
@@ -2136,14 +2144,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Mirrors & glass</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistMirrorsGlass}
-                        onChange={(event) => handleBookingFieldChange('checklistMirrorsGlass', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistMirrorsGlass', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistMirrorsGlass)}</div>
                     )}
@@ -2152,14 +2156,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Brakes</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistBrakes}
-                        onChange={(event) => handleBookingFieldChange('checklistBrakes', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistBrakes', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBrakes)}</div>
                     )}
@@ -2168,14 +2168,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Steering</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistSteering}
-                        onChange={(event) => handleBookingFieldChange('checklistSteering', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistSteering', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSteering)}</div>
                     )}
@@ -2184,14 +2180,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Wipers & washers</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistWipersWashers}
-                        onChange={(event) => handleBookingFieldChange('checklistWipersWashers', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistWipersWashers', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWipersWashers)}</div>
                     )}
@@ -2200,14 +2192,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Dashboard warning lights</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistDashboardWarningLights}
-                        onChange={(event) => handleBookingFieldChange('checklistDashboardWarningLights', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistDashboardWarningLights', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistDashboardWarningLights)}</div>
                     )}
@@ -2216,14 +2204,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Seats & seatbelts</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistSeatsSeatbelts}
-                        onChange={(event) => handleBookingFieldChange('checklistSeatsSeatbelts', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistSeatsSeatbelts', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSeatsSeatbelts)}</div>
                     )}
@@ -2232,14 +2216,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Emergency equipment</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistEmergencyEquipment}
-                        onChange={(event) => handleBookingFieldChange('checklistEmergencyEquipment', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistEmergencyEquipment', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistEmergencyEquipment)}</div>
                     )}
@@ -2248,14 +2228,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheelchair lifts & restraints</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistWheelchairLiftsRestraints}
-                        onChange={(event) => handleBookingFieldChange('checklistWheelchairLiftsRestraints', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistWheelchairLiftsRestraints', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelchairLiftsRestraints)}</div>
                     )}
@@ -2264,14 +2240,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <label className="admin-vehicle-checklist-item">
                     <span>Tail lifts</span>
                     {canEditChecklist ? (
-                      <select
+                      <TriStateButtonGroup
                         value={bookingForm.checklistTailLifts}
-                        onChange={(event) => handleBookingFieldChange('checklistTailLifts', event.target.value)}
-                      >
-                        <option value="not-entered">Not entered</option>
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
+                        onChange={(nextValue) => handleBookingFieldChange('checklistTailLifts', nextValue)}
+                      />
                     ) : (
                       <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTailLifts)}</div>
                     )}
@@ -2331,6 +2303,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
                         {checklistSaveLoading ? 'Saving...' : 'Save Checklist'}
                       </button>
+                      {banner.type === 'error' && !isAdmin && (
+                        <p className="admin-banner admin-banner-error field-full" role="alert">{banner.message}</p>
+                      )}
                     </div>
                   )}
                   </section>
@@ -2436,6 +2411,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                           <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                           {bookingDeleteLoading ? 'Deleting...' : 'Delete Permanently'}
                         </button>
+                      )}
+                      {banner.type === 'error' && (
+                        <p className="admin-banner admin-banner-error field-full" role="alert">{banner.message}</p>
                       )}
                     </div>
                   )}
