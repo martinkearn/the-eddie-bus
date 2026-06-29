@@ -9,3 +9,4 @@ backend/config.php
 .env
 .env.local
 .env.*.local
+backend/php-api/config.php
