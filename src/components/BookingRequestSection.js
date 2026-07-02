@@ -643,17 +643,6 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               </p>
             </div>
 
-            <label>
-              <span>Approx Pickup time *</span>
-              <small className="field-prompt">Times between 07:00 and 16:00. We're flexible and can discuss alternatives.</small>
-              <select name="pickupTime" required defaultValue="">
-                <option value="" disabled>Select pickup time</option>
-                {PICKUP_TIME_OPTIONS.map((time) => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </label>
-
             <label className="field-full">
               <span>Name of organisation or group *</span>
               <small className="field-prompt">e.g. Care home name or group name</small>
@@ -664,6 +653,17 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <span>Destination name</span>
               <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre. Leave blank if you do not yet know where you going.</small>
               <input type="text" name="destinationName" />
+            </label>
+
+            <label>
+              <span>Approx Pickup time *</span>
+              <small className="field-prompt">Times between 07:00 and 16:00. We're flexible and can discuss alternatives.</small>
+              <select name="pickupTime" required defaultValue="">
+                <option value="" disabled>Select pickup time</option>
+                {PICKUP_TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
             </label>
 
             <label className="field-full">
