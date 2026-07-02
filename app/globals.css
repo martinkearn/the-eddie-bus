@@ -2500,6 +2500,7 @@ main {
   display: grid;
   gap: 1.35rem;
   align-content: start;
+  min-width: 0;
   padding: clamp(2rem, 5vw, 4rem);
 }
 
@@ -2518,6 +2519,7 @@ main {
   grid-template-columns: 4rem 1fr;
   gap: 0.15rem 1.25rem;
   align-items: center;
+  min-width: 0;
   color: var(--text);
   text-decoration: none;
 }
@@ -2554,6 +2556,7 @@ main {
   color: var(--text);
   font-family: "Plus Jakarta Sans", Inter, Arial, sans-serif;
   font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  min-width: 0;
   overflow-wrap: break-word;
   word-break: normal;
 }
@@ -2578,6 +2581,7 @@ main {
   display: grid;
   gap: 0.35rem;
   padding: 1.5rem;
+  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.08);
@@ -2917,6 +2921,24 @@ main {
   .contact-panel-highlight {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+
+  .contact-methods a {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .contact-methods span {
+    display: none;
+  }
+
+  .contact-methods strong {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .contact-panel-highlight div {
+    padding: 1.25rem;
   }
 
   .contact-panel-actions,
