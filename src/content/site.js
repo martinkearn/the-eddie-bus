@@ -16,7 +16,7 @@ export const primaryNavigation = [
   { label: 'Book', href: '/how-to-book/' },
   { label: 'About', href: '/about-us/' },
   { label: 'Places', href: '/places-to-visit/' },
-  { label: 'Policies', href: '/passenger-accessibility-policy/' },
+  { label: 'Policies', href: '/policies/' },
   { label: 'Volunteer', href: '/volunteering/' },
 ]
 

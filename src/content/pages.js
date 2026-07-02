@@ -349,34 +349,32 @@ export const accessibilityPage = {
     {
       title: 'Standard seating',
       capacity: '13 passengers',
-      paragraphs: ['The bus has 11 passenger seats in the main body of the vehicle, plus 2 seats at the front with the driver.'],
+      paragraphs: ['The bus has 11 seats in the main passenger area, plus 2 seats at the front with the driver.'],
     },
     {
       title: 'Wheelchair transfers',
       capacity: 'Up to 6 passengers who transfer from wheelchairs or walking aids, plus up to 7 able-bodied passengers.',
       paragraphs: [
-        'Passengers who can transfer from a wheelchair or walking aid may be seated in the bus. Their wheelchairs are then folded and stored at the rear of the vehicle.',
-        'Passengers using walking supports are counted within the transfer passenger total.',
+        'Passengers who can transfer from a wheelchair or walking aid may travel seated in the bus, with their wheelchairs folded and stored at the rear.',
+        'Passengers using walking supports are included in the transfer passenger total.',
       ],
     },
     {
       title: 'Static wheelchairs',
       capacity: 'Up to 3 static wheelchair users, plus additional passengers depending on the final seating arrangement.',
       paragraphs: [
-        'A static wheelchair is one that remains occupied while the passenger is on the minibus.',
-        'Static wheelchairs must be secured to the floor of the bus, with appropriate wheelchair restraints and seat belts fitted by the driver. At least one seat needs to be removed for each static wheelchair and stored at the client’s pickup point.',
-        'In addition to static wheelchair users, up to 3 transfer passengers may also be accommodated, allowing for up to 7 additional able-bodied passengers.',
-        'Some passengers may be seated next to the window in a more restricted position. This may not be suitable for passengers who need more active support.',
+        'Static wheelchairs remain occupied on the bus and must be secured to the floor with the correct restraints and seat belts fitted by the driver.',
+        'One seat must be removed for each static wheelchair and stored at the pickup point; after that, up to 3 transfer passengers and up to 7 additional able-bodied passengers may also be accommodated, depending on the final seating layout.',
+        'Some passengers may be seated next to the window in a more restricted position, so this option may not suit people who need more active support.',
       ],
     },
     {
       title: 'Powered wheelchairs',
       capacity: 'Usually 1 powered wheelchair user, plus additional passengers depending on the final seating arrangement.',
       paragraphs: [
-        'In general, only one powered wheelchair can be accommodated because of loading and space constraints.',
-        'The powered wheelchair must be secured at the front and rear to the floor of the bus, with a seat belt fitted. Two seats need to be removed and stored at the pickup point.',
-        'In addition to the powered wheelchair user, up to 3 transfer passengers may also be accommodated, allowing for up to 7 additional able-bodied passengers.',
-        'If space permits, one static wheelchair may also be accommodated in addition to the powered wheelchair, but this is at the driver’s discretion.',
+        'Usually only one powered wheelchair can be carried because of loading and space limits.',
+        'It must be secured at the front and rear to the floor with a seat belt fitted, and two seats must be removed and stored at the pickup point.',
+        'Depending on the final seating layout, up to 3 transfer passengers may also be carried, and if space permits one static wheelchair may be added at the driver’s discretion.',
       ],
     },
   ],

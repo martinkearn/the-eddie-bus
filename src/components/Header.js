@@ -16,7 +16,7 @@ const navIcons = {
   '/how-to-book/': faCalendarCheck,
   '/about-us/': faUsers,
   '/places-to-visit/': faMapLocationDot,
-  '/passenger-accessibility-policy/': faShieldHeart,
+  '/policies/': faShieldHeart,
   '/volunteering/': faHandshake,
 }
 

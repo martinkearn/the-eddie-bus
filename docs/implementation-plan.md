@@ -78,7 +78,7 @@ Implement the recommended page order from the canonical copy:
 3. About Us: `/about-us/`
 4. Volunteering: `/volunteering/`
 5. Places to Visit: `/places-to-visit/`
-6. Passenger & Accessibility Policy: `/passenger-accessibility-policy/`
+6. Passenger & Accessibility Policy: `/policies/`
 7. Contact Us: `/contact-us/`
 8. Privacy Policy: `/privacy-policy/`
 9. Cookie Policy: `/cookie-policy/`
@@ -111,7 +111,7 @@ app/
   how-to-book/page.js
   layout.js
   page.js
-  passenger-accessibility-policy/page.js
+  policies/page.js
   places-to-visit/page.js
   privacy-policy/page.js
   terms-of-use/page.js
