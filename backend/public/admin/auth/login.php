@@ -29,7 +29,7 @@ if ($username === '' || $password === '') {
 try {
     $pdo = db_connection();
 
-    $stmt = $pdo->prepare('SELECT id, username, role, password_hash FROM admin_users WHERE username = :username LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, username, display_name, email, phone_number, role, password_hash FROM admin_users WHERE username = :username LIMIT 1');
     $stmt->execute([':username' => $username]);
     $user = $stmt->fetch();
 
@@ -53,6 +53,9 @@ try {
         'user' => [
             'id' => $userId,
             'username' => (string)$user['username'],
+            'displayName' => $user['display_name'] !== null ? (string)$user['display_name'] : null,
+            'email' => $user['email'] !== null ? (string)$user['email'] : null,
+            'phoneNumber' => $user['phone_number'] !== null ? (string)$user['phone_number'] : null,
             'role' => (string)$user['role'],
         ],
     ]);

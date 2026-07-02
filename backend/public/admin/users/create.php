@@ -20,12 +20,18 @@ if (!is_array($payload)) {
 }
 
 $username = trim((string)($payload['username'] ?? ''));
+$displayName = trim((string)($payload['displayName'] ?? $payload['display_name'] ?? ''));
 $role = trim((string)($payload['role'] ?? 'viewer'));
 $password = (string)($payload['password'] ?? '');
+$email = trim((string)($payload['email'] ?? ''));
+$phoneNumber = trim((string)($payload['phoneNumber'] ?? $payload['phone_number'] ?? ''));
 
 $errors = [];
 if ($username === '') {
     $errors['username'] = 'Username is required.';
+}
+if (strlen($displayName) > 255) {
+    $errors['displayName'] = 'Display name must be 255 characters or fewer.';
 }
 if (!in_array($role, ['admin', 'viewer'], true)) {
     $errors['role'] = 'Role is invalid.';
@@ -33,6 +39,12 @@ if (!in_array($role, ['admin', 'viewer'], true)) {
 $policyError = validate_password_policy($password);
 if ($policyError !== null) {
     $errors['password'] = $policyError;
+}
+if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+    $errors['email'] = 'Email address is invalid.';
+}
+if ($phoneNumber !== '' && strlen($phoneNumber) > 32) {
+    $errors['phoneNumber'] = 'Phone number must be 32 characters or fewer.';
 }
 
 if ($errors !== []) {
@@ -43,9 +55,12 @@ try {
     $pdo = db_connection();
     $actor = require_admin($pdo);
 
-    $stmt = $pdo->prepare('INSERT INTO admin_users (username, password_hash, role) VALUES (:username, :password_hash, :role)');
+    $stmt = $pdo->prepare('INSERT INTO admin_users (username, display_name, email, phone_number, password_hash, role) VALUES (:username, :display_name, :email, :phone_number, :password_hash, :role)');
     $stmt->execute([
         ':username' => $username,
+        ':display_name' => $displayName !== '' ? $displayName : null,
+        ':email' => $email !== '' ? $email : null,
+        ':phone_number' => $phoneNumber !== '' ? $phoneNumber : null,
         ':password_hash' => password_hash_secure($password),
         ':role' => $role,
     ]);

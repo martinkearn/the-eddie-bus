@@ -12,7 +12,7 @@ try {
     $pdo = db_connection();
     require_admin($pdo);
 
-    $stmt = $pdo->query('SELECT id, username, role, last_login_at, created_at, updated_at FROM admin_users ORDER BY username ASC');
+    $stmt = $pdo->query('SELECT id, username, display_name, email, phone_number, role, last_login_at, created_at, updated_at FROM admin_users ORDER BY username ASC');
     $rows = $stmt->fetchAll();
     if (!is_array($rows)) {
         $rows = [];

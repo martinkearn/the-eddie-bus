@@ -21,6 +21,9 @@ try {
         'user' => [
             'id' => (int)$user['id'],
             'username' => (string)$user['username'],
+            'displayName' => $user['display_name'] !== null ? (string)$user['display_name'] : null,
+            'email' => $user['email'] !== null ? (string)$user['email'] : null,
+            'phoneNumber' => $user['phone_number'] !== null ? (string)$user['phone_number'] : null,
             'role' => (string)$user['role'],
             'lastLoginAt' => $user['last_login_at'] !== null ? (string)$user['last_login_at'] : null,
         ],

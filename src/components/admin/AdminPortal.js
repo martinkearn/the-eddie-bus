@@ -14,7 +14,6 @@ import {
   faCopy,
   faFloppyDisk,
   faHourglassHalf,
-  faKey,
   faMagnifyingGlass,
   faPlus,
   faRotate,
@@ -498,17 +497,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [users, setUsers] = useState([])
   const [assignableUsers, setAssignableUsers] = useState([])
   const [usersLoading, setUsersLoading] = useState(false)
-  const [userSaveLoadingId, setUserSaveLoadingId] = useState('')
-  const [userDeleteLoadingId, setUserDeleteLoadingId] = useState('')
-  const [userResetLoadingId, setUserResetLoadingId] = useState('')
-  const [userDrafts, setUserDrafts] = useState({})
+  const [selectedUserProfileId, setSelectedUserProfileId] = useState('')
+  const [selectedUserProfileDraft, setSelectedUserProfileDraft] = useState({ username: '', displayName: '', role: 'viewer', email: '', phoneNumber: '' })
+  const [userProfileSaving, setUserProfileSaving] = useState(false)
+  const [userDeleteLoading, setUserDeleteLoading] = useState(false)
+  const [userResetLoading, setUserResetLoading] = useState(false)
   const [resetPasswordResult, setResetPasswordResult] = useState(null)
-  const [newUserForm, setNewUserForm] = useState({ username: '', role: 'viewer', password: '' })
+  const [newUserForm, setNewUserForm] = useState({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer', password: '' })
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [showCreateUserForm, setShowCreateUserForm] = useState(false)
 
-  const [changePasswordForm, setChangePasswordForm] = useState({ currentPassword: '', newPassword: '' })
-  const [changePasswordLoading, setChangePasswordLoading] = useState(false)
+  const [accountForm, setAccountForm] = useState({ displayName: '', email: '', phoneNumber: '', currentPassword: '', newPassword: '' })
+  const [accountSaving, setAccountSaving] = useState(false)
 
   const isAdmin = user?.role === 'admin'
   const isAssignedDriver = !!bookingForm?.driverUserId && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
@@ -617,14 +617,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     try {
       const data = await apiFetch('/users/list.php')
       setUsers(data.items || [])
-      const drafts = {}
-      for (const item of data.items || []) {
-        drafts[String(item.id)] = {
-          username: String(item.username || ''),
-          role: String(item.role || 'viewer'),
-        }
-      }
-      setUserDrafts(drafts)
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not load users.' })
     } finally {
@@ -740,6 +732,35 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
     loadAssignableUsers()
   }, [user, loadAssignableUsers])
+
+  useEffect(() => {
+    setAccountForm({
+      displayName: String(user?.displayName || ''),
+      email: String(user?.email || ''),
+      phoneNumber: String(user?.phoneNumber || ''),
+      currentPassword: '',
+      newPassword: '',
+    })
+  }, [user])
+
+  useEffect(() => {
+    if (!selectedUserProfileId) {
+      return
+    }
+
+    const selectedUser = users.find((item) => String(item.id) === String(selectedUserProfileId))
+    if (!selectedUser) {
+      return
+    }
+
+    setSelectedUserProfileDraft({
+      username: String(selectedUser.username || ''),
+      displayName: String(selectedUser.display_name || ''),
+      role: String(selectedUser.role || 'viewer'),
+      email: String(selectedUser.email || ''),
+      phoneNumber: String(selectedUser.phone_number || ''),
+    })
+  }, [users, selectedUserProfileId])
 
   useEffect(() => {
     if (banner.type === 'idle') {
@@ -858,6 +879,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setUser(null)
     setBookings([])
     setUsers([])
+    setSelectedUserProfileId('')
+    setSelectedUserProfileDraft({ username: '', displayName: '', role: 'viewer', email: '', phoneNumber: '' })
+    setAccountForm({ displayName: '', email: '', phoneNumber: '', currentPassword: '', newPassword: '' })
     setBookingForm(null)
     setSelectedBookingId('')
     setDriverMappings([])
@@ -1106,7 +1130,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         body: JSON.stringify(newUserForm),
       })
 
-      setNewUserForm({ username: '', role: 'viewer', password: '' })
+      setNewUserForm({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer', password: '' })
       setShowCreateUserForm(false)
       setBanner({ type: 'success', message: 'User created successfully.' })
       await loadUsers()
@@ -1117,11 +1141,33 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }
 
-  async function handleUpdateUser(userId) {
-    const draft = userDrafts[String(userId)]
-    if (!draft || !isAdmin) return
+  function handleOpenUserProfile(userId) {
+    const selectedUser = users.find((item) => String(item.id) === String(userId))
+    if (!selectedUser) return
 
-    setUserSaveLoadingId(String(userId))
+    setSelectedUserProfileId(String(userId))
+    setSelectedUserProfileDraft({
+      username: String(selectedUser.username || ''),
+      displayName: String(selectedUser.display_name || ''),
+      role: String(selectedUser.role || 'viewer'),
+      email: String(selectedUser.email || ''),
+      phoneNumber: String(selectedUser.phone_number || ''),
+    })
+    setActiveTab('user-profile')
+    setBanner({ type: 'idle', message: '' })
+  }
+
+  function handleCloseUserProfile() {
+    setSelectedUserProfileId('')
+    setSelectedUserProfileDraft({ username: '', displayName: '', role: 'viewer', email: '', phoneNumber: '' })
+    setActiveTab('users')
+  }
+
+  async function handleUpdateSelectedUserProfile(event) {
+    event.preventDefault()
+    if (!isAdmin || !selectedUserProfileId) return
+
+    setUserProfileSaving(true)
     setBanner({ type: 'idle', message: '' })
 
     try {
@@ -1129,28 +1175,61 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: userId,
-          username: draft.username,
-          role: draft.role,
+          id: selectedUserProfileId,
+          username: selectedUserProfileDraft.username,
+          displayName: selectedUserProfileDraft.displayName,
+          role: selectedUserProfileDraft.role,
+          email: selectedUserProfileDraft.email,
+          phoneNumber: selectedUserProfileDraft.phoneNumber,
         }),
       })
 
-      setBanner({ type: 'success', message: 'User updated successfully.' })
+      setBanner({ type: 'success', message: 'User profile updated successfully.' })
       await loadUsers()
-      if (String(user?.id) === String(userId)) {
+      if (String(user?.id) === String(selectedUserProfileId)) {
         await refreshSession()
       }
     } catch (error) {
-      setBanner({ type: 'error', message: error.message || 'Could not update user.' })
+      setBanner({ type: 'error', message: error.message || 'Could not update user profile.' })
     } finally {
-      setUserSaveLoadingId('')
+      setUserProfileSaving(false)
+    }
+  }
+
+  async function handleUpdateAccount(event) {
+    event.preventDefault()
+    if (!user) return
+
+    setAccountSaving(true)
+    setBanner({ type: 'idle', message: '' })
+
+    try {
+      await apiFetch('/users/update.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          displayName: accountForm.displayName,
+          email: accountForm.email,
+          phoneNumber: accountForm.phoneNumber,
+        }),
+      })
+
+      setBanner({ type: 'success', message: 'Account details updated successfully.' })
+      await refreshSession()
+    } catch (error) {
+      setBanner({ type: 'error', message: error.message || 'Could not update your account details.' })
+    } finally {
+      setAccountSaving(false)
     }
   }
 
   async function handleResetUserPassword(userId) {
     if (!isAdmin) return
 
-    setUserResetLoadingId(String(userId))
+    setUserResetLoading(true)
     setBanner({ type: 'idle', message: '' })
 
     try {
@@ -1171,20 +1250,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not reset password.' })
     } finally {
-      setUserResetLoadingId('')
+      setUserResetLoading(false)
     }
-  }
-
-  function flashCopyFeedback(key) {
-    if (copyFeedbackTimerRef.current) {
-      window.clearTimeout(copyFeedbackTimerRef.current)
-    }
-
-    setCopyFeedbackKey(key)
-    copyFeedbackTimerRef.current = window.setTimeout(() => {
-      setCopyFeedbackKey('')
-      copyFeedbackTimerRef.current = null
-    }, 1400)
   }
 
   async function handleCopyTemporaryPassword() {
@@ -1198,6 +1265,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     } catch {
       setBanner({ type: 'error', message: 'Could not copy the login credentials.' })
     }
+  }
+
+  function flashCopyFeedback(key) {
+    if (copyFeedbackTimerRef.current) {
+      window.clearTimeout(copyFeedbackTimerRef.current)
+    }
+
+    setCopyFeedbackKey(key)
+    copyFeedbackTimerRef.current = window.setTimeout(() => {
+      setCopyFeedbackKey('')
+      copyFeedbackTimerRef.current = null
+    }, 1400)
   }
 
   async function handleDraftBookingMessage(type) {
@@ -1241,7 +1320,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     const confirmed = window.confirm(`Delete user ${username}? This cannot be undone.`)
     if (!confirmed) return
 
-    setUserDeleteLoadingId(String(userId))
+    setUserDeleteLoading(true)
     setBanner({ type: 'idle', message: '' })
 
     try {
@@ -1253,36 +1332,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
       setBanner({ type: 'success', message: 'User deleted successfully.' })
       await loadUsers()
+      if (String(selectedUserProfileId) === String(userId)) {
+        handleCloseUserProfile()
+      }
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not delete user.' })
     } finally {
-      setUserDeleteLoadingId('')
-    }
-  }
-
-  async function handleChangePassword(event) {
-    event.preventDefault()
-    setChangePasswordLoading(true)
-    setBanner({ type: 'idle', message: '' })
-
-    try {
-      await apiFetch('/auth/change-password.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(changePasswordForm),
-      })
-
-      setChangePasswordForm({ currentPassword: '', newPassword: '' })
-      setSessionToken('')
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('eddie_admin_session_token')
-      }
-      setUser(null)
-      setBanner({ type: 'success', message: 'Password changed. Please sign in again.' })
-    } catch (error) {
-      setBanner({ type: 'error', message: error.message || 'Could not change password.' })
-    } finally {
-      setChangePasswordLoading(false)
+      setUserDeleteLoading(false)
     }
   }
 
@@ -2469,7 +2525,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             <div className="admin-section-heading">
               <div>
                 <h2>Users</h2>
-                <p>Create, edit, reset passwords, and delete users.</p>
+                <p>Browse users and open a profile to edit details.</p>
               </div>
               <button
                 className="button button-primary"
@@ -2481,28 +2537,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               </button>
             </div>
 
-            {resetPasswordResult && (
-              <section className="admin-editor" aria-label="Temporary password panel">
-                <h3>Temporary Password</h3>
-                <p>
-                  Username: <strong>{resetPasswordResult.username}</strong>
-                </p>
-                <p>
-                  Temporary password: <strong>{resetPasswordResult.temporaryPassword}</strong>
-                </p>
-                <div className="admin-inline-actions">
-                  <button className={`button button-primary ${copyFeedbackKey === 'temporary-password' ? 'is-copied' : ''}`} type="button" onClick={handleCopyTemporaryPassword}>
-                    <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
-                    Copy
-                  </button>
-                  <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
-                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
-                    Close
-                  </button>
-                </div>
-              </section>
-            )}
-
             {showCreateUserForm && (
               <section className="admin-editor" aria-label="Create user form">
                 <h3>Create User</h3>
@@ -2513,6 +2547,28 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       value={newUserForm.username}
                       onChange={(event) => setNewUserForm((current) => ({ ...current, username: event.target.value }))}
                       required
+                    />
+                  </label>
+                  <label>
+                    <span>Display Name</span>
+                    <input
+                      value={newUserForm.displayName}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, displayName: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      value={newUserForm.email}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, email: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    <span>Phone number</span>
+                    <input
+                      value={newUserForm.phoneNumber}
+                      onChange={(event) => setNewUserForm((current) => ({ ...current, phoneNumber: event.target.value }))}
                     />
                   </label>
                   <label>
@@ -2557,64 +2613,25 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <th>Username</th>
                     <th>Role</th>
                     <th>Last login</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((item) => {
-                    const draft = userDrafts[String(item.id)] || { username: item.username, role: item.role }
                     return (
                       <tr key={item.id}>
                         <td>
-                          <input
-                            value={draft.username}
-                            onChange={(event) => setUserDrafts((current) => ({
-                              ...current,
-                              [String(item.id)]: {
-                                ...draft,
-                                username: event.target.value,
-                              },
-                            }))}
-                          />
+                          <button className="admin-link-button" type="button" onClick={() => handleOpenUserProfile(item.id)}>
+                            {item.username}
+                          </button>
                         </td>
-                        <td>
-                          <select
-                            value={draft.role}
-                            onChange={(event) => setUserDrafts((current) => ({
-                              ...current,
-                              [String(item.id)]: {
-                                ...draft,
-                                role: event.target.value,
-                              },
-                            }))}
-                          >
-                            <option value="viewer">viewer</option>
-                            <option value="admin">admin</option>
-                          </select>
-                        </td>
+                        <td>{item.role}</td>
                         <td>{item.last_login_at || 'Never'}</td>
-                        <td>
-                          <div className="admin-inline-actions">
-                            <button className="button button-quiet" type="button" onClick={() => handleUpdateUser(item.id)} disabled={userSaveLoadingId === String(item.id)}>
-                              <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
-                              {userSaveLoadingId === String(item.id) ? 'Saving...' : 'Save'}
-                            </button>
-                            <button className="button button-quiet" type="button" onClick={() => handleResetUserPassword(item.id)} disabled={userResetLoadingId === String(item.id)}>
-                              <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
-                              {userResetLoadingId === String(item.id) ? 'Resetting...' : 'Reset Password'}
-                            </button>
-                            <button className="button button-danger" type="button" onClick={() => handleDeleteUser(item.id, item.username)} disabled={userDeleteLoadingId === String(item.id)}>
-                              <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-                              {userDeleteLoadingId === String(item.id) ? 'Deleting...' : 'Delete'}
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     )
                   })}
                   {!usersLoading && users.length === 0 && (
                     <tr>
-                      <td colSpan={4}>No users found.</td>
+                      <td colSpan={3}>No users found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -2623,44 +2640,173 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
           </section>
         )}
 
+        {activeTab === 'user-profile' && isAdmin && selectedUserProfileId && (
+          <section className="admin-section" aria-label="User profile">
+            <div className="admin-section-heading">
+              <div>
+                <h2>User Profile</h2>
+                <p>Edit account details for this user.</p>
+              </div>
+              <button className="button button-quiet" type="button" onClick={handleCloseUserProfile}>
+                <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                Back to Users
+              </button>
+            </div>
+
+            <form className="admin-form-grid admin-profile-form" onSubmit={handleUpdateSelectedUserProfile}>
+              <label>
+                <span>Username</span>
+                <input
+                  value={selectedUserProfileDraft.username}
+                  onChange={(event) => setSelectedUserProfileDraft((current) => ({ ...current, username: event.target.value }))}
+                  required
+                />
+              </label>
+
+              <label>
+                <span>Display Name</span>
+                <input
+                  value={selectedUserProfileDraft.displayName}
+                  onChange={(event) => setSelectedUserProfileDraft((current) => ({ ...current, displayName: event.target.value }))}
+                />
+              </label>
+
+              <label>
+                <span>Role</span>
+                <select
+                  value={selectedUserProfileDraft.role}
+                  onChange={(event) => setSelectedUserProfileDraft((current) => ({ ...current, role: event.target.value }))}
+                >
+                  <option value="viewer">viewer</option>
+                  <option value="admin">admin</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={selectedUserProfileDraft.email}
+                  onChange={(event) => setSelectedUserProfileDraft((current) => ({ ...current, email: event.target.value }))}
+                />
+              </label>
+
+              <label>
+                <span>Phone number</span>
+                <input
+                  value={selectedUserProfileDraft.phoneNumber}
+                  onChange={(event) => setSelectedUserProfileDraft((current) => ({ ...current, phoneNumber: event.target.value }))}
+                />
+              </label>
+
+              <div className="field-full admin-inline-actions">
+                <button className="button button-primary" type="submit" disabled={userProfileSaving}>
+                  <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
+                  {userProfileSaving ? 'Saving...' : 'Save Profile'}
+                </button>
+                <button className="button button-quiet" type="button" onClick={() => handleResetUserPassword(selectedUserProfileId)} disabled={userResetLoading}>
+                  <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
+                  {userResetLoading ? 'Resetting...' : 'Reset Password'}
+                </button>
+                <button className="button button-danger" type="button" onClick={() => handleDeleteUser(selectedUserProfileId, selectedUserProfileDraft.username)} disabled={userDeleteLoading || String(user?.id) === String(selectedUserProfileId)}>
+                  <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                  {userDeleteLoading ? 'Deleting...' : 'Delete User'}
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
+
         {activeTab === 'account' && (
           <section className="admin-section" aria-label="My account">
             <div className="admin-section-heading">
               <div>
-                <h2>Change Password</h2>
-                <p>Changing your password signs you out of all current sessions.</p>
+                <h2>My Account</h2>
+                <p>Update your contact details and password.</p>
               </div>
             </div>
 
-            <form className="admin-form-grid" onSubmit={handleChangePassword}>
+            <form className="admin-form-grid admin-profile-form" onSubmit={handleUpdateAccount}>
+              <label>
+                <span>Username</span>
+                <div className="admin-readonly-value">{formatDisplayText(user?.username, 'Unknown')}</div>
+              </label>
+
+              <label>
+                <span>Display Name</span>
+                <input
+                  value={accountForm.displayName}
+                  onChange={(event) => setAccountForm((current) => ({ ...current, displayName: event.target.value }))}
+                />
+              </label>
+
+              <label>
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={accountForm.email}
+                  onChange={(event) => setAccountForm((current) => ({ ...current, email: event.target.value }))}
+                />
+              </label>
+
+              <label>
+                <span>Phone number</span>
+                <input
+                  value={accountForm.phoneNumber}
+                  onChange={(event) => setAccountForm((current) => ({ ...current, phoneNumber: event.target.value }))}
+                />
+              </label>
+
               <label>
                 <span>Current password</span>
                 <input
-                  type="password"
-                  value={changePasswordForm.currentPassword}
-                  onChange={(event) => setChangePasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
-                  required
+                  type="text"
+                  value={accountForm.currentPassword}
+                  onChange={(event) => setAccountForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                  placeholder="Leave blank to keep your password"
                 />
               </label>
 
               <label>
                 <span>New password</span>
                 <input
-                  type="password"
+                  type="text"
                   minLength={8}
-                  value={changePasswordForm.newPassword}
-                  onChange={(event) => setChangePasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
-                  required
+                  value={accountForm.newPassword}
+                  onChange={(event) => setAccountForm((current) => ({ ...current, newPassword: event.target.value }))}
+                  placeholder="Leave blank to keep your password"
                 />
               </label>
 
               <div className="field-full admin-inline-actions">
-                <button className="button button-primary" type="submit" disabled={changePasswordLoading}>
-                  <FontAwesomeIcon icon={faKey} aria-hidden="true" />
-                  {changePasswordLoading ? 'Updating...' : 'Update Password'}
+                <button className="button button-primary" type="submit" disabled={accountSaving}>
+                  <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
+                  {accountSaving ? 'Saving...' : 'Save Details'}
                 </button>
               </div>
             </form>
+          </section>
+        )}
+
+        {resetPasswordResult && (
+          <section className="admin-editor" aria-label="Temporary password panel">
+            <h3>Temporary Password</h3>
+            <p>
+              Username: <strong>{resetPasswordResult.username}</strong>
+            </p>
+            <p>
+              Temporary password: <strong>{resetPasswordResult.temporaryPassword}</strong>
+            </p>
+            <div className="admin-inline-actions">
+              <button className={`button button-primary ${copyFeedbackKey === 'temporary-password' ? 'is-copied' : ''}`} type="button" onClick={handleCopyTemporaryPassword}>
+                <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                Copy
+              </button>
+              <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
+                <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                Close
+              </button>
+            </div>
           </section>
         )}
       </section>

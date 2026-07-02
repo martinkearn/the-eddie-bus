@@ -44,9 +44,45 @@ BEGIN
 END //
 DELIMITER ;
 
+DROP PROCEDURE IF EXISTS ensure_admin_user_column;
+DELIMITER //
+CREATE PROCEDURE ensure_admin_user_column(
+  IN p_column_name VARCHAR(64),
+  IN p_definition TEXT,
+  IN p_after_column VARCHAR(64)
+)
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'admin_users'
+      AND COLUMN_NAME = p_column_name
+  ) THEN
+    SET @ddl = CONCAT(
+      'ALTER TABLE admin_users ADD COLUMN ',
+      p_column_name,
+      ' ',
+      p_definition,
+      CASE
+        WHEN p_after_column IS NULL OR p_after_column = '' THEN ''
+        ELSE CONCAT(' AFTER ', p_after_column)
+      END
+    );
+
+    PREPARE stmt FROM @ddl;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+END //
+DELIMITER ;
+
 CREATE TABLE IF NOT EXISTS admin_users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   username VARCHAR(64) NOT NULL,
+  display_name VARCHAR(255) NULL,
+  email VARCHAR(255) NULL,
+  phone_number VARCHAR(32) NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('admin', 'viewer') NOT NULL DEFAULT 'viewer',
   last_login_at TIMESTAMP NULL DEFAULT NULL,
@@ -55,6 +91,10 @@ CREATE TABLE IF NOT EXISTS admin_users (
   PRIMARY KEY (id),
   UNIQUE KEY uq_admin_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CALL ensure_admin_user_column('display_name', 'VARCHAR(255) NULL', 'username');
+CALL ensure_admin_user_column('email', 'VARCHAR(255) NULL', 'username');
+CALL ensure_admin_user_column('phone_number', 'VARCHAR(32) NULL', 'email');
 
 CREATE TABLE IF NOT EXISTS booking_driver_mappings (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

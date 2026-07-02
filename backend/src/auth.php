@@ -188,15 +188,15 @@ function auth_user(PDO $pdo): ?array
         return null;
     }
 
-    $tokenHash = hash('sha256', $token);
-    $stmt = $pdo->prepare(
-        'SELECT u.id, u.username, u.role, u.created_at, u.updated_at, u.last_login_at
-         FROM admin_sessions s
-         INNER JOIN admin_users u ON u.id = s.user_id
-         WHERE s.token_hash = :token_hash
-           AND s.revoked_at IS NULL
-         LIMIT 1'
-    );
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare(
+                'SELECT u.id, u.username, u.display_name, u.email, u.phone_number, u.role, u.created_at, u.updated_at, u.last_login_at
+                 FROM admin_sessions s
+                 INNER JOIN admin_users u ON u.id = s.user_id
+                 WHERE s.token_hash = :token_hash
+                     AND s.revoked_at IS NULL
+                 LIMIT 1'
+        );
     $stmt->execute([':token_hash' => $tokenHash]);
     $user = $stmt->fetch();
 

@@ -21,7 +21,12 @@ if (!is_array($payload)) {
 
 $idRaw = trim((string)($payload['id'] ?? ''));
 $username = trim((string)($payload['username'] ?? ''));
+$displayName = trim((string)($payload['displayName'] ?? $payload['display_name'] ?? ''));
 $role = trim((string)($payload['role'] ?? ''));
+$email = trim((string)($payload['email'] ?? ''));
+$phoneNumber = trim((string)($payload['phoneNumber'] ?? $payload['phone_number'] ?? ''));
+$currentPassword = (string)($payload['currentPassword'] ?? '');
+$newPassword = (string)($payload['newPassword'] ?? '');
 
 $errors = [];
 if ($idRaw === '' || !ctype_digit($idRaw)) {
@@ -30,8 +35,29 @@ if ($idRaw === '' || !ctype_digit($idRaw)) {
 if ($username === '') {
     $errors['username'] = 'Username is required.';
 }
+if (strlen($displayName) > 255) {
+    $errors['displayName'] = 'Display name must be 255 characters or fewer.';
+}
 if (!in_array($role, ['admin', 'viewer'], true)) {
     $errors['role'] = 'Role is invalid.';
+}
+if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+    $errors['email'] = 'Email address is invalid.';
+}
+if ($phoneNumber !== '' && strlen($phoneNumber) > 32) {
+    $errors['phoneNumber'] = 'Phone number must be 32 characters or fewer.';
+}
+if ($currentPassword !== '' || $newPassword !== '') {
+        if ($currentPassword === '') {
+            $errors['currentPassword'] = 'Current password is required.';
+        }
+        if ($newPassword === '') {
+            $errors['newPassword'] = 'New password is required.';
+        }
+        $policyError = validate_password_policy($newPassword);
+        if ($policyError !== null) {
+                $errors['newPassword'] = $policyError;
+        }
 }
 
 if ($errors !== []) {
@@ -42,16 +68,72 @@ $targetUserId = (int)$idRaw;
 
 try {
     $pdo = db_connection();
-    $actor = require_admin($pdo);
+    $actor = require_auth($pdo);
+    $actorId = (int)($actor['id'] ?? 0);
+    $actorRole = (string)($actor['role'] ?? '');
+    $isAdmin = $actorRole === 'admin';
 
-    ensure_not_last_admin_change($pdo, $targetUserId, $role);
+    if (!$isAdmin && $actorId !== $targetUserId) {
+        fail_json(403, 'You can only update your own profile.');
+    }
 
-    $stmt = $pdo->prepare('UPDATE admin_users SET username = :username, role = :role WHERE id = :id');
+    $existingStmt = $pdo->prepare('SELECT id, username, display_name, role FROM admin_users WHERE id = :id LIMIT 1');
+    $existingStmt->execute([':id' => $targetUserId]);
+    $existing = $existingStmt->fetch();
+    if (!is_array($existing)) {
+        fail_json(404, 'User not found.');
+    }
+
+    $passwordChangeRequested = $currentPassword !== '' || $newPassword !== '';
+    if ($passwordChangeRequested && $actorId !== $targetUserId) {
+        fail_json(403, 'You can only change your own password.');
+    }
+
+    $nextUsername = $username;
+    $nextDisplayName = $displayName;
+    $nextRole = $role;
+
+    if (!$isAdmin) {
+        if ($nextUsername !== (string)$existing['username'] || $nextRole !== (string)$existing['role']) {
+            fail_json(403, 'You can only update your own profile details.');
+        }
+        $nextUsername = (string)$existing['username'];
+        $nextDisplayName = $displayName;
+        $nextRole = (string)$existing['role'];
+    } else {
+        ensure_not_last_admin_change($pdo, $targetUserId, $nextRole);
+    }
+
+    $stmt = $pdo->prepare('UPDATE admin_users SET username = :username, display_name = :display_name, email = :email, phone_number = :phone_number, role = :role WHERE id = :id');
     $stmt->execute([
-        ':username' => $username,
-        ':role' => $role,
+        ':username' => $nextUsername,
+        ':display_name' => $nextDisplayName !== '' ? $nextDisplayName : null,
+        ':email' => $email !== '' ? $email : null,
+        ':phone_number' => $phoneNumber !== '' ? $phoneNumber : null,
+        ':role' => $nextRole,
         ':id' => $targetUserId,
     ]);
+
+    $signedOut = false;
+    if ($passwordChangeRequested) {
+        $passwordStmt = $pdo->prepare('SELECT password_hash FROM admin_users WHERE id = :id LIMIT 1');
+        $passwordStmt->execute([':id' => $targetUserId]);
+        $passwordRow = $passwordStmt->fetch();
+        if (!is_array($passwordRow) || !password_verify_secure($currentPassword, (string)$passwordRow['password_hash'])) {
+            fail_json(401, 'Current password is incorrect.');
+        }
+
+        $newHash = password_hash_secure($newPassword);
+        $passwordUpdateStmt = $pdo->prepare('UPDATE admin_users SET password_hash = :password_hash WHERE id = :id');
+        $passwordUpdateStmt->execute([
+            ':password_hash' => $newHash,
+            ':id' => $targetUserId,
+        ]);
+
+        revoke_user_sessions($pdo, $targetUserId);
+        clear_session_cookie();
+        $signedOut = true;
+    }
 
     if ($stmt->rowCount() === 0) {
         $existsStmt = $pdo->prepare('SELECT id FROM admin_users WHERE id = :id LIMIT 1');
@@ -62,15 +144,17 @@ try {
         }
     }
 
-    auth_event($pdo, 'user_updated', (int)$actor['id'], (string)$actor['username'], [
+    auth_event($pdo, $isAdmin || $actorId !== $targetUserId ? 'user_updated' : 'profile_updated', $actorId, (string)$actor['username'], [
         'targetUserId' => $targetUserId,
-        'targetUsername' => $username,
-        'targetRole' => $role,
+        'targetUsername' => $nextUsername,
+        'targetRole' => $nextRole,
+        'passwordChanged' => $signedOut,
     ]);
 
     respond_json(200, [
         'ok' => true,
         'message' => 'User updated.',
+        'signedOut' => $signedOut,
     ]);
 } catch (PDOException $pdoException) {
     $sqlState = $pdoException->errorInfo[0] ?? '';

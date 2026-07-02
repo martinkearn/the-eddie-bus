@@ -3320,6 +3320,10 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-profile-form {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .admin-form label,
 .admin-form-grid label {
   display: grid;
@@ -3440,6 +3444,29 @@ main {
 
 .admin-users-table tbody tr {
   cursor: default;
+}
+
+.admin-link-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--primary);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+.admin-link-button:hover {
+  color: var(--primary-bright);
+}
+
+.admin-link-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
 .admin-table tbody tr:hover {
