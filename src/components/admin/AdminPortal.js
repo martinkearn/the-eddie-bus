@@ -1415,7 +1415,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
             </Link>
             <div>
               <h1>Admin Portal</h1>
-              <p>Welcome {user.username}</p>
+              <p>Welcome {formatDisplayText(user?.displayName, user?.username || 'there')}</p>
             </div>
           </div>
 
