@@ -2172,6 +2172,136 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.policy-access-section {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: min(calc(100% - 2rem), var(--max));
+  max-width: none;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.policy-access-lead {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.policy-access-lead img {
+  width: 100%;
+  min-height: 18rem;
+  object-fit: cover;
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.policy-access-lead > div {
+  display: grid;
+  align-content: center;
+  min-height: 18rem;
+  padding: 0.5rem 0;
+  max-width: 42rem;
+}
+
+.policy-capacity-label {
+  margin-top: 0.5rem;
+  color: var(--secondary);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.policy-capacity-grid {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.policy-capacity-card {
+  width: 100%;
+}
+
+.policy-capacity-summary {
+  max-width: 66rem;
+}
+
+.policy-capacity-card .definition-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.policy-capacity-card .definition-list div {
+  padding: 1.1rem 1.2rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--outline);
+  border-radius: 0.9rem;
+}
+
+.policy-capacity-card .definition-list dt {
+  font-size: 1rem;
+}
+
+.policy-capacity-card .definition-list dd {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.policy-capacity-note-title {
+  margin-top: 0.5rem;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.policy-support-stack {
+  display: grid;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.policy-support-stack .info-card {
+  height: 100%;
+  width: 100%;
+}
+
+.policy-support-card-content {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.policy-support-card-content img {
+  width: 100%;
+  height: 100%;
+  min-height: 14rem;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.policy-support-card-content > div {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.policy-support-card-content .check-list {
+  gap: 0.5rem;
+}
+
+.policy-support-card-content .check-list li {
+  font-size: 0.95rem;
+}
+
+.policy-download-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .accessibility-photo-panel {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
@@ -2563,6 +2693,10 @@ main {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .policy-download-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .booking-info-card-half,
   .booking-info-card-full {
     grid-column: span 1;
@@ -2607,6 +2741,7 @@ main {
   .hero,
   .accessibility-feature,
   .driver-responsibilities-layout,
+  .policy-access-lead,
   .contact-panel,
   .contact-direct,
   .booking-panel,
@@ -2692,6 +2827,28 @@ main {
     grid-template-columns: 1fr;
   }
 
+  .policy-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-capacity-grid,
+  .policy-download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-capacity-card .definition-list {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-support-grid,
+  .policy-support-card-content {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-support-card-content img {
+    min-height: 12rem;
+  }
+
   .booking-info-card-half,
   .booking-info-card-full {
     grid-column: span 1;
@@ -2770,13 +2927,13 @@ main {
   .calendar-grid,
   .booking-form-grid,
   .booking-intro-highlights,
-  .mobility-support-grid {
-    grid-template-columns: 1fr;
-  }
-
   .booking-hero-process {
     padding: 1rem;
     gap: 0.8rem;
+  }
+
+  .policy-support-stack {
+    gap: 1rem;
   }
 
   .booking-hero .page-intro-content > h1 + p,
