@@ -83,6 +83,9 @@ return [
 		'user' => 'eddie_bus_app',
 		'pass' => 'replace-with-real-password',
 	],
+	'resend' => [
+		'api_key' => 're_replace_with_real_key',
+	],
 	'availability' => [
 		'days_to_show' => 90,
 		'disable_past_dates' => true,
