@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { site } from '../../content/site'
 import {
   faArrowLeft,
   faArrowRight,
@@ -356,94 +355,6 @@ function preferredUserLabel(user, fallback = 'Not provided') {
   return fallback
 }
 
-function buildBookingMessageDraft(booking, type) {
-  if (!booking) return ''
-
-  const contactName = formatDisplayText(booking.contactName, 'there')
-  const organisation = formatDisplayText(booking.organisation)
-  const bookingRef = formatDisplayText(booking.bookingRef, '')
-  const bookingDateWords = formatDateWords(booking.bookingDate)
-  const bookingTime = formatPickupTime(booking.pickupTime)
-  const bookingWhen = [bookingDateWords, bookingTime ? `at ${bookingTime}` : '']
-    .filter(Boolean)
-    .join(' ')
-  const destinationName = formatDisplayText(booking.destinationName, '')
-  const driverName = formatDisplayText(booking.driverName, 'the assigned driver')
-
-  const signatureLines = [
-    'Best wishes,',
-    '',
-    'The EDDIE Bus team',
-    `Email: ${site.email}`,
-    `Phone: ${site.phone}`,
-  ]
-
-  if (type === 'confirmed') {
-    return [
-      `Hi ${contactName},`,
-      '',
-      `Your booking for ${organisation} to ${destinationName || 'your chosen destination'} on ${bookingWhen || 'your requested date'}, booking reference ${bookingRef || 'not provided'} is now fully confirmed.`,
-      '',
-      `The bus is reserved and ${driverName} will be your driver.`,
-      '',
-      'If anything changes, please reply to this message and we will help you with the next steps.',
-      '',
-      ...signatureLines,
-    ].join('\n')
-  }
-
-  if (type === 'driver_confirmed') {
-    const destinationAddress = formatDisplayText(booking.destinationAddress)
-    const driverContactName = formatDisplayText(booking.driverName, 'there')
-
-    return [
-      `Hi ${driverContactName},`,
-      '',
-      'Thank you for taking this booking. You are now confirmed as the driver.',
-      '',
-      `Booking reference: ${bookingRef || 'Not provided'}`,
-      `Date and pickup time: ${bookingWhen || 'Not provided'}`,
-      `Organisation: ${organisation}`,
-      `Destination: ${destinationName || 'Not provided'}`,
-      `Destination address: ${destinationAddress}`,
-      '',
-      'Customer contact details:',
-      `Name: ${formatDisplayText(booking.contactName)}`,
-      `Email: ${formatDisplayText(booking.contactEmail)}`,
-      `Phone: ${formatDisplayText(booking.contactNumber)}`,
-      '',
-      `Special requirements: ${formatDisplayText(booking.specialRequirements)}`,
-      '',
-      'Please complete the vehicle checklist in the admin portal after the journey.',
-      '',
-      'Go to https://theeddiebus.org.uk/admin/ to see more details of the booking and update the checklist.',
-      '',
-      ...signatureLines,
-    ].join('\n')
-  }
-
-  return [
-    `Hi ${contactName},`,
-    '',
-    `Thank you for your booking request for ${organisation} to ${destinationName || 'your chosen destination'} on ${bookingWhen || 'your requested date'}.`,
-    '',
-    bookingRef ? `Booking reference: ${bookingRef}` : '',
-    '',
-    'We have reserved the bus for you but it is not finally confirmed until a driver is matched.',
-    '',
-    'We are actively looking for a driver and will be back in touch as soon as we can confirm the driver.',
-    '',
-    ...signatureLines,
-  ].join('\n')
-}
-
-function buildBookingSubjectDraft(booking) {
-  if (!booking) return ''
-
-  const bookingRef = formatDisplayText(booking.bookingRef, '')
-  return bookingRef ? `Your EDDIE bus booking ${bookingRef} ` : ''
-}
-
 function formatDateForApi(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -499,9 +410,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [driverMappings, setDriverMappings] = useState([])
   const [myDriverMappingDraft, setMyDriverMappingDraft] = useState('')
   const [adminConfirmUserIdDraft, setAdminConfirmUserIdDraft] = useState('')
-  const [bookingMessageDraft, setBookingMessageDraft] = useState('')
-  const [bookingSubjectDraft, setBookingSubjectDraft] = useState('')
-  const [messageDraftType, setMessageDraftType] = useState('')
   const [bookingSaveLoading, setBookingSaveLoading] = useState(false)
   const [checklistSaveLoading, setChecklistSaveLoading] = useState(false)
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
@@ -681,8 +589,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setSelectedBookingId(String(id))
     setBookingForm(null)
     setBookingDetailTab('main')
-    setBookingMessageDraft('')
-    setBookingSubjectDraft('')
     setDriverMappings([])
     setMyDriverMappingDraft('')
     setAdminConfirmUserIdDraft('')
@@ -960,8 +866,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setDriverMappings([])
     setMyDriverMappingDraft('')
     setAdminConfirmUserIdDraft('')
-    setBookingMessageDraft('')
-    setBookingSubjectDraft('')
     setBookingDetailLoading(false)
   }
 
@@ -1291,41 +1195,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setCopyFeedbackKey('')
       copyFeedbackTimerRef.current = null
     }, 1400)
-  }
-
-  async function handleDraftBookingMessage(type) {
-    if (!isAdmin || !bookingForm) return
-
-    const draft = buildBookingMessageDraft(bookingForm, type)
-    const subjectDraft = buildBookingSubjectDraft(bookingForm)
-    setBookingMessageDraft(draft)
-    setBookingSubjectDraft(subjectDraft)
-
-    try {
-      await navigator.clipboard.writeText(draft)
-      setBanner({
-        type: 'success',
-        message: type === 'confirmed'
-          ? 'Booking confirmed message copied to clipboard.'
-          : (type === 'driver_confirmed'
-            ? 'Driver confirmed message copied to clipboard.'
-            : 'Booking acknowledgment copied to clipboard.'),
-      })
-    } catch {
-      setBanner({ type: 'error', message: 'Could not copy the booking message.' })
-    }
-  }
-
-  async function handleCopyDraftText(copyText, successMessage, errorMessage, feedbackKey) {
-    try {
-      await navigator.clipboard.writeText(copyText)
-      setBanner({ type: 'success', message: successMessage })
-      if (feedbackKey) {
-        flashCopyFeedback(feedbackKey)
-      }
-    } catch {
-      setBanner({ type: 'error', message: errorMessage })
-    }
   }
 
   async function handleDeleteUser(userId, userLabel) {
@@ -1812,7 +1681,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <option value="main">Main booking</option>
                       {isAdmin && <option value="driver-assignment">Driver Assignment</option>}
                       <option value="checklist">Checklist</option>
-                      {isAdmin && <option value="messages">Messages</option>}
                     </select>
                   </label>
 
@@ -1828,11 +1696,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => setBookingDetailTab('checklist')}>
                       Checklist
                     </button>
-                    {isAdmin && (
-                      <button type="button" role="tab" aria-selected={bookingDetailTab === 'messages'} className={bookingDetailTab === 'messages' ? 'is-active' : ''} onClick={() => setBookingDetailTab('messages')}>
-                        Messages
-                      </button>
-                    )}
                   </nav>
 
                   {bookingDetailTab === 'main' && (
@@ -2411,99 +2274,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                     </div>
                   )}
                   </section>
-                  )}
-
-                  {bookingDetailTab === 'messages' && isAdmin && (
-                    <section className="field-full admin-draft-section" aria-label="Booking message drafts">
-                      <div className="admin-detail-tab-heading">
-                        <h3>Messages</h3>
-                        <p>Create and copy customer-ready booking messages.</p>
-                      </div>
-
-                      <div className="field-full" style={{ marginTop: '0.6rem', marginBottom: '0.8rem', display: 'grid', gap: '0.6rem', maxWidth: '22rem' }}>
-                        <label>
-                          <span>Message type</span>
-                          <select
-                            value={messageDraftType}
-                            onChange={(event) => {
-                              const nextType = event.target.value
-                              setMessageDraftType(nextType)
-                              if (!nextType) {
-                                setBookingMessageDraft('')
-                                setBookingSubjectDraft('')
-                                return
-                              }
-                              void handleDraftBookingMessage(nextType)
-                            }}
-                          >
-                            <option value="">Choose draft</option>
-                            <option value="acknowledgment">Booking acknowledgment</option>
-                            <option value="confirmed">Booking confirmed</option>
-                            <option value="driver_confirmed">Driver confirmed</option>
-                          </select>
-                        </label>
-                      </div>
-
-                      <div className="field-full">
-                        <span>Subject</span>
-                        <div className="admin-field-with-copy">
-                          <input
-                            type="text"
-                            className="booking-subject-draft-textarea"
-                            readOnly
-                            value={bookingSubjectDraft}
-                            placeholder="Create a draft to see the suggested subject"
-                          />
-                          <button
-                            className={`button button-quiet button-icon-only ${copyFeedbackKey === 'subject-copy' ? 'is-copied' : ''}`}
-                            type="button"
-                            onClick={async () => {
-                              if (!bookingForm) return
-
-                              const subjectDraft = buildBookingSubjectDraft(bookingForm)
-                              setBookingSubjectDraft(subjectDraft)
-                              await handleCopyDraftText(subjectDraft, 'Subject copied to clipboard.', 'Could not copy the subject.', 'subject-copy')
-                            }}
-                            aria-label="Copy subject to clipboard"
-                            title="Copy subject"
-                          >
-                            <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="field-full">
-                        <span>Body</span>
-                        <div className="admin-field-with-copy">
-                          <textarea
-                            rows={15}
-                            className="booking-body-draft-textarea"
-                            readOnly
-                            value={bookingMessageDraft}
-                            placeholder="Create a draft to see a suggested body for email or WhatsApp"
-                          />
-                          <button
-                            className={`button button-quiet button-icon-only ${copyFeedbackKey === 'body-copy' ? 'is-copied' : ''}`}
-                            type="button"
-                            onClick={() => handleCopyDraftText(bookingMessageDraft, 'Booking message copied to clipboard.', 'Could not copy the booking message.', 'body-copy')}
-                            aria-label="Copy booking message to clipboard"
-                            title="Copy message"
-                          >
-                            <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {bookingDetailTab === 'messages' && !isAdmin && (
-                    <section className="field-full admin-draft-section" aria-label="Messages">
-                      <div className="admin-detail-tab-heading">
-                        <h3>Messages</h3>
-                        <p>Message drafting tools are available to admin users.</p>
-                      </div>
-                      <p>Message drafting is available to admin users only.</p>
-                    </section>
                   )}
 
                   <p className="field-full admin-detail-meta-text" aria-label="Booking metadata">
