@@ -28,7 +28,9 @@ try {
     $stmt = $pdo->prepare(
         "SELECT
             m.user_id,
+            u.display_name,
             u.username,
+            COALESCE(NULLIF(TRIM(u.display_name), ''), u.username) AS user_name,
             u.role,
             m.mapping_status,
             m.created_at,
@@ -44,6 +46,7 @@ try {
                 WHEN 'not_available' THEN 4
                 ELSE 5
             END,
+            user_name ASC,
             u.username ASC"
     );
     $stmt->execute([':booking_id' => $bookingId]);

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../bootstrap_api.php';
+require_once __DIR__ . '/../../../src/email.php';
 
 function tri_state_to_nullable_int(mixed $value): ?int
 {
@@ -26,6 +27,22 @@ function bool_to_int(mixed $value): int
     }
 
     return 0;
+}
+
+function fallback_text(string $value, string $fallback): string
+{
+    $trimmed = trim($value);
+    return $trimmed !== '' ? $trimmed : $fallback;
+}
+
+function format_booking_date_words(string $bookingDate): string
+{
+    $date = DateTimeImmutable::createFromFormat('Y-m-d', $bookingDate);
+    if (!$date instanceof DateTimeImmutable) {
+        return $bookingDate;
+    }
+
+    return $date->format('l j F Y');
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
@@ -148,8 +165,19 @@ try {
     }
 
     $adminNotesUpdateSql = $hasAdminNotesColumn ? ",\n             admin_notes = :admin_notes" : '';
+    $statusBeforeUpdate = '';
+    $driverUserIdBeforeUpdate = null;
 
     $pdo->beginTransaction();
+
+    $existingStatusStmt = $pdo->prepare('SELECT status, driver_user_id FROM bookings WHERE id = :id LIMIT 1 FOR UPDATE');
+    $existingStatusStmt->execute([':id' => $bookingId]);
+    $existingStatusRow = $existingStatusStmt->fetch();
+    if (!is_array($existingStatusRow)) {
+        fail_json(404, 'Booking not found.');
+    }
+    $statusBeforeUpdate = (string)($existingStatusRow['status'] ?? '');
+    $driverUserIdBeforeUpdate = $existingStatusRow['driver_user_id'] !== null ? (int)$existingStatusRow['driver_user_id'] : null;
 
     $stmt = $pdo->prepare(
         'UPDATE bookings
@@ -275,9 +303,198 @@ try {
 
     $pdo->commit();
 
+    $statusMovedToConfirmed = $status === 'confirmed' && $statusBeforeUpdate !== 'confirmed';
+    $driverChanged = $driverUserIdBeforeUpdate !== $driverUserId;
+    $driverChangedToAssigned = $driverChanged && $driverUserId !== null;
+    $confirmationEmailSent = true;
+    $confirmationEmailError = null;
+    $driverAssignmentEmailSent = null;
+    $driverAssignmentEmailError = null;
+    $emailBooking = null;
+
+    if ($statusMovedToConfirmed || $driverChangedToAssigned) {
+        try {
+            $emailBookingStmt = $pdo->prepare(
+                "SELECT
+                    b.booking_ref,
+                    b.booking_date,
+                    TIME_FORMAT(b.pickup_time, '%H:%i') AS pickup_time,
+                    b.organisation,
+                    b.destination_name,
+                    b.destination_address,
+                    b.contact_name,
+                    b.contact_email,
+                    b.contact_number,
+                    b.static_wheelchairs,
+                    b.powered_wheelchairs,
+                    b.passenger_transfers,
+                    b.special_requirements,
+                    d.email AS driver_email,
+                    d.username AS driver_username,
+                    COALESCE(NULLIF(TRIM(d.display_name), ''), d.username) AS driver_name
+                 FROM bookings b
+                 LEFT JOIN admin_users d ON d.id = b.driver_user_id
+                 WHERE b.id = :id
+                 LIMIT 1"
+            );
+            $emailBookingStmt->execute([':id' => $bookingId]);
+            $emailBooking = $emailBookingStmt->fetch();
+
+            if (!is_array($emailBooking)) {
+                throw new RuntimeException('Could not load booking details for email delivery.');
+            }
+        } catch (RuntimeException $runtimeException) {
+            if ($statusMovedToConfirmed) {
+                $confirmationEmailSent = false;
+                $confirmationEmailError = $runtimeException->getMessage();
+            }
+
+            if ($driverChangedToAssigned) {
+                $driverAssignmentEmailSent = false;
+                $driverAssignmentEmailError = $runtimeException->getMessage();
+            }
+
+            error_log('Booking email preload failed: ' . $runtimeException->getMessage());
+        } catch (Throwable $emailException) {
+            if ($statusMovedToConfirmed) {
+                $confirmationEmailSent = false;
+                $confirmationEmailError = 'Could not load booking details for confirmation email.';
+            }
+
+            if ($driverChangedToAssigned) {
+                $driverAssignmentEmailSent = false;
+                $driverAssignmentEmailError = 'Could not load booking details for driver assignment email.';
+            }
+
+            error_log('Booking email preload failed: ' . $emailException->getMessage());
+        }
+    }
+
+    if ($statusMovedToConfirmed && is_array($emailBooking)) {
+        try {
+            $recipientEmail = trim((string)($emailBooking['contact_email'] ?? ''));
+            if ($recipientEmail === '' || filter_var($recipientEmail, FILTER_VALIDATE_EMAIL) === false) {
+                throw new RuntimeException('Booking contact email is missing or invalid for confirmation email.');
+            }
+
+            $bookingRefForEmail = trim((string)($emailBooking['booking_ref'] ?? ''));
+            $bookingDateWords = format_booking_date_words((string)($emailBooking['booking_date'] ?? ''));
+            $pickupTimeForEmail = trim((string)($emailBooking['pickup_time'] ?? ''));
+            $bookingWhen = trim($bookingDateWords . ($pickupTimeForEmail !== '' ? ' at ' . $pickupTimeForEmail : ''));
+
+            $subject = $bookingRefForEmail !== ''
+                ? 'Your EDDIE bus booking ' . $bookingRefForEmail . ' is now confirmed'
+                : 'Your EDDIE bus booking is now confirmed';
+
+            send_resend_templated_email(
+                $recipientEmail,
+                $subject,
+                'booking-confirmed',
+                [
+                    'subject' => $subject,
+                    'recipient_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'there'),
+                    'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'your organisation'),
+                    'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'your chosen destination'),
+                    'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
+                    'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
+                    'booking_when' => fallback_text($bookingWhen, 'your requested date'),
+                    'booking_status_label' => 'Confirmed (Stage 2)',
+                    'driver_name' => fallback_text((string)($emailBooking['driver_name'] ?? ''), 'the assigned driver'),
+                    'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),
+                    'contact_email' => fallback_text($recipientEmail, 'Not provided'),
+                    'contact_number' => fallback_text((string)($emailBooking['contact_number'] ?? ''), 'Not provided'),
+                    'static_wheelchairs' => ((int)($emailBooking['static_wheelchairs'] ?? 0)) === 1 ? 'Yes' : 'No',
+                    'powered_wheelchairs' => ((int)($emailBooking['powered_wheelchairs'] ?? 0)) === 1 ? 'Yes' : 'No',
+                    'passenger_transfers' => ((int)($emailBooking['passenger_transfers'] ?? 0)) === 1 ? 'Yes' : 'No',
+                    'special_requirements' => fallback_text((string)($emailBooking['special_requirements'] ?? ''), 'None provided'),
+                    'support_email' => 'bookings@theeddiebus.org.uk',
+                    'support_phone' => '07805 400180',
+                ]
+            );
+        } catch (RuntimeException $runtimeException) {
+            $confirmationEmailSent = false;
+            $confirmationEmailError = $runtimeException->getMessage();
+            error_log('Booking confirmed email failed: ' . $runtimeException->getMessage());
+        } catch (Throwable $emailException) {
+            $confirmationEmailSent = false;
+            $confirmationEmailError = 'Could not send booking confirmation email.';
+            error_log('Booking confirmed email failed: ' . $emailException->getMessage());
+        }
+    }
+
+    if ($driverChangedToAssigned) {
+        if ($driverAssignmentEmailSent === null) {
+            $driverAssignmentEmailSent = true;
+        }
+
+        if (is_array($emailBooking)) {
+            try {
+                $recipientEmail = trim((string)($emailBooking['driver_email'] ?? ''));
+                if ($recipientEmail === '' || filter_var($recipientEmail, FILTER_VALIDATE_EMAIL) === false) {
+                    throw new RuntimeException('Assigned driver email is missing or invalid for driver assignment email.');
+                }
+
+                $bookingRefForEmail = trim((string)($emailBooking['booking_ref'] ?? ''));
+                $bookingDateWords = format_booking_date_words((string)($emailBooking['booking_date'] ?? ''));
+                $pickupTimeForEmail = trim((string)($emailBooking['pickup_time'] ?? ''));
+                $bookingWhen = trim($bookingDateWords . ($pickupTimeForEmail !== '' ? ' at ' . $pickupTimeForEmail : ''));
+
+                $subject = $bookingRefForEmail !== ''
+                    ? 'Driver confirmation for booking ' . $bookingRefForEmail
+                    : 'Driver confirmation for EDDIE bus booking';
+
+                send_resend_templated_email(
+                    $recipientEmail,
+                    $subject,
+                    'booking-driver-confirmed',
+                    [
+                        'subject' => $subject,
+                        'recipient_name' => fallback_text((string)($emailBooking['driver_name'] ?? ''), 'there'),
+                        'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
+                        'booking_when' => fallback_text($bookingWhen, 'Not provided'),
+                        'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'Not provided'),
+                        'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'Not provided'),
+                        'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
+                        'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),
+                        'contact_email' => fallback_text((string)($emailBooking['contact_email'] ?? ''), 'Not provided'),
+                        'contact_number' => fallback_text((string)($emailBooking['contact_number'] ?? ''), 'Not provided'),
+                        'special_requirements' => fallback_text((string)($emailBooking['special_requirements'] ?? ''), 'None provided'),
+                        'support_email' => 'bookings@theeddiebus.org.uk',
+                        'support_phone' => '07805 400180',
+                        'admin_url' => 'https://theeddiebus.org.uk/admin/',
+                    ]
+                );
+            } catch (RuntimeException $runtimeException) {
+                $driverAssignmentEmailSent = false;
+                $driverAssignmentEmailError = $runtimeException->getMessage();
+                error_log('Driver assignment email failed: ' . $runtimeException->getMessage());
+            } catch (Throwable $emailException) {
+                $driverAssignmentEmailSent = false;
+                $driverAssignmentEmailError = 'Could not send driver assignment email.';
+                error_log('Driver assignment email failed: ' . $emailException->getMessage());
+            }
+        }
+    }
+
+    $messages = ['Booking updated.'];
+    if ($statusMovedToConfirmed) {
+        $messages[] = $confirmationEmailSent
+            ? 'Booking confirmation email sent.'
+            : 'Booking confirmation email could not be sent.';
+    }
+    if ($driverChangedToAssigned) {
+        $messages[] = $driverAssignmentEmailSent
+            ? 'Driver assignment email sent.'
+            : 'Driver assignment email could not be sent.';
+    }
+
     respond_json(200, [
         'ok' => true,
-        'message' => 'Booking updated.',
+        'message' => implode(' ', $messages),
+        'confirmationEmailSent' => $statusMovedToConfirmed ? $confirmationEmailSent : null,
+        'confirmationEmailError' => $statusMovedToConfirmed ? $confirmationEmailError : null,
+        'driverAssignmentEmailSent' => $driverChangedToAssigned ? $driverAssignmentEmailSent : null,
+        'driverAssignmentEmailError' => $driverChangedToAssigned ? $driverAssignmentEmailError : null,
     ]);
 } catch (PDOException $pdoException) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {

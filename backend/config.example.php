@@ -19,4 +19,9 @@ return [
         'session_cookie_lifetime_seconds' => 315360000,
         'session_cookie_samesite' => 'Lax',
     ],
+    'resend' => [
+        'api_key' => 're_xxxxxxxxxxxxxxxxxxxxxxxxx',
+        'from_email' => 'bookings@your-domain.example',
+        'from_name' => 'The EDDIE Bus',
+    ],
 ];

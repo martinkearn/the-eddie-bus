@@ -83,6 +83,11 @@ return [
 		'user' => 'eddie_bus_app',
 		'pass' => 'replace-with-real-password',
 	],
+	'resend' => [
+		'api_key' => 're_replace_with_real_key',
+		'from_email' => 'bookings@your-domain.example',
+		'from_name' => 'The EDDIE Bus',
+	],
 	'availability' => [
 		'days_to_show' => 90,
 		'disable_past_dates' => true,
@@ -90,6 +95,27 @@ return [
 	]
 ];
 ```
+
+## Email delivery (Resend)
+
+- Resend config lives in the private config file under `resend`.
+- HTML email templates are source-controlled in:
+  - `backend/templates/emails/`
+- All outgoing emails are automatically CC'd to:
+  - `bookings@theeddiebus.org.uk`
+- Booking form submissions now trigger an automatic acknowledgement email to the booking contact:
+  - endpoint: `POST /bookings/create.php`
+  - template: `backend/templates/emails/booking-acknowledgement.html`
+  - status in that email is stage 1 (`Pending`) and explicitly states the booking is not fully confirmed until a driver is matched.
+- Booking updates now trigger an automatic confirmation email to the booking contact when status moves to stage 2 (`confirmed`):
+  - endpoint: `POST /admin/bookings/update.php`
+  - template: `backend/templates/emails/booking-confirmed.html`
+  - this sends only on transition into `confirmed` (not on unrelated edits while already confirmed).
+- Booking updates now also trigger an automatic driver email when the assigned driver changes to a user:
+  - endpoint: `POST /admin/bookings/update.php`
+  - template: `backend/templates/emails/booking-driver-confirmed.html`
+  - recipient: the newly assigned driver's `admin_users.email`
+  - this sends on driver assignment/change during save.
 
 ## Setup
 

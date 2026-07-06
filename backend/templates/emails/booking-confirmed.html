@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>Your booking is now confirmed</h1>
+
+    <p>Hi {{recipient_name}},</p>
+
+    <p>
+      Your booking for <strong>{{organisation}}</strong> to <strong>{{destination_name}}</strong> on
+      <strong>{{booking_when}}</strong> is now fully confirmed.
+    </p>
+
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Status:</strong> {{booking_status_label}}<br />
+      <strong>Driver:</strong> {{driver_name}}
+    </p>
+
+    <p>
+      The bus is reserved and your driver has been matched. If anything changes, please reply to this email and we will help with the next steps.
+    </p>
+
+    <h2>Booking details</h2>
+    <p>
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination name:</strong> {{destination_name}}<br />
+      <strong>Destination address:</strong> {{destination_address}}<br />
+      <strong>Booking date and pickup time:</strong> {{booking_when}}
+    </p>
+
+    <h2>Contact details</h2>
+    <p>
+      <strong>Contact name:</strong> {{contact_name}}<br />
+      <strong>Contact email:</strong> {{contact_email}}<br />
+      <strong>Contact number:</strong> {{contact_number}}
+    </p>
+
+    <h2>Accessibility and requirements</h2>
+    <p>
+      <strong>Static wheelchairs:</strong> {{static_wheelchairs}}<br />
+      <strong>Powered wheelchairs:</strong> {{powered_wheelchairs}}<br />
+      <strong>Passenger transfers:</strong> {{passenger_transfers}}<br />
+      <strong>Special requirements:</strong> {{special_requirements}}
+    </p>
+
+    <p>
+      If anything needs changing, please reply to this email or contact us at
+      <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>

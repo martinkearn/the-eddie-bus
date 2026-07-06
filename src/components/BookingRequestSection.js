@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faClock, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 
@@ -25,6 +26,8 @@ const PICKUP_TIME_OPTIONS = [
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
 ]
+
+const BOOKING_ACKNOWLEDGEMENT_STORAGE_KEY = 'eddie_booking_acknowledgement'
 
 function formatISODate(date) {
   const year = date.getFullYear()
@@ -215,6 +218,7 @@ function deriveAvailabilityEndpoint(apiEndpoint, explicitAvailabilityEndpoint) {
 }
 
 export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', bookingAvailabilityEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
+  const router = useRouter()
   const phoneHref = fallbackPhoneHref || '#'
   const apiEndpoint = useMemo(() => {
     const explicitEndpoint = String(bookingApiEndpoint || '').trim()
@@ -448,33 +452,48 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       const bookingReferenceText = typeof result.bookingRef === 'string' && result.bookingRef.trim() !== ''
         ? ` and your reference is ${result.bookingRef}`
         : (typeof result.bookingId === 'number' ? ` and your reference is booking #${result.bookingId}` : '')
-
-      setSubmitState({
-        type: 'success',
-        message: `Your booking request has been sent successfully${bookingReferenceText}, and we will now check driver availability before contacting you by email or phone to confirm your final booking. We do not send an automatic confirmation email after form submission, so please make a note of your booking reference.`,
-      })
-      formElement.reset()
-
-      if (availabilityEndpoint) {
-        setAvailabilityLoading(true)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-
-        try {
-          const refreshed = await fetchAvailability(today, daysToShow, new Set())
-          if (refreshed) {
-            setCalendarConfig(refreshed)
-            setAvailabilityError('')
-            if (refreshed.unavailableDates.has(payload.bookingDate)) {
-              setSelectedDate('')
-            }
-          }
-        } catch {
-          setAvailabilityError('Live availability could not be loaded from the booking database. Booked dates may not be highlighted right now.')
-        }
-
-        setAvailabilityLoading(false)
+      const emailStatusText = result?.emailSent === false
+        ? ' We could not send your automatic confirmation email right now, but your booking request has still been received.'
+        : ' A booking acknowledgement email has been sent to your contact email address.'
+      const bookingDateDisplay = parseISODateLocal(payload.bookingDate)
+        ? formatReadableDate(parseISODateLocal(payload.bookingDate))
+        : payload.bookingDate
+      const redirectDetails = {
+        submittedAt: new Date().toISOString(),
+        bookingReference: typeof result.bookingRef === 'string' && result.bookingRef.trim() !== ''
+          ? result.bookingRef.trim()
+          : (typeof result.bookingId === 'number' ? `booking #${result.bookingId}` : ''),
+        bookingId: typeof result.bookingId === 'number' ? result.bookingId : null,
+        bookingStatusLabel: 'Pending (Stage 1)',
+        bookingDate: bookingDateDisplay,
+        pickupTime: payload.pickupTime,
+        organisation: payload.organisation,
+        destinationName: payload.destinationName || 'Not provided',
+        destinationAddress: payload.destinationAddress || 'Not provided',
+        contactName: payload.contactName,
+        contactEmail: payload.contactEmail,
+        contactNumber: payload.contactNumber,
+        staticWheelchairs: payload.staticWheelchairs,
+        poweredWheelchairs: payload.poweredWheelchairs,
+        passengerTransfers: payload.passengerTransfers,
+        specialRequirements: payload.specialRequirements || 'None provided',
+        summaryMessage: `Your booking request has been sent successfully${bookingReferenceText}, and we will now check driver availability before contacting you by email or phone to confirm your final booking.${emailStatusText} Please make a note of your booking reference.`,
       }
+
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(BOOKING_ACKNOWLEDGEMENT_STORAGE_KEY, JSON.stringify(redirectDetails))
+        } catch {
+          // Continue redirect even if storage is unavailable.
+        }
+      }
+
+      const query = new URLSearchParams()
+      if (redirectDetails.bookingReference) {
+        query.set('bookingRef', redirectDetails.bookingReference)
+      }
+      router.push(`/bookings/acknowledgement/${query.toString() ? `?${query.toString()}` : ''}`)
+      return
     } catch (error) {
       const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       const isNetworkError = error instanceof TypeError || (error instanceof Error && /failed to fetch/i.test(error.message))
