@@ -21,5 +21,7 @@ return [
     ],
     'resend' => [
         'api_key' => 're_xxxxxxxxxxxxxxxxxxxxxxxxx',
+        'from_email' => 'bookings@your-domain.example',
+        'from_name' => 'The EDDIE Bus',
     ],
 ];

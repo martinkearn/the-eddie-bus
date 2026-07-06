@@ -63,6 +63,7 @@ function app_config(): array
     }
 
     $privateDb = isset($privateConfig['db']) && is_array($privateConfig['db']) ? $privateConfig['db'] : [];
+    $privateResend = isset($privateConfig['resend']) && is_array($privateConfig['resend']) ? $privateConfig['resend'] : [];
 
     return [
         'environment' => (string)($privateConfig['environment'] ?? env_value('APP_ENV', 'production')),
@@ -78,6 +79,11 @@ function app_config(): array
             'name' => (string)($privateDb['name'] ?? required_env_value('DB_NAME')),
             'user' => (string)($privateDb['user'] ?? required_env_value('DB_USER')),
             'pass' => (string)($privateDb['pass'] ?? required_env_value('DB_PASS')),
+        ],
+        'resend' => [
+            'api_key' => (string)($privateResend['api_key'] ?? ''),
+            'from_email' => (string)($privateResend['from_email'] ?? 'onboarding@resend.dev'),
+            'from_name' => (string)($privateResend['from_name'] ?? 'The EDDIE Bus'),
         ],
     ];
 }

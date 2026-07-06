@@ -85,6 +85,8 @@ return [
 	],
 	'resend' => [
 		'api_key' => 're_replace_with_real_key',
+		'from_email' => 'bookings@your-domain.example',
+		'from_name' => 'The EDDIE Bus',
 	],
 	'availability' => [
 		'days_to_show' => 90,
@@ -93,6 +95,17 @@ return [
 	]
 ];
 ```
+
+## Email delivery (Resend)
+
+- Resend config lives in the private config file under `resend`.
+- HTML email templates are source-controlled in:
+  - `backend/templates/emails/`
+- Current test template:
+  - `backend/templates/emails/test-email.html`
+- Current test endpoint (admin only):
+  - `POST /admin/emails/test.php`
+  - sends the template email to the signed-in admin user's email address.
 
 ## Setup
 
