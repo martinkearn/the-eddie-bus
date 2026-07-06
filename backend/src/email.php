@@ -4,6 +4,45 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 
+function default_email_cc_recipients(): array
+{
+    return ['bookings@theeddiebus.org.uk'];
+}
+
+function normalize_email_recipients(mixed $value): array
+{
+    $rawValues = [];
+
+    if (is_string($value)) {
+        $rawValues = [$value];
+    } elseif (is_array($value)) {
+        $rawValues = $value;
+    }
+
+    $normalized = [];
+    foreach ($rawValues as $item) {
+        $email = strtolower(trim((string)$item));
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            continue;
+        }
+
+        if (!in_array($email, $normalized, true)) {
+            $normalized[] = $email;
+        }
+    }
+
+    return $normalized;
+}
+
+function add_default_cc_to_payload(array $payload): array
+{
+    $existingCc = normalize_email_recipients($payload['cc'] ?? []);
+    $defaultCc = normalize_email_recipients(default_email_cc_recipients());
+
+    $payload['cc'] = array_values(array_unique(array_merge($existingCc, $defaultCc)));
+    return $payload;
+}
+
 function resend_mail_config(): array
 {
     $config = app_config();
@@ -80,6 +119,8 @@ function html_to_plain_text(string $html): string
 
 function resend_send_email(array $payload, string $apiKey): array
 {
+    $payload = add_default_cc_to_payload($payload);
+
     $jsonBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (!is_string($jsonBody) || $jsonBody === '') {
         throw new RuntimeException('Could not encode Resend email payload.');

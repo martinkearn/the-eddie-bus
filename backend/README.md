@@ -103,6 +103,8 @@ return [
   - `backend/templates/emails/`
 - Current test template:
   - `backend/templates/emails/test-email.html`
+- All outgoing emails are automatically CC'd to:
+  - `bookings@theeddiebus.org.uk`
 - Current test endpoint (admin only):
   - `POST /admin/emails/test.php`
   - sends the template email to the signed-in admin user's email address.
