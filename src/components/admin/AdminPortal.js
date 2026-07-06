@@ -12,7 +12,6 @@ import {
   faCalendarCheck,
   faCheck,
   faCopy,
-  faEnvelope,
   faFloppyDisk,
   faHourglassHalf,
   faMagnifyingGlass,
@@ -465,7 +464,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [loginLoading, setLoginLoading] = useState(false)
-  const [testEmailLoading, setTestEmailLoading] = useState(false)
   const [banner, setBanner] = useState({ type: 'idle', message: '' })
 
   const [searchInput, setSearchInput] = useState('')
@@ -891,20 +889,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setAdminConfirmUserIdDraft('')
     setActiveTab('bookings')
     setBanner({ type: 'success', message: 'You have been signed out.' })
-  }
-
-  async function handleSendTestEmail() {
-    setTestEmailLoading(true)
-    setBanner({ type: 'idle', message: '' })
-
-    try {
-      const data = await apiFetch('/emails/test.php', { method: 'POST' })
-      setBanner({ type: 'success', message: data.message || 'Test email sent.' })
-    } catch (error) {
-      setBanner({ type: 'error', message: error.message || 'Could not send test email.' })
-    } finally {
-      setTestEmailLoading(false)
-    }
   }
 
   async function handleSearchSubmit(event) {
@@ -1453,12 +1437,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               Back To Main Site
             </Link>
             {isAdmin && (
-              <button className="button button-quiet" type="button" onClick={() => void handleSendTestEmail()} disabled={testEmailLoading}>
-                <FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />
-                {testEmailLoading ? 'Sending Test Email...' : 'Test Email'}
-              </button>
-            )}
-            {isAdmin && (
               <Link className="button button-quiet" href="/bookings/request">
                 <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
                 Create Booking
@@ -1520,20 +1498,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <FontAwesomeIcon icon={faArrowUpRightFromSquare} aria-hidden="true" />
               Back To Main Site
             </Link>
-            {isAdmin && (
-              <button
-                className="button button-quiet"
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false)
-                  void handleSendTestEmail()
-                }}
-                disabled={testEmailLoading}
-              >
-                <FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />
-                {testEmailLoading ? 'Sending Test Email...' : 'Test Email'}
-              </button>
-            )}
             {isAdmin && (
               <Link className="button button-quiet" href="/bookings/request" onClick={() => setIsMobileMenuOpen(false)}>
                 <FontAwesomeIcon icon={faPlus} aria-hidden="true" />

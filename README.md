@@ -48,6 +48,7 @@ npm run build
 ## Booking API Integration
 
 - Booking form submissions can be posted to a separate PHP API.
+- After a successful booking form submission, the frontend redirects users to `/bookings/acknowledgement/` and shows a summary of the submitted details.
 - In almost all deployments (including same-host setups), you only need this build-time variable before running `npm run build`:
 	- `NEXT_PUBLIC_BOOKING_API_ENDPOINT=https://your-api-domain/bookings/create.php`
 - Availability is derived automatically from that value (for example `.../bookings/availability.php`).

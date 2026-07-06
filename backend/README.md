@@ -101,13 +101,12 @@ return [
 - Resend config lives in the private config file under `resend`.
 - HTML email templates are source-controlled in:
   - `backend/templates/emails/`
-- Current test template:
-  - `backend/templates/emails/test-email.html`
 - All outgoing emails are automatically CC'd to:
   - `bookings@theeddiebus.org.uk`
-- Current test endpoint (admin only):
-  - `POST /admin/emails/test.php`
-  - sends the template email to the signed-in admin user's email address.
+- Booking form submissions now trigger an automatic acknowledgement email to the booking contact:
+  - endpoint: `POST /bookings/create.php`
+  - template: `backend/templates/emails/booking-acknowledgement.html`
+  - status in that email is stage 1 (`Pending`) and explicitly states the booking is not fully confirmed until a driver is matched.
 
 ## Setup
 

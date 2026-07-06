@@ -36,6 +36,7 @@ $srcPath = resolve_src_path();
 
 require_once $srcPath . '/bootstrap.php';
 require_once $srcPath . '/db.php';
+require_once $srcPath . '/email.php';
 
 function ref_token_from_text(string $value, int $maxLength = 8): string
 {
@@ -88,6 +89,22 @@ function next_booking_ref(PDO $pdo, string $baseRef): string
     }
 
     return $baseRef . '-' . ($maxSuffix + 1);
+}
+
+function fallback_text(string $value, string $fallback): string
+{
+    $trimmed = trim($value);
+    return $trimmed !== '' ? $trimmed : $fallback;
+}
+
+function format_booking_date_words(string $bookingDate): string
+{
+    $date = DateTimeImmutable::createFromFormat('Y-m-d', $bookingDate);
+    if (!$date instanceof DateTimeImmutable) {
+        return $bookingDate;
+    }
+
+    return $date->format('l j F Y');
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
@@ -240,12 +257,59 @@ try {
     }
 
     $bookingId = (int)$pdo->lastInsertId();
+    $subject = $bookingRef !== ''
+        ? 'Your EDDIE bus booking request ' . $bookingRef
+        : 'Your EDDIE bus booking request';
+    $bookingDateWords = format_booking_date_words($bookingDate);
+    $bookingWhen = trim($bookingDateWords . ($pickupTime !== '' ? ' at ' . $pickupTime : ''));
+
+    $emailSent = true;
+    $emailError = null;
+
+    try {
+        send_resend_templated_email(
+            $contactEmail,
+            $subject,
+            'booking-acknowledgement',
+            [
+                'subject' => $subject,
+                'recipient_name' => fallback_text($contactName, 'there'),
+                'organisation' => fallback_text($organisation, 'your organisation'),
+                'destination_name' => fallback_text($destinationName, 'your chosen destination'),
+                'destination_address' => fallback_text($destinationAddress, 'Not provided'),
+                'booking_ref' => fallback_text($bookingRef, 'Not provided'),
+                'booking_when' => fallback_text($bookingWhen, 'your requested date'),
+                'booking_status_label' => 'Pending (Stage 1)',
+                'contact_name' => fallback_text($contactName, 'Not provided'),
+                'contact_email' => fallback_text($contactEmail, 'Not provided'),
+                'contact_number' => fallback_text($contactNumber, 'Not provided'),
+                'static_wheelchairs' => $staticWheelchairs === 1 ? 'Yes' : 'No',
+                'powered_wheelchairs' => $poweredWheelchairs === 1 ? 'Yes' : 'No',
+                'passenger_transfers' => $passengerTransfers === 1 ? 'Yes' : 'No',
+                'special_requirements' => fallback_text($specialRequirements, 'None provided'),
+                'support_email' => 'bookings@theeddiebus.org.uk',
+                'support_phone' => '07805 400180',
+            ]
+        );
+    } catch (RuntimeException $runtimeException) {
+        $emailSent = false;
+        $emailError = $runtimeException->getMessage();
+        error_log('Booking acknowledgement email failed: ' . $runtimeException->getMessage());
+    } catch (Throwable $emailException) {
+        $emailSent = false;
+        $emailError = 'Could not send booking confirmation email.';
+        error_log('Booking acknowledgement email failed: ' . $emailException->getMessage());
+    }
 
     respond_json(201, [
         'ok' => true,
-        'message' => 'Booking request saved.',
+        'message' => $emailSent
+            ? 'Booking request saved and confirmation email sent.'
+            : 'Booking request saved but confirmation email could not be sent.',
         'bookingId' => $bookingId,
         'bookingRef' => $bookingRef,
+        'emailSent' => $emailSent,
+        'emailError' => $emailError,
     ]);
 } catch (Throwable $exception) {
     error_log('Booking create failed: ' . $exception->getMessage());
