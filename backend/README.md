@@ -107,6 +107,15 @@ return [
   - endpoint: `POST /bookings/create.php`
   - template: `backend/templates/emails/booking-acknowledgement.html`
   - status in that email is stage 1 (`Pending`) and explicitly states the booking is not fully confirmed until a driver is matched.
+- Booking updates now trigger an automatic confirmation email to the booking contact when status moves to stage 2 (`confirmed`):
+  - endpoint: `POST /admin/bookings/update.php`
+  - template: `backend/templates/emails/booking-confirmed.html`
+  - this sends only on transition into `confirmed` (not on unrelated edits while already confirmed).
+- Booking updates now also trigger an automatic driver email when the assigned driver changes to a user:
+  - endpoint: `POST /admin/bookings/update.php`
+  - template: `backend/templates/emails/booking-driver-confirmed.html`
+  - recipient: the newly assigned driver's `admin_users.email`
+  - this sends on driver assignment/change during save.
 
 ## Setup
 

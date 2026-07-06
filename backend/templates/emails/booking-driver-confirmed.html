@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>You are confirmed as the driver</h1>
+
+    <p>Hi {{recipient_name}},</p>
+
+    <p>Thank you for taking this booking. You are now confirmed as the driver.</p>
+
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Date and pickup time:</strong> {{booking_when}}<br />
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination:</strong> {{destination_name}}<br />
+      <strong>Destination address:</strong> {{destination_address}}
+    </p>
+
+    <h2>Customer contact details</h2>
+    <p>
+      <strong>Name:</strong> {{contact_name}}<br />
+      <strong>Email:</strong> {{contact_email}}<br />
+      <strong>Phone:</strong> {{contact_number}}
+    </p>
+
+    <h2>Special requirements</h2>
+    <p>{{special_requirements}}</p>
+
+    <p>
+      Please complete the vehicle checklist in the admin portal after the journey.
+      Go to <a href="{{admin_url}}">{{admin_url}}</a> to view full booking details and update the checklist.
+    </p>
+
+    <p>
+      If anything needs changing, please reply to this email or contact us at
+      <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>
