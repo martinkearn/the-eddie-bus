@@ -191,7 +191,7 @@ function mapBookingToForm(booking) {
     bookingRef: String(booking.booking_ref || ''),
     status: normalizeBookingStatus(booking.status),
     driverUserId: booking.driver_user_id !== null && booking.driver_user_id !== undefined ? String(booking.driver_user_id) : '',
-    driverUsername: String(booking.driver_username || ''),
+    driverName: String(booking.driver_name || booking.driver_display_name || booking.driver_username || ''),
     bookingDate: String(booking.booking_date || ''),
     pickupTime: String(booking.pickup_time || ''),
     organisation: String(booking.organisation || ''),
@@ -342,6 +342,20 @@ function formatDisplayText(value, fallback = 'Not provided') {
   return normalized || fallback
 }
 
+function preferredUserLabel(user, fallback = 'Not provided') {
+  if (!user || typeof user !== 'object') {
+    return fallback
+  }
+
+  const displayName = String(user.displayName ?? user.display_name ?? '').trim()
+  if (displayName) return displayName
+
+  const username = String(user.username ?? user.user_name ?? user.label ?? '').trim()
+  if (username) return username
+
+  return fallback
+}
+
 function buildBookingMessageDraft(booking, type) {
   if (!booking) return ''
 
@@ -354,7 +368,7 @@ function buildBookingMessageDraft(booking, type) {
     .filter(Boolean)
     .join(' ')
   const destinationName = formatDisplayText(booking.destinationName, '')
-  const driverName = formatDisplayText(booking.driverUsername, 'the assigned driver')
+  const driverName = formatDisplayText(booking.driverName, 'the assigned driver')
 
   const signatureLines = [
     'Best wishes,',
@@ -380,7 +394,7 @@ function buildBookingMessageDraft(booking, type) {
 
   if (type === 'driver_confirmed') {
     const destinationAddress = formatDisplayText(booking.destinationAddress)
-    const driverContactName = formatDisplayText(booking.driverUsername, 'there')
+    const driverContactName = formatDisplayText(booking.driverName, 'there')
 
     return [
       `Hi ${driverContactName},`,
@@ -1314,10 +1328,10 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }
 
-  async function handleDeleteUser(userId, username) {
+  async function handleDeleteUser(userId, userLabel) {
     if (!isAdmin) return
 
-    const confirmed = window.confirm(`Delete user ${username}? This cannot be undone.`)
+    const confirmed = window.confirm(`Delete user ${userLabel}? This cannot be undone.`)
     if (!confirmed) return
 
     setUserDeleteLoading(true)
@@ -1560,7 +1574,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                 {selectedBookingId ? (
                   <p>Everything you need to know about this booking.</p>
                 ) : isMyBookingsTab ? (
-                  <p>Bookings assigned to {user.username}.</p>
+                  <p>Bookings assigned to {preferredUserLabel(user, 'you')}.</p>
                 ) : (
                   <p>All bookings, future and past.</p>
                 )}
@@ -1678,7 +1692,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       key={item.id}
                       className={[
                         String(selectedBookingId) === String(item.id) ? 'is-selected' : '',
-                        item.driver_username ? '' : 'is-missing-driver',
+                        item.driver_name ? '' : 'is-missing-driver',
                       ].filter(Boolean).join(' ')}
                       onClick={() => loadBookingDetail(item.id)}
                     >
@@ -1686,7 +1700,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <td>{item.organisation}</td>
                       <td>{item.destination_name}</td>
                       <td>
-                        {item.driver_username ? item.driver_username : <strong>Unassigned</strong>}
+                        {item.driver_name ? item.driver_name : <strong>Unassigned</strong>}
                       </td>
                       <td>
                         <div>{formatBookingStatusLabel(item.status)}</div>
@@ -1743,7 +1757,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         <>
                           <p className="admin-viewer-availability-label">
                             {hasConfirmedDriver
-                              ? `${formatDisplayText(bookingForm.driverUsername, 'Another driver')} is already the confirmed driver for this booking but it is still useful to know your availability in case anything changes.`
+                              ? `${formatDisplayText(bookingForm.driverName, 'Another driver')} is already the confirmed driver for this booking but it is still useful to know your availability in case anything changes.`
                               : (currentUserDriverMappingStatus
                                 ? `You are ${formatDriverMappingStatus(currentUserDriverMappingStatus).toLowerCase()} for this booking`
                                 : 'Please let us know your availability for this booking')}
@@ -1889,11 +1903,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       >
                         <option value="">Unassigned</option>
                         {assignableUsers.map((item) => (
-                          <option key={item.id} value={String(item.id)}>{item.username}</option>
+                          <option key={item.id} value={String(item.id)}>{preferredUserLabel(item)}</option>
                         ))}
                       </select>
                     ) : (
-                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.driverUsername, 'Unassigned')}</div>
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.driverName, 'Unassigned')}</div>
                     )}
                   </label>
 
@@ -2094,7 +2108,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                             {driverMappings.map((item) => (
                               <li key={`${item.user_id}-${item.mapping_status}`}>
                                 <div className="admin-driver-mapping-item-main">
-                                  <strong>{item.username}</strong>
+                                  <strong>{preferredUserLabel(item)}</strong>
                                   <span className={`admin-driver-mapping-badge status-${item.mapping_status}`}>{formatDriverMappingStatus(item.mapping_status)}</span>
                                   <span className="admin-driver-mapping-updated-at">Last updated: {formatDisplayText(formatDateTimeUK(item.updated_at), 'Not available')}</span>
                                 </div>
@@ -2106,7 +2120,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                                     onClick={() => handleUpdateDriverMapping('confirmed', String(item.user_id))}
                                   >
                                     <FontAwesomeIcon icon={faCircleCheck} aria-hidden="true" />
-                                    Confirm {item.username} as driver
+                                    Confirm {preferredUserLabel(item)} as driver
                                   </button>
                                 )}
                                 {isAdmin && bookingForm.driverUserId && String(bookingForm.driverUserId) === String(item.user_id) && (
@@ -2117,7 +2131,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                                     onClick={() => handleUpdateDriverMapping('', String(item.user_id))}
                                   >
                                     <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
-                                    Remove {item.username} as driver
+                                    Remove {preferredUserLabel(item)} as driver
                                   </button>
                                 )}
                               </li>
@@ -2610,7 +2624,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
               <table className="admin-table admin-users-table">
                 <thead>
                   <tr>
-                    <th>Username</th>
+                    <th>Name</th>
                     <th>Role</th>
                     <th>Last login</th>
                   </tr>
@@ -2621,7 +2635,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                       <tr key={item.id}>
                         <td>
                           <button className="admin-link-button" type="button" onClick={() => handleOpenUserProfile(item.id)}>
-                            {item.username}
+                            {preferredUserLabel(item)}
                           </button>
                         </td>
                         <td>{item.role}</td>
@@ -2708,7 +2722,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                   <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
                   {userResetLoading ? 'Resetting...' : 'Reset Password'}
                 </button>
-                <button className="button button-danger" type="button" onClick={() => handleDeleteUser(selectedUserProfileId, selectedUserProfileDraft.username)} disabled={userDeleteLoading || String(user?.id) === String(selectedUserProfileId)}>
+                <button
+                  className="button button-danger"
+                  type="button"
+                  onClick={() => handleDeleteUser(selectedUserProfileId, preferredUserLabel(selectedUserProfileDraft, selectedUserProfileDraft.username))}
+                  disabled={userDeleteLoading || String(user?.id) === String(selectedUserProfileId)}
+                >
                   <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                   {userDeleteLoading ? 'Deleting...' : 'Delete User'}
                 </button>

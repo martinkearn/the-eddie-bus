@@ -12,7 +12,15 @@ try {
     $pdo = db_connection();
     require_auth($pdo);
 
-    $stmt = $pdo->query('SELECT id, username FROM admin_users ORDER BY username ASC');
+    $stmt = $pdo->query(
+        "SELECT
+            id,
+            username,
+            display_name,
+            COALESCE(NULLIF(TRIM(display_name), ''), username) AS label
+         FROM admin_users
+         ORDER BY label ASC, username ASC"
+    );
     $rows = $stmt->fetchAll();
     if (!is_array($rows)) {
         $rows = [];
