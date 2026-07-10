@@ -217,6 +217,45 @@ function deriveAvailabilityEndpoint(apiEndpoint, explicitAvailabilityEndpoint) {
   return ''
 }
 
+function buildSubmitErrorMessage({ response, result, fallbackPhone }) {
+  const hasBookingRef = typeof result?.bookingRef === 'string' && result.bookingRef.trim() !== ''
+  const hasBookingId = typeof result?.bookingId === 'number'
+  const bookingReference = hasBookingRef
+    ? result.bookingRef.trim()
+    : (hasBookingId ? `booking #${result.bookingId}` : '')
+
+  const bookingSaved = Boolean(result?.bookingSaved)
+  const provider = typeof result?.error?.provider === 'string' ? result.error.provider : ''
+  const providerStatus = typeof result?.error?.providerStatus === 'number' ? result.error.providerStatus : null
+  const errorCode = typeof result?.error?.code === 'string' ? result.error.code : ''
+  const detail = typeof result?.error?.detail === 'string' ? result.error.detail.trim() : ''
+  const apiMessage = typeof result?.message === 'string' ? result.message.trim() : ''
+
+  if (bookingSaved) {
+    const summary = [
+      'Your booking request was saved, but we could not send your confirmation email.',
+      bookingReference ? `Booking reference: ${bookingReference}.` : '',
+      `Please contact us on ${fallbackPhone} so we can confirm your request manually.`,
+    ].filter(Boolean).join(' ')
+
+    const technicalParts = []
+    if (provider) technicalParts.push(`provider=${provider}`)
+    if (providerStatus) technicalParts.push(`status=${providerStatus}`)
+    if (errorCode) technicalParts.push(`code=${errorCode}`)
+    const technicalSummary = technicalParts.length ? ` Technical details: ${technicalParts.join(', ')}.` : ''
+    const detailedMessage = detail || apiMessage
+
+    return `${summary}${technicalSummary}${detailedMessage ? ` ${detailedMessage}` : ''}`
+  }
+
+  const statusText = response?.status ? ` (HTTP ${response.status})` : ''
+  if (apiMessage) {
+    return `${apiMessage}${statusText}`
+  }
+
+  return `We could not send your booking request at the moment${statusText}. Please try again or call us on ${fallbackPhone}.`
+}
+
 export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneHref, bookingApiEndpoint = '', bookingAvailabilityEndpoint = '', showIntro = true, sectionId = 'booking-request' }) {
   const router = useRouter()
   const phoneHref = fallbackPhoneHref || '#'
@@ -445,16 +484,14 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       const result = await response.json().catch(() => null)
 
       if (!response.ok || !result?.ok) {
-        const message = result?.message || 'We could not send your booking request at the moment. Please try again or call us.'
+        const message = buildSubmitErrorMessage({ response, result, fallbackPhone })
         throw new Error(message)
       }
 
       const bookingReferenceText = typeof result.bookingRef === 'string' && result.bookingRef.trim() !== ''
         ? ` and your reference is ${result.bookingRef}`
         : (typeof result.bookingId === 'number' ? ` and your reference is booking #${result.bookingId}` : '')
-      const emailStatusText = result?.emailSent === false
-        ? ' We could not send your automatic confirmation email right now, but your booking request has still been received.'
-        : ' A booking acknowledgement email has been sent to your contact email address.'
+      const emailStatusText = ' A booking acknowledgement email has been sent to your contact email address.'
       const bookingDateDisplay = parseISODateLocal(payload.bookingDate)
         ? formatReadableDate(parseISODateLocal(payload.bookingDate))
         : payload.bookingDate

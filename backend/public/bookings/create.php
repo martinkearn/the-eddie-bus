@@ -107,6 +107,16 @@ function format_booking_date_words(string $bookingDate): string
     return $date->format('l j F Y');
 }
 
+function sanitize_error_for_log(string $message, int $maxLength = 1000): string
+{
+    $trimmed = trim($message);
+    if ($trimmed === '') {
+        return 'Unknown error.';
+    }
+
+    return substr($trimmed, 0, $maxLength);
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     fail_json(405, 'Method not allowed.');
 }
@@ -265,6 +275,8 @@ try {
 
     $emailSent = true;
     $emailError = null;
+    $emailErrorCode = null;
+    $emailErrorStatus = null;
 
     try {
         send_resend_templated_email(
@@ -291,25 +303,50 @@ try {
                 'support_phone' => '07805 400180',
             ]
         );
+    } catch (ResendEmailException $resendException) {
+        $emailSent = false;
+        $emailError = sanitize_error_for_log($resendException->getMessage());
+        $emailErrorCode = 'RESEND_API_REJECTED';
+        $emailErrorStatus = $resendException->http_status() > 0 ? $resendException->http_status() : null;
+        error_log('Booking acknowledgement email failed: ' . $emailError);
     } catch (RuntimeException $runtimeException) {
         $emailSent = false;
-        $emailError = $runtimeException->getMessage();
-        error_log('Booking acknowledgement email failed: ' . $runtimeException->getMessage());
+        $emailError = sanitize_error_for_log($runtimeException->getMessage());
+        $emailErrorCode = 'EMAIL_CONFIG_OR_RUNTIME_ERROR';
+        error_log('Booking acknowledgement email failed: ' . $emailError);
     } catch (Throwable $emailException) {
         $emailSent = false;
         $emailError = 'Could not send booking confirmation email.';
+        $emailErrorCode = 'EMAIL_UNKNOWN_ERROR';
         error_log('Booking acknowledgement email failed: ' . $emailException->getMessage());
     }
 
-    respond_json(201, [
-        'ok' => true,
-        'message' => $emailSent
-            ? 'Booking request saved and confirmation email sent.'
-            : 'Booking request saved but confirmation email could not be sent.',
+    if ($emailSent) {
+        respond_json(201, [
+            'ok' => true,
+            'message' => 'Booking request saved and confirmation email sent.',
+            'bookingId' => $bookingId,
+            'bookingRef' => $bookingRef,
+            'emailSent' => true,
+            'emailError' => null,
+            'bookingSaved' => true,
+        ]);
+    }
+
+    respond_json(502, [
+        'ok' => false,
+        'message' => 'Your booking request was saved, but we could not send your confirmation email right now. Please contact us and quote your booking reference.',
         'bookingId' => $bookingId,
         'bookingRef' => $bookingRef,
-        'emailSent' => $emailSent,
+        'bookingSaved' => true,
+        'emailSent' => false,
         'emailError' => $emailError,
+        'error' => [
+            'code' => $emailErrorCode,
+            'provider' => 'resend',
+            'providerStatus' => $emailErrorStatus,
+            'detail' => $emailError,
+        ],
     ]);
 } catch (Throwable $exception) {
     error_log('Booking create failed: ' . $exception->getMessage());

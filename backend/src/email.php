@@ -4,6 +4,29 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 
+class ResendEmailException extends RuntimeException
+{
+    private int $httpStatus;
+    private array $responseData;
+
+    public function __construct(string $message, int $httpStatus = 0, array $responseData = [])
+    {
+        parent::__construct($message);
+        $this->httpStatus = $httpStatus;
+        $this->responseData = $responseData;
+    }
+
+    public function http_status(): int
+    {
+        return $this->httpStatus;
+    }
+
+    public function response_data(): array
+    {
+        return $this->responseData;
+    }
+}
+
 function default_email_cc_recipients(): array
 {
     return ['bookings@theeddiebus.org.uk'];
@@ -126,41 +149,105 @@ function resend_send_email(array $payload, string $apiKey): array
         throw new RuntimeException('Could not encode Resend email payload.');
     }
 
-    $httpContext = stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => implode("\r\n", [
+    $httpStatus = 0;
+    $responseBody = '';
+
+    if (function_exists('curl_init')) {
+        $curl = curl_init('https://api.resend.com/emails');
+        if ($curl === false) {
+            throw new ResendEmailException('Could not initialize cURL for Resend request.');
+        }
+
+        curl_setopt_array($curl, [
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey,
-            ]),
-            'content' => $jsonBody,
-            'timeout' => 15,
-            'ignore_errors' => true,
-        ],
-    ]);
+            ],
+            CURLOPT_POSTFIELDS => $jsonBody,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+        ]);
 
-    $responseBody = file_get_contents('https://api.resend.com/emails', false, $httpContext);
-    if ($responseBody === false) {
-        throw new RuntimeException('Resend request failed before receiving a response.');
-    }
+        $curlResult = curl_exec($curl);
+        if ($curlResult === false) {
+            $curlError = curl_error($curl);
+            $curlErrno = curl_errno($curl);
+            curl_close($curl);
 
-    $httpStatus = 0;
-    $responseHeaders = $http_response_header ?? [];
-    foreach ($responseHeaders as $headerLine) {
-        if (preg_match('#^HTTP/\S+\s+(\d{3})#', (string)$headerLine, $matches) === 1) {
-            $httpStatus = (int)$matches[1];
+            $message = 'Resend request failed before receiving a response via cURL.';
+            if ($curlError !== '') {
+                $message .= ' cURL error ' . $curlErrno . ': ' . $curlError;
+            }
+
+            throw new ResendEmailException($message);
+        }
+
+        $httpStatus = (int)curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        $responseBody = (string)$curlResult;
+        curl_close($curl);
+    } else {
+        $httpContext = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => implode("\r\n", [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $apiKey,
+                ]),
+                'content' => $jsonBody,
+                'timeout' => 15,
+                'ignore_errors' => true,
+            ],
+        ]);
+
+        $streamResult = file_get_contents('https://api.resend.com/emails', false, $httpContext);
+        if ($streamResult === false) {
+            $lastError = error_get_last();
+            $lastErrorMessage = '';
+            if (is_array($lastError) && isset($lastError['message'])) {
+                $lastErrorMessage = trim((string)$lastError['message']);
+            }
+
+            $message = 'Resend request failed before receiving a response via stream transport.';
+            if ($lastErrorMessage !== '') {
+                $message .= ' ' . $lastErrorMessage;
+            }
+
+            throw new ResendEmailException($message);
+        }
+
+        $responseBody = (string)$streamResult;
+
+        $responseHeaders = $http_response_header ?? [];
+        foreach ($responseHeaders as $headerLine) {
+            if (preg_match('#^HTTP/\S+\s+(\d{3})#', (string)$headerLine, $matches) === 1) {
+                $httpStatus = (int)$matches[1];
+            }
         }
     }
 
     $responseData = json_decode($responseBody, true);
     if (!is_array($responseData)) {
-        throw new RuntimeException('Resend returned an invalid JSON response.');
+        throw new ResendEmailException('Resend returned an invalid JSON response.', $httpStatus);
     }
 
     if ($httpStatus < 200 || $httpStatus >= 300) {
+        $errorType = trim((string)($responseData['name'] ?? ''));
         $apiMessage = trim((string)($responseData['message'] ?? ''));
-        $fallback = 'Resend rejected the email request.';
-        throw new RuntimeException($apiMessage !== '' ? $apiMessage : $fallback);
+
+        $parts = [];
+        $parts[] = 'Resend rejected the email request';
+        if ($httpStatus > 0) {
+            $parts[] = '(HTTP ' . $httpStatus . ')';
+        }
+        if ($errorType !== '') {
+            $parts[] = '- ' . $errorType;
+        }
+        if ($apiMessage !== '') {
+            $parts[] = ': ' . $apiMessage;
+        }
+
+        throw new ResendEmailException(implode(' ', $parts), $httpStatus, $responseData);
     }
 
     return $responseData;
