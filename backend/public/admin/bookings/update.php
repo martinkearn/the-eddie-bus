@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../bootstrap_api.php';
-require_once __DIR__ . '/../../../src/email.php';
+require_once $srcPath . '/email.php';
 
 function tri_state_to_nullable_int(mixed $value): ?int
 {

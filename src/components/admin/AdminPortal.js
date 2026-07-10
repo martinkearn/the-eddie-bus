@@ -470,7 +470,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
 
     if (!response.ok || !data?.ok) {
-      const message = data?.message || 'Request failed.'
+      const message = data?.message || `Request failed (HTTP ${response.status}).`
       const error = new Error(message)
       error.status = response.status
       error.details = data?.details || {}
