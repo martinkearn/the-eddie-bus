@@ -1,4 +1,5 @@
 import { BookingAcknowledgementPanel } from '../../../src/components/BookingAcknowledgementPanel'
+import { ContactPanel } from '../../../src/components/ContactPanel'
 import { PageIntro } from '../../../src/components/PageIntro'
 import { SiteLayout } from '../../../src/components/SiteLayout'
 import { images } from '../../../src/content/site'
@@ -27,6 +28,12 @@ export default function BookingAcknowledgementPage() {
       />
 
       <BookingAcknowledgementPanel />
+      <ContactPanel
+        title="Need any help with this booking?"
+        text={[
+          'If you need to update any details or have questions about next steps, contact our bookings team and quote your booking reference.',
+        ]}
+      />
     </SiteLayout>
   )
 }
