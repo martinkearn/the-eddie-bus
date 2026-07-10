@@ -51,6 +51,12 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: sudo apt-get install -y lftp
 
+      - name: Verify email templates directory
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          test -d backend/templates/emails
+          find backend/templates/emails -type f -name '*.html' | sort
+
       - name: Mirror out to public_html
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -85,7 +91,7 @@ jobs:
           timeout 300 lftp \
             -u "$FTP_USERNAME","$FTP_PASSWORD" \
             "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; bye"
+            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; mirror --reverse ./backend/templates/emails/ /booking-api/templates/emails/; bye"
 
       - name: Show deploy results
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'

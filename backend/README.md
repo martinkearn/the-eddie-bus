@@ -122,7 +122,7 @@ return [
 1. Create database tables using `sql/bookings.sql`.
 2. Apply admin schema updates using `sql/admin_portal.sql`.
 2. Deploy backend/public to a public URL path, such as /public_html/api.
-3. Deploy backend/src and backend/sql to a private path, such as /booking-api.
+3. Deploy backend/src, backend/sql, and backend/templates to a private path, such as /booking-api.
 4. Add your private config file outside public_html.
 5. Optionally set BOOKING_API_CONFIG_FILE and/or BOOKING_API_SRC_PATH if your paths differ from defaults.
 
