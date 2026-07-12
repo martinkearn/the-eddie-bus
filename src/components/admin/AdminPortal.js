@@ -355,6 +355,11 @@ function preferredUserLabel(user, fallback = 'Not provided') {
   return fallback
 }
 
+function isDriverUnassigned(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return normalized === '' || normalized === 'unassigned'
+}
+
 function formatDateForApi(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -435,6 +440,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const isAdmin = user?.role === 'admin'
   const isAssignedDriver = !!bookingForm?.driverUserId && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
   const canEditChecklist = isAdmin || isAssignedDriver
+  const isDriverSelectionUnassigned = isDriverUnassigned(bookingForm?.driverUserId)
   const hasConfirmedDriver = !!bookingForm?.driverUserId
   const isCurrentUserConfirmedDriver = hasConfirmedDriver && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
   const isBookingsTab = activeTab === 'bookings'
@@ -904,6 +910,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   async function handleBookingSave(event) {
     event.preventDefault()
     if (!bookingForm || !isAdmin) return
+
+    if (normalizeBookingStatus(bookingForm.status) !== 'pending' && isDriverUnassigned(bookingForm.driverUserId)) {
+      setBanner({ type: 'error', message: 'Assign a driver before moving a booking beyond Pending.' })
+      return
+    }
 
     setBookingSaveLoading(true)
     setBanner({ type: 'idle', message: '' })
@@ -1715,7 +1726,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                           onChange={(event) => handleBookingFieldChange('status', event.target.value)}
                         >
                           {BOOKING_STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
+                            <option key={option.value} value={option.value} disabled={option.value !== 'pending' && isDriverSelectionUnassigned}>{option.label}</option>
                           ))}
                         </select>
                         {isStandardBookingStatus(normalizeBookingStatus(bookingForm.status)) ? (
@@ -1735,6 +1746,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                                       className="admin-status-process-step-button"
                                       type="button"
                                       onClick={() => handleBookingFieldChange('status', option.value)}
+                                      disabled={option.value !== 'pending' && isDriverSelectionUnassigned}
                                       aria-pressed={normalizeBookingStatus(bookingForm.status) === option.value}
                                     >
                                       <span className="admin-status-process-content">
@@ -1749,6 +1761,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                               })}
                             </ol>
                           </div>
+                        ) : null}
+                        {isDriverSelectionUnassigned ? (
+                          <small className="admin-field-help">Assign a driver before moving a booking beyond Pending.</small>
                         ) : null}
                         <small className="admin-field-help">{formatBookingStatusDescription(bookingForm.status)}</small>
                       </>

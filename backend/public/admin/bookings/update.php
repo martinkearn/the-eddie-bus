@@ -116,6 +116,9 @@ if ($contactNumber === '') {
 if ($driverUserIdRaw !== '' && !ctype_digit($driverUserIdRaw)) {
     $errors['driverUserId'] = 'Driver must be a valid user selection.';
 }
+if ($status !== 'pending' && in_array(trim(strtolower($driverUserIdRaw)), ['', 'unassigned'], true)) {
+    $errors['driverUserId'] = 'Driver must be assigned before moving booking beyond Pending.';
+}
 
 $isValidMileage = static function (string $value): bool {
     return preg_match('/^\d+(\.\d{1,2})?$/', $value) === 1;
