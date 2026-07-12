@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: krystal-ftp-deploy
-  cancel-in-progress: true
+  group: deploy-krystal-ftp
+  cancel-in-progress: false
 
 jobs:
   deploy:
