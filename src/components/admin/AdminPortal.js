@@ -383,8 +383,57 @@ function getBookingWindowDates(weeksInPast, weeksInFuture) {
   }
 }
 
-export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
+function decodeUrlSegment(value) {
+  try {
+    return decodeURIComponent(String(value || '').trim())
+  } catch {
+    return String(value || '').trim()
+  }
+}
+
+function getBookingReferenceFromLocation() {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  const currentUrl = new URL(window.location.href)
+  const rawQueryReference = currentUrl.searchParams.get('bookingRef') || currentUrl.searchParams.get('bookingReference') || currentUrl.searchParams.get('ref') || ''
+  const queryReference = decodeUrlSegment(rawQueryReference)
+  if (queryReference) {
+    return queryReference
+  }
+
+  const pathMatch = currentUrl.pathname.match(/^\/admin\/(.+?)\/?$/i)
+  if (!pathMatch || !pathMatch[1]) {
+    return ''
+  }
+
+  return decodeUrlSegment(pathMatch[1])
+}
+
+function updateBookingReferenceInUrl(reference, { replace = false } = {}) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const normalizedReference = String(reference || '').trim()
+  const currentUrl = new URL(window.location.href)
+  const nextPathname = normalizedReference ? `/admin/${encodeURIComponent(normalizedReference)}` : '/admin/'
+  const nextSearch = ''
+  const currentPathAndQuery = `${currentUrl.pathname}${currentUrl.search}`
+  const nextPathAndQuery = `${nextPathname}${nextSearch}`
+
+  if (currentPathAndQuery === nextPathAndQuery) {
+    return
+  }
+
+  const method = replace ? 'replaceState' : 'pushState'
+  window.history[method](null, '', `${nextPathAndQuery}${currentUrl.hash}`)
+}
+
+export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initialBookingReference = '' }) {
   const baseUrl = useMemo(() => deriveAdminApiBase(bookingApiEndpoint, adminApiBase), [bookingApiEndpoint, adminApiBase])
+  const initialBookingReferenceTerm = useMemo(() => String(initialBookingReference || '').trim(), [initialBookingReference])
   const [sessionToken, setSessionToken] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -420,6 +469,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   const [bookingDeleteLoading, setBookingDeleteLoading] = useState(false)
   const [copyFeedbackKey, setCopyFeedbackKey] = useState('')
   const copyFeedbackTimerRef = useRef(null)
+  const [pendingDeepLinkReference, setPendingDeepLinkReference] = useState(initialBookingReferenceTerm)
 
   const [users, setUsers] = useState([])
   const [assignableUsers, setAssignableUsers] = useState([])
@@ -520,12 +570,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       }
 
       const data = await apiFetch(`/bookings/list.php?${query.toString()}`)
-      setBookings(data.items || [])
+      const items = data.items || []
+      setBookings(items)
       setBookingWindowCounts({
         pastCount: data.window?.pastCount ?? 0,
         futureCount: data.window?.futureCount ?? 0,
       })
       setSearchError('')
+      return items
     } catch (error) {
       const errorMessage = error.message || 'Could not load bookings.'
       if (q.trim()) {
@@ -533,6 +585,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       } else {
         setBanner({ type: 'error', message: errorMessage })
       }
+      return []
     } finally {
       setBookingsLoading(false)
     }
@@ -589,8 +642,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [apiFetch, user])
 
-  const loadBookingDetail = useCallback(async (id) => {
+  const loadBookingDetail = useCallback(async (id, bookingReferenceHint = '', { historyMode = 'none' } = {}) => {
     if (!id) return
+
+    const normalizedHint = String(bookingReferenceHint || '').trim()
+    if (normalizedHint && historyMode !== 'none') {
+      updateBookingReferenceInUrl(normalizedHint, { replace: historyMode === 'replace' })
+    }
 
     setSelectedBookingId(String(id))
     setBookingForm(null)
@@ -601,7 +659,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     setBookingDetailLoading(true)
     try {
       const data = await apiFetch(`/bookings/get.php?id=${encodeURIComponent(id)}`)
-      setBookingForm(mapBookingToForm(data.item))
+      const nextBookingForm = mapBookingToForm(data.item)
+      setBookingForm(nextBookingForm)
+      if (historyMode !== 'none') {
+        updateBookingReferenceInUrl(nextBookingForm?.bookingRef || normalizedHint, { replace: historyMode === 'replace' })
+      }
       await loadDriverMappings(id)
     } catch (error) {
       setSelectedBookingId('')
@@ -610,6 +672,33 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       setBookingDetailLoading(false)
     }
   }, [apiFetch, loadDriverMappings])
+
+  const openBookingByReference = useCallback(async (reference, { historyMode = 'replace' } = {}) => {
+    const normalizedReference = String(reference || '').trim()
+    if (!user || !normalizedReference) {
+      return
+    }
+
+    setActiveTab('bookings')
+    setHasExecutedSearch(true)
+    setSearchInput(normalizedReference)
+    setSearchTerm(normalizedReference)
+    setSearchError('')
+    setSelectedBookingId('')
+    setBookingForm(null)
+
+    const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
+    const items = await loadBookings({ q: normalizedReference, windowFrom: window.from, windowTo: window.to })
+    const normalizedReferenceLower = normalizedReference.toLowerCase()
+    const exactMatch = items.find((item) => String(item.booking_ref || '').trim().toLowerCase() === normalizedReferenceLower)
+
+    if (exactMatch) {
+      await loadBookingDetail(exactMatch.id, exactMatch.booking_ref, { historyMode })
+      return
+    }
+
+    updateBookingReferenceInUrl(normalizedReference, { replace: historyMode === 'replace' })
+  }, [futureWeeksVisible, loadBookingDetail, loadBookings, pastWeeksVisible, user])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -625,6 +714,17 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   useEffect(() => {
     refreshSession()
   }, [refreshSession])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const locationReference = getBookingReferenceFromLocation()
+    if (locationReference && locationReference !== pendingDeepLinkReference) {
+      setPendingDeepLinkReference(locationReference)
+    }
+  }, [pendingDeepLinkReference])
 
   useEffect(() => {
     if (!user) {
@@ -756,6 +856,46 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     }
   }, [isBookingsTab, isMyBookingsTab, searchTerm, user, apiFetch, getCurrentBookingsWindow, myBookingsDriverUserId])
 
+  useEffect(() => {
+    if (!user || !pendingDeepLinkReference) {
+      return
+    }
+
+    void openBookingByReference(pendingDeepLinkReference, { historyMode: 'replace' })
+  }, [openBookingByReference, pendingDeepLinkReference, user])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const handlePopState = () => {
+      const nextReference = getBookingReferenceFromLocation()
+      if (!nextReference) {
+        setPendingDeepLinkReference('')
+        setSelectedBookingId('')
+        setBookingForm(null)
+        setBookingDetailTab('main')
+        setDriverMappings([])
+        setMyDriverMappingDraft('')
+        setAdminConfirmUserIdDraft('')
+        setBookingDetailLoading(false)
+        setActiveTab('bookings')
+        return
+      }
+
+      setPendingDeepLinkReference(nextReference)
+      if (user) {
+        void openBookingByReference(nextReference, { historyMode: 'none' })
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [openBookingByReference, user])
+
   async function handleLoginSubmit(event) {
     event.preventDefault()
     setLoginLoading(true)
@@ -822,6 +962,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
     const trimmed = searchInput.trim()
     const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
 
+    updateBookingReferenceInUrl('', { replace: true })
+    setPendingDeepLinkReference('')
     setHasExecutedSearch(true)
     setSearchTerm(trimmed)
     setSelectedBookingId('')
@@ -832,6 +974,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   async function handleClearSearch() {
     const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
 
+    updateBookingReferenceInUrl('', { replace: true })
+    setPendingDeepLinkReference('')
     setSearchInput('')
     setSearchTerm('')
     setHasExecutedSearch(false)
@@ -866,6 +1010,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   }
 
   function handleBackToBookingResults() {
+    updateBookingReferenceInUrl('', { replace: false })
+    setPendingDeepLinkReference('')
     setSelectedBookingId('')
     setBookingForm(null)
     setBookingDetailTab('main')
@@ -876,6 +1022,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   }
 
   function handleMyBookingsTabClick() {
+    updateBookingReferenceInUrl('', { replace: true })
+    setPendingDeepLinkReference('')
     const driverUserId = user?.id !== undefined && user?.id !== null ? String(user.id) : ''
     setIsMobileMenuOpen(false)
     setActiveTab('my-bookings')
@@ -890,6 +1038,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
   }
 
   function handleBookingsTabClick() {
+    updateBookingReferenceInUrl('', { replace: true })
+    setPendingDeepLinkReference('')
     setIsMobileMenuOpen(false)
     setActiveTab('bookings')
     setHasExecutedSearch(false)
@@ -929,7 +1079,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
       setBanner({ type: 'success', message: 'Booking updated successfully.' })
       await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
-      await loadBookingDetail(bookingForm.id)
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not update booking.' })
     } finally {
@@ -962,7 +1112,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
         windowTo: window.to,
         driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '',
       })
-      await loadBookingDetail(bookingForm.id)
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
 
       const baseMessage = mappingStatus === 'confirmed'
         ? 'Driver confirmed for booking.'
@@ -1010,7 +1160,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
       })
 
       setBanner({ type: 'success', message: 'Checklist saved successfully.' })
-      await loadBookingDetail(bookingForm.id)
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not save checklist.' })
     } finally {
@@ -1574,7 +1724,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '' }) {
                         String(selectedBookingId) === String(item.id) ? 'is-selected' : '',
                         item.driver_name ? '' : 'is-missing-driver',
                       ].filter(Boolean).join(' ')}
-                      onClick={() => loadBookingDetail(item.id)}
+                      onClick={() => loadBookingDetail(item.id, item.booking_ref, { historyMode: 'push' })}
                     >
                       <td>{formatBookingDateAndTime(item.booking_date, item.pickup_time)}</td>
                       <td>{item.organisation}</td>

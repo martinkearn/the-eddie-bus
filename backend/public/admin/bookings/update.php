@@ -446,6 +446,11 @@ try {
                     ? 'Driver confirmation for booking ' . $bookingRefForEmail
                     : 'Driver confirmation for EDDIE bus booking';
 
+                $adminBookingUrl = 'https://theeddiebus.org.uk/admin/';
+                if ($bookingRefForEmail !== '') {
+                    $adminBookingUrl .= rawurlencode($bookingRefForEmail);
+                }
+
                 send_resend_templated_email(
                     $recipientEmail,
                     $subject,
@@ -464,7 +469,7 @@ try {
                         'special_requirements' => fallback_text((string)($emailBooking['special_requirements'] ?? ''), 'None provided'),
                         'support_email' => 'bookings@theeddiebus.org.uk',
                         'support_phone' => '07805 400180',
-                        'admin_url' => 'https://theeddiebus.org.uk/admin/',
+                        'admin_booking_url' => $adminBookingUrl,
                     ]
                 );
             } catch (RuntimeException $runtimeException) {

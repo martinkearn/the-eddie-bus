@@ -16,6 +16,11 @@ function getLegacyRedirect(pathname) {
     .replace(/^\/+|\/+$/g, '')
     .replace(/\.html$/i, '')
 
+  const adminMatch = trimmedPath.match(/^admin\/(.+)$/i)
+  if (adminMatch && adminMatch[1]) {
+    return `/admin/?bookingRef=${encodeURIComponent(adminMatch[1])}`
+  }
+
   const legacyKey = trimmedPath
     .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
