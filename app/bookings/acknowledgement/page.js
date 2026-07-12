@@ -15,7 +15,7 @@ export const metadata = {
 
 export default function BookingAcknowledgementPage() {
   return (
-    <SiteLayout currentPath="/how-to-book/">
+    <SiteLayout currentPath="/bookings/">
       <PageIntro
         title="Booking request received"
         intro={[

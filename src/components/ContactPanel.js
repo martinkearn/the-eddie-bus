@@ -1,8 +1,9 @@
+import Link from 'next/link'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAward, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons'
+import { faAward, faCalendarCheck, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons'
 import { site } from '../content/site'
 
-export function ContactPanel({ title = 'Get in touch', text = [] }) {
+export function ContactPanel({ title = 'Get in touch', text = [], showBookNow = true }) {
   const textItems = Array.isArray(text) ? text : []
 
   return (
@@ -21,6 +22,13 @@ export function ContactPanel({ title = 'Get in touch', text = [] }) {
             <small>Call Us Directly</small>
             <strong>{site.phone}</strong>
           </a>
+          {showBookNow ? (
+            <Link href="/bookings/">
+              <span aria-hidden="true"><FontAwesomeIcon icon={faCalendarCheck} /></span>
+              <small>Ready to travel?</small>
+              <strong>Book now</strong>
+            </Link>
+          ) : null}
         </div>
       </div>
       <div className="contact-panel-highlight">

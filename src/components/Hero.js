@@ -8,7 +8,7 @@ export function Hero({ title, intro, image, eyebrow = 'Serving Bromsgrove since 
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         <div className="button-row">
-          <Link className="button button-primary" href="/how-to-book/">{site.primaryCta}</Link>
+          <Link className="button button-primary" href="/bookings/">{site.primaryCta}</Link>
           <Link className="button button-secondary" href="/volunteering/">Find out about volunteering</Link>
         </div>
         <div className="hero-intro">

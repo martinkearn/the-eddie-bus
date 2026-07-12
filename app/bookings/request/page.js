@@ -19,7 +19,7 @@ export default function BookingRequestPage() {
 	const bookingAvailabilityEndpoint = process.env.NEXT_PUBLIC_BOOKING_AVAILABILITY_ENDPOINT || ''
 
 	return (
-		<SiteLayout currentPath="/how-to-book/">
+		<SiteLayout currentPath="/bookings/">
 			<PageIntro
 				title="Booking request form"
 				intro={[

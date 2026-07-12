@@ -13,7 +13,7 @@ export const site = {
 
 export const primaryNavigation = [
   { label: 'Home', href: '/' },
-  { label: 'Book', href: '/how-to-book/' },
+  { label: 'Book', href: '/bookings/' },
   { label: 'About', href: '/about-us/' },
   { label: 'Places', href: '/places-to-visit/' },
   { label: 'Policies', href: '/policies/' },

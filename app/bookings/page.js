@@ -130,7 +130,11 @@ export default function BookingsPage() {
       <Callout title="Looking for trip ideas?">
         <p><FontAwesomeIcon icon={faMapLocationDot} aria-hidden="true" /> See <Link href="/places-to-visit/">Places to Visit</Link> for outing ideas.</p>
       </Callout>
-      <ContactPanel title="Contact details" text={['Use the booking request form for the quickest response. Email and phone bookings are also welcome.']} />
+      <ContactPanel
+        title="Contact details"
+        text={['Use the booking request form for the quickest response. Email and phone bookings are also welcome.']}
+        showBookNow={false}
+      />
     </SiteLayout>
   )
 }

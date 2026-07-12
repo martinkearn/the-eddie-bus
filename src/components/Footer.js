@@ -15,24 +15,22 @@ import { primaryNavigation, site } from '../content/site'
 
 const footerPages = [
   { label: 'Home', href: '/' },
-  { label: 'Book', href: '/how-to-book/' },
+  { label: 'Book', href: '/bookings/' },
   { label: 'About', href: '/about-us/' },
   { label: 'Places', href: '/places-to-visit/' },
   { label: 'Policies', href: '/policies/' },
   { label: 'Volunteer', href: '/volunteering/' },
   { label: 'Admin Portal', href: '/admin' },
-  { label: 'Bookings Form', href: '/bookings/' },
 ]
 
 const footerPageIcons = {
   '/': faHouse,
-  '/how-to-book/': faCalendarCheck,
+  '/bookings/': faCalendarCheck,
   '/about-us/': faUsers,
   '/places-to-visit/': faMapLocationDot,
   '/policies/': faShieldHeart,
   '/volunteering/': faHandshake,
   '/admin': faKey,
-  '/bookings/': faCalendarCheck,
 }
 
 export function Footer() {
@@ -49,6 +47,7 @@ export function Footer() {
           <h2>Contact</h2>
           <p><a href={site.emailHref}><FontAwesomeIcon icon={faEnvelope} aria-hidden="true" />{site.email}</a></p>
           <p><a href={site.phoneHref}><FontAwesomeIcon icon={faPhone} aria-hidden="true" />{site.phone}</a></p>
+          <p><Link href="/bookings/"><FontAwesomeIcon icon={faCalendarCheck} aria-hidden="true" />Book now</Link></p>
         </div>
         <div>
           <h2>Pages</h2>
