@@ -3,6 +3,34 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../../bootstrap_api.php';
+require_once $srcPath . '/email.php';
+
+function fallback_text(string $value, string $fallback): string
+{
+    $trimmed = trim($value);
+    return $trimmed !== '' ? $trimmed : $fallback;
+}
+
+function format_booking_date_words(string $bookingDate): string
+{
+    $date = DateTimeImmutable::createFromFormat('Y-m-d', $bookingDate);
+    if (!$date instanceof DateTimeImmutable) {
+        return $bookingDate;
+    }
+
+    return $date->format('l j F Y');
+}
+
+function mapping_status_label(string $mappingStatus): string
+{
+    return match ($mappingStatus) {
+        'available' => 'Available',
+        'maybe_available' => 'Maybe Available',
+        'not_available' => 'Not Available',
+        'confirmed' => 'Confirmed',
+        default => 'Not set',
+    };
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     fail_json(405, 'Method not allowed.');
@@ -73,7 +101,24 @@ try {
         fail_json(403, 'Only admin users can confirm a driver.');
     }
 
-    $bookingStmt = $pdo->prepare('SELECT id, driver_user_id FROM bookings WHERE id = :id LIMIT 1');
+    $bookingStmt = $pdo->prepare(
+        "SELECT
+            id,
+            driver_user_id,
+            booking_ref,
+            status,
+            booking_date,
+            TIME_FORMAT(pickup_time, '%H:%i') AS pickup_time,
+            organisation,
+            destination_name,
+            destination_address,
+            contact_name,
+            contact_email,
+            contact_number
+         FROM bookings
+         WHERE id = :id
+         LIMIT 1"
+    );
     $bookingStmt->execute([':id' => $bookingId]);
     $booking = $bookingStmt->fetch();
     if (!is_array($booking)) {
@@ -85,11 +130,52 @@ try {
         && (int)($booking['driver_user_id'] ?? 0) === $targetUserId
         && in_array($mappingStatusRaw, ['maybe_available', 'not_available'], true);
 
-    $targetUserStmt = $pdo->prepare('SELECT id FROM admin_users WHERE id = :id LIMIT 1');
+    $targetUserStmt = $pdo->prepare(
+        "SELECT
+            id,
+            username,
+            display_name,
+            email,
+            phone_number
+         FROM admin_users
+         WHERE id = :id
+         LIMIT 1"
+    );
     $targetUserStmt->execute([':id' => $targetUserId]);
     $targetUser = $targetUserStmt->fetch();
     if (!is_array($targetUser)) {
         fail_json(422, 'Driver must be an existing user.');
+    }
+
+    $existingMappingStmt = $pdo->prepare(
+        'SELECT mapping_status FROM booking_driver_mappings WHERE booking_id = :booking_id AND user_id = :user_id LIMIT 1'
+    );
+    $existingMappingStmt->execute([
+        ':booking_id' => $bookingId,
+        ':user_id' => $targetUserId,
+    ]);
+    $existingMapping = $existingMappingStmt->fetch();
+    $existingMappingStatus = is_array($existingMapping)
+        ? trim((string)($existingMapping['mapping_status'] ?? ''))
+        : '';
+
+    $shouldSendAdminAvailabilityAlert = $isSelfAvailabilityUpdate
+        && in_array($mappingStatusRaw, ['available', 'maybe_available', 'not_available'], true)
+        && ($existingMappingStatus === '' || $existingMappingStatus !== $mappingStatusRaw);
+
+    $driverDisplayName = trim((string)($targetUser['display_name'] ?? ''));
+    if ($driverDisplayName === '') {
+        $driverDisplayName = trim((string)($targetUser['username'] ?? ''));
+    }
+
+    $bookingRefForEmail = trim((string)($booking['booking_ref'] ?? ''));
+    $bookingStatusForEmail = trim((string)($booking['status'] ?? ''));
+    $bookingDateWords = format_booking_date_words((string)($booking['booking_date'] ?? ''));
+    $pickupTimeForEmail = trim((string)($booking['pickup_time'] ?? ''));
+    $bookingWhenForEmail = trim($bookingDateWords . ($pickupTimeForEmail !== '' ? ' at ' . $pickupTimeForEmail : ''));
+    $driverAssignmentUrl = 'https://theeddiebus.org.uk/admin/';
+    if ($bookingRefForEmail !== '') {
+        $driverAssignmentUrl .= rawurlencode($bookingRefForEmail) . '/driver-assignment';
     }
 
     $pdo->beginTransaction();
@@ -151,6 +237,40 @@ try {
     }
 
     $pdo->commit();
+
+    if ($shouldSendAdminAvailabilityAlert) {
+        try {
+            $subject = $bookingRefForEmail !== ''
+                ? 'Driver availability updated for booking ' . $bookingRefForEmail
+                : 'Driver availability updated for EDDIE bus booking';
+
+            send_resend_templated_email(
+                'bookings@theeddiebus.org.uk',
+                $subject,
+                'booking-driver-availability-admin-alert',
+                [
+                    'subject' => $subject,
+                    'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
+                    'booking_status_label' => fallback_text(ucwords(str_replace('_', ' ', $bookingStatusForEmail)), 'Not provided'),
+                    'booking_when' => fallback_text($bookingWhenForEmail, 'Not provided'),
+                    'organisation' => fallback_text((string)($booking['organisation'] ?? ''), 'Not provided'),
+                    'destination_name' => fallback_text((string)($booking['destination_name'] ?? ''), 'Not provided'),
+                    'destination_address' => fallback_text((string)($booking['destination_address'] ?? ''), 'Not provided'),
+                    'contact_name' => fallback_text((string)($booking['contact_name'] ?? ''), 'Not provided'),
+                    'contact_email' => fallback_text((string)($booking['contact_email'] ?? ''), 'Not provided'),
+                    'contact_number' => fallback_text((string)($booking['contact_number'] ?? ''), 'Not provided'),
+                    'driver_name' => fallback_text($driverDisplayName, 'Not provided'),
+                    'driver_email' => fallback_text((string)($targetUser['email'] ?? ''), 'Not provided'),
+                    'driver_phone' => fallback_text((string)($targetUser['phone_number'] ?? ''), 'Not provided'),
+                    'driver_availability_label' => mapping_status_label($mappingStatusRaw),
+                    'driver_assignment_url' => $driverAssignmentUrl,
+                ],
+                false
+            );
+        } catch (Throwable $emailException) {
+            error_log('Driver availability admin alert email failed: ' . $emailException->getMessage());
+        }
+    }
 
     respond_json(200, [
         'ok' => true,

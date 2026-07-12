@@ -122,6 +122,12 @@ return [
   - template: `backend/templates/emails/booking-driver-confirmed.html`
   - recipient: the newly assigned driver's `admin_users.email`
   - this sends on driver assignment/change during save.
+- Driver availability updates now trigger an admin alert email when a driver records or changes their own availability:
+	- endpoint: `POST /admin/bookings/driver-mappings/update.php`
+	- template: `backend/templates/emails/booking-driver-availability-admin-alert.html`
+	- recipient: `bookings@theeddiebus.org.uk` only
+	- triggers: self-updates to `available`, `maybe_available`, or `not_available` when the value is new or changed
+	- deep link format: `https://theeddiebus.org.uk/admin/<booking_ref>/driver-assignment`
 
 ## Setup
 

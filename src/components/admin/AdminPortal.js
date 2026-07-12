@@ -411,14 +411,14 @@ function decodeUrlSegment(value) {
 
 const BOOKING_DETAIL_TAB_SLUGS = {
   main: 'main',
-  availability: 'youravaliability',
+  availability: 'your-avaliability',
   'driver-assignment': 'driver-assignment',
   checklist: 'checklist',
 }
 
 function normalizeBookingDetailTab(value) {
   const normalized = String(value || '').trim().toLowerCase()
-  if (normalized === 'availability' || normalized === 'youravaliability' || normalized === 'youravailability') return 'availability'
+  if (normalized === 'availability' || normalized === 'your-avaliability' || normalized === 'youravaliability' || normalized === 'youravailability') return 'availability'
   if (normalized === 'driver-assignment' || normalized === 'driverassignment') return 'driver-assignment'
   if (normalized === 'checklist') return 'checklist'
   return 'main'
@@ -1833,7 +1833,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       onChange={(event) => handleBookingDetailTabChange(event.target.value)}
                       aria-label="Select booking detail view"
                     >
-                      <option value="main">Main booking</option>
+                      <option value="main">Main Booking</option>
                       <option value="availability">Your Avaliability</option>
                       {isAdmin && <option value="driver-assignment">Driver Assignment</option>}
                       <option value="checklist">Checklist</option>
@@ -1842,7 +1842,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
 
                   <nav className="field-full admin-detail-tabs" aria-label="Booking detail tabs" role="tablist">
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('main')}>
-                      Main booking
+                      Main Booking
                     </button>
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'availability'} className={bookingDetailTab === 'availability' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('availability')}>
                       Your Avaliability
@@ -1861,7 +1861,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                     <>
 
                   <section className="field-full admin-detail-tab-heading" aria-label="Main booking heading">
-                    <h3>Main booking</h3>
+                    <h3>Main Booking</h3>
                     <p>Booking reference: {formatDisplayText(bookingForm?.bookingRef, 'Not provided')}</p>
                   </section>
 
@@ -2199,7 +2199,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                           </div>
 
                           {currentUserDriverMappingStatus === 'available' && (
-                            <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
+                            <p className="admin-viewer-availability-note admin-viewer-availability-note-available">We'll confirm shortly whether you've been assigned as the driver. Please watch for an email confirmation and check here for updates. If you don't receive confirmation, you can assume you have not been assigned.</p>
                           )}
                           {currentUserDriverMappingStatus === 'maybe_available' && (
                             <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please update this to Available or Not Available as soon as you can.</p>
@@ -2212,7 +2212,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   {bookingDetailTab === 'driver-assignment' && (
                     <section className="field-full admin-driver-mapping-panel" aria-label="Driver assignment">
                       <div className="admin-detail-tab-heading">
-                        <h3>Driver assignment</h3>
+                        <h3>Driver Assignment</h3>
                         <p>Manage drivers for this booking</p>
                       </div>
 

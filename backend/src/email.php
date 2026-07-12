@@ -140,9 +140,11 @@ function html_to_plain_text(string $html): string
     return trim((string)$text);
 }
 
-function resend_send_email(array $payload, string $apiKey): array
+function resend_send_email(array $payload, string $apiKey, bool $addDefaultCc = true): array
 {
-    $payload = add_default_cc_to_payload($payload);
+    if ($addDefaultCc) {
+        $payload = add_default_cc_to_payload($payload);
+    }
 
     $jsonBody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (!is_string($jsonBody) || $jsonBody === '') {
@@ -257,7 +259,8 @@ function send_resend_templated_email(
     string $toEmail,
     string $subject,
     string $templateName,
-    array $templateData = []
+    array $templateData = [],
+    bool $addDefaultCc = true
 ): array {
     $to = trim($toEmail);
     if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
@@ -281,5 +284,5 @@ function send_resend_templated_email(
         'text' => $text,
     ];
 
-    return resend_send_email($payload, $mailConfig['api_key']);
+    return resend_send_email($payload, $mailConfig['api_key'], $addDefaultCc);
 }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>Driver availability updated</h1>
+
+    <p>
+      A driver has submitted or changed their availability for a booking.
+    </p>
+
+    <p>
+      <a href="{{driver_assignment_url}}">Open Driver Assignment tab</a>
+    </p>
+
+    <h2>Availability update</h2>
+    <p>
+      <strong>Driver availability:</strong> {{driver_availability_label}}<br />
+      <strong>Driver name:</strong> {{driver_name}}<br />
+      <strong>Driver email:</strong> {{driver_email}}<br />
+      <strong>Driver phone:</strong> {{driver_phone}}
+    </p>
+
+    <h2>Booking details</h2>
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Status:</strong> {{booking_status_label}}<br />
+      <strong>Booking date and pickup time:</strong> {{booking_when}}<br />
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination name:</strong> {{destination_name}}<br />
+      <strong>Destination address:</strong> {{destination_address}}<br />
+      <strong>Booking contact:</strong> {{contact_name}}<br />
+      <strong>Contact email:</strong> {{contact_email}}<br />
+      <strong>Contact number:</strong> {{contact_number}}
+    </p>
+
+    <p>
+      The EDDIE Bus admin notification service.
+    </p>
+  </body>
+</html>
