@@ -363,7 +363,7 @@ try {
 
             $adminBookingUrl = 'https://theeddiebus.org.uk/admin/';
             if ($bookingRef !== '') {
-                $adminBookingUrl .= '?bookingRef=' . rawurlencode($bookingRef);
+                $adminBookingUrl .= rawurlencode($bookingRef) . '/youravaliability';
             }
 
             foreach ($driverRecipients as $recipient) {

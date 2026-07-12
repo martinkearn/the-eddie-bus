@@ -258,6 +258,24 @@ function formatDateUK(dateStr) {
   return formatDateWords(dateStr)
 }
 
+function formatDateShortNoYearUK(dateStr) {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(String(dateStr) + 'T00:00:00Z')
+    if (Number.isNaN(date.getTime())) {
+      return String(dateStr)
+    }
+
+    const weekday = WEEKDAY_NAMES_SHORT[date.getUTCDay()]
+    const day = toOrdinalDay(date.getUTCDate())
+    const month = MONTH_NAMES[date.getUTCMonth()]
+
+    return `${weekday} ${day} ${month}`
+  } catch {
+    return String(dateStr)
+  }
+}
+
 function formatDateTimeUK(dateTimeStr) {
   if (!dateTimeStr) return ''
   try {
@@ -1052,18 +1070,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     await loadBookings({ q: isBookingsTab ? searchTerm : '', windowFrom: window.from, windowTo: window.to, driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '' })
   }
 
-  function handleBackToBookingResults() {
-    updateBookingReferenceInUrl('', { replace: false })
-    setPendingDeepLinkReference('')
-    setSelectedBookingId('')
-    setBookingForm(null)
-    setBookingDetailTab('main')
-    setDriverMappings([])
-    setMyDriverMappingDraft('')
-    setAdminConfirmUserIdDraft('')
-    setBookingDetailLoading(false)
-  }
-
   function handleMyBookingsTabClick() {
     updateBookingReferenceInUrl('', { replace: true })
     setPendingDeepLinkReference('')
@@ -1638,24 +1644,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
 
         {(isBookingsTab || isMyBookingsTab) && (
           <section className="admin-section" aria-label="Booking management">
-            {selectedBookingId && (
-              <div className="admin-inline-actions" style={{ marginBottom: '0.75rem' }}>
-                <button
-                  className="button button-quiet"
-                  type="button"
-                  onClick={handleBackToBookingResults}
-                >
-                  <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
-                  Back to {isBookingsTab && hasExecutedSearch ? 'search results' : 'booking list'}
-                </button>
-              </div>
-            )}
-
             <div className="admin-section-heading">
               <div>
-                <h2>{selectedBookingId ? formatDisplayText(bookingForm?.bookingRef, 'Booking details') : (isMyBookingsTab ? 'My Bookings' : 'All Bookings')}</h2>
+                <h2>{selectedBookingId
+                  ? `${formatDisplayText(bookingForm?.organisation, 'Organisation')} to ${formatDisplayText(bookingForm?.destinationName, 'Destination')} on ${formatDisplayText(formatDateShortNoYearUK(bookingForm?.bookingDate), 'Date not provided')}`
+                  : (isMyBookingsTab ? 'My Bookings' : 'All Bookings')}
+                </h2>
                 {selectedBookingId ? (
-                  <p>Everything you need to know about this booking.</p>
+                  <p>Booking reference: {formatDisplayText(bookingForm?.bookingRef, 'Not provided')}</p>
                 ) : isMyBookingsTab ? (
                   <p>Bookings assigned to {preferredUserLabel(user, 'you')}.</p>
                 ) : (
@@ -1866,7 +1862,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
 
                   <section className="field-full admin-detail-tab-heading" aria-label="Main booking heading">
                     <h3>Main booking</h3>
-                    <p>Booking details, contact details, and status updates.</p>
+                    <p>Booking reference: {formatDisplayText(bookingForm?.bookingRef, 'Not provided')}</p>
                   </section>
 
                   <label className="field-full">
@@ -2198,7 +2194,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                                 <span className="admin-availability-radio-indicator" aria-hidden="true" />
                                 Not Available
                               </span>
-                              <span className="admin-availability-vote-detail">I cannot take this booking, so planning can move ahead quickly.</span>
+                              <span className="admin-availability-vote-detail">I cannot take this booking</span>
                             </button>
                           </div>
 
