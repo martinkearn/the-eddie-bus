@@ -291,7 +291,7 @@ try {
                 'destination_address' => fallback_text($destinationAddress, 'Not provided'),
                 'booking_ref' => fallback_text($bookingRef, 'Not provided'),
                 'booking_when' => fallback_text($bookingWhen, 'your requested date'),
-                'booking_status_label' => 'Pending (Stage 1)',
+                'booking_status_label' => 'Pending',
                 'contact_name' => fallback_text($contactName, 'Not provided'),
                 'contact_email' => fallback_text($contactEmail, 'Not provided'),
                 'contact_number' => fallback_text($contactNumber, 'Not provided'),

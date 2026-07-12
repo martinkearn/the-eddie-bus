@@ -398,7 +398,7 @@ try {
                     'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
                     'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
                     'booking_when' => fallback_text($bookingWhen, 'your requested date'),
-                    'booking_status_label' => 'Confirmed (Stage 2)',
+                    'booking_status_label' => 'Confirmed',
                     'driver_name' => fallback_text((string)($emailBooking['driver_name'] ?? ''), 'the assigned driver'),
                     'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),
                     'contact_email' => fallback_text($recipientEmail, 'Not provided'),

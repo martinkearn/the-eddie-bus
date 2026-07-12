@@ -6,7 +6,7 @@
     <title>{{subject}}</title>
   </head>
   <body>
-    <h1>Your booking is now confirmed</h1>
+    <h1>Great news, your booking is now confirmed!</h1>
 
     <p>Hi {{recipient_name}},</p>
 
@@ -22,7 +22,7 @@
     </p>
 
     <p>
-      The bus is reserved and your driver has been matched. If anything changes, please reply to this email and we will help with the next steps.
+      The bus is reserved and {{driver_name}} has been assigned as your driver. If anything changes, please reply to this email and we will help with the next steps. Otherwise, we look forward to meeting you on {{booking_when}}.
     </p>
 
     <h2>Booking details</h2>
@@ -34,6 +34,7 @@
     </p>
 
     <h2>Contact details</h2>
+    <p>We'll use these contact details to reach you if needed:</p>
     <p>
       <strong>Contact name:</strong> {{contact_name}}<br />
       <strong>Contact email:</strong> {{contact_email}}<br />

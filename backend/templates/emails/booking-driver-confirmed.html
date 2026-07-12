@@ -6,7 +6,7 @@
     <title>{{subject}}</title>
   </head>
   <body>
-    <h1>You are confirmed as the driver</h1>
+    <h1>You are confirmed as the driver for {{organisation}} to {{destination_name}} on {{booking_when}}</h1>
 
     <p>Hi {{recipient_name}},</p>
 
@@ -21,6 +21,7 @@
     </p>
 
     <h2>Customer contact details</h2>
+    <p>You can use these contact details to reach the customer if needed:</p>
     <p>
       <strong>Name:</strong> {{contact_name}}<br />
       <strong>Email:</strong> {{contact_email}}<br />
@@ -36,7 +37,7 @@
     </p>
 
     <p>
-      If anything needs changing, please reply to this email or contact us at
+      If you have any questions or need assistance, please contact us at
       <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
     </p>
 
