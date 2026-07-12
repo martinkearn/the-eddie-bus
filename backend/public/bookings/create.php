@@ -277,6 +277,10 @@ try {
     $emailError = null;
     $emailErrorCode = null;
     $emailErrorStatus = null;
+    $driverAvailabilityEmailTotalRecipients = 0;
+    $driverAvailabilityEmailSentCount = 0;
+    $driverAvailabilityEmailFailedCount = 0;
+    $driverAvailabilityEmailError = null;
 
     try {
         send_resend_templated_email(
@@ -321,6 +325,90 @@ try {
         error_log('Booking acknowledgement email failed: ' . $emailException->getMessage());
     }
 
+    try {
+        $usersStmt = $pdo->query('SELECT id, username, display_name, email FROM admin_users ORDER BY id ASC');
+        $users = $usersStmt->fetchAll();
+        if (!is_array($users)) {
+            $users = [];
+        }
+
+        $driverRecipients = [];
+        foreach ($users as $userRow) {
+            if (!is_array($userRow)) {
+                continue;
+            }
+
+            $recipientEmail = strtolower(trim((string)($userRow['email'] ?? '')));
+            if ($recipientEmail === '' || filter_var($recipientEmail, FILTER_VALIDATE_EMAIL) === false) {
+                continue;
+            }
+
+            if (isset($driverRecipients[$recipientEmail])) {
+                continue;
+            }
+
+            $driverRecipients[$recipientEmail] = [
+                'email' => $recipientEmail,
+                'display_name' => trim((string)($userRow['display_name'] ?? '')),
+                'username' => trim((string)($userRow['username'] ?? '')),
+            ];
+        }
+
+        $driverAvailabilityEmailTotalRecipients = count($driverRecipients);
+
+        if ($driverAvailabilityEmailTotalRecipients > 0) {
+            $driverAvailabilitySubject = $bookingRef !== ''
+                ? 'Driver availability needed for booking ' . $bookingRef
+                : 'Driver availability needed for a new booking';
+
+            $adminBookingUrl = 'https://theeddiebus.org.uk/admin/';
+            if ($bookingRef !== '') {
+                $adminBookingUrl .= '?bookingRef=' . rawurlencode($bookingRef);
+            }
+
+            foreach ($driverRecipients as $recipient) {
+                try {
+                    $recipientName = fallback_text((string)($recipient['display_name'] ?? ''), (string)($recipient['username'] ?? 'there'));
+
+                    send_resend_templated_email(
+                        (string)$recipient['email'],
+                        $driverAvailabilitySubject,
+                        'booking-driver-availability-request',
+                        [
+                            'subject' => $driverAvailabilitySubject,
+                            'recipient_name' => $recipientName,
+                            'organisation' => fallback_text($organisation, 'your organisation'),
+                            'destination_name' => fallback_text($destinationName, 'your chosen destination'),
+                            'destination_address' => fallback_text($destinationAddress, 'Not provided'),
+                            'booking_ref' => fallback_text($bookingRef, 'Not provided'),
+                            'booking_when' => fallback_text($bookingWhen, 'your requested date'),
+                            'booking_status_label' => 'Pending',
+                            'admin_booking_url' => $adminBookingUrl,
+                            'support_email' => 'bookings@theeddiebus.org.uk',
+                            'support_phone' => '07805 400180',
+                        ]
+                    );
+
+                    $driverAvailabilityEmailSentCount += 1;
+                } catch (Throwable $driverEmailException) {
+                    $driverAvailabilityEmailFailedCount += 1;
+                    error_log('Driver availability email failed for ' . (string)$recipient['email'] . ': ' . $driverEmailException->getMessage());
+                }
+            }
+
+            if ($driverAvailabilityEmailFailedCount > 0) {
+                $driverAvailabilityEmailError = sprintf(
+                    'Sent %d of %d driver availability emails.',
+                    $driverAvailabilityEmailSentCount,
+                    $driverAvailabilityEmailTotalRecipients
+                );
+            }
+        }
+    } catch (Throwable $driverAvailabilityException) {
+        $driverAvailabilityEmailError = sanitize_error_for_log($driverAvailabilityException->getMessage());
+        error_log('Driver availability email batch failed: ' . $driverAvailabilityException->getMessage());
+    }
+
     if ($emailSent) {
         respond_json(201, [
             'ok' => true,
@@ -329,6 +417,10 @@ try {
             'bookingRef' => $bookingRef,
             'emailSent' => true,
             'emailError' => null,
+            'driverAvailabilityEmailTotalRecipients' => $driverAvailabilityEmailTotalRecipients,
+            'driverAvailabilityEmailSentCount' => $driverAvailabilityEmailSentCount,
+            'driverAvailabilityEmailFailedCount' => $driverAvailabilityEmailFailedCount,
+            'driverAvailabilityEmailError' => $driverAvailabilityEmailError,
             'bookingSaved' => true,
         ]);
     }
@@ -341,6 +433,10 @@ try {
         'bookingSaved' => true,
         'emailSent' => false,
         'emailError' => $emailError,
+        'driverAvailabilityEmailTotalRecipients' => $driverAvailabilityEmailTotalRecipients,
+        'driverAvailabilityEmailSentCount' => $driverAvailabilityEmailSentCount,
+        'driverAvailabilityEmailFailedCount' => $driverAvailabilityEmailFailedCount,
+        'driverAvailabilityEmailError' => $driverAvailabilityEmailError,
         'error' => [
             'code' => $emailErrorCode,
             'provider' => 'resend',

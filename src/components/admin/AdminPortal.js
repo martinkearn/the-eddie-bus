@@ -496,11 +496,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
   const isBookingsTab = activeTab === 'bookings'
   const isMyBookingsTab = activeTab === 'my-bookings'
   const myBookingsDriverUserId = isMyBookingsTab && user?.id !== undefined && user?.id !== null ? String(user.id) : ''
-  const currentUserDriverMappingStatus = useMemo(() => {
-    if (!user?.id) return ''
-    const match = driverMappings.find((item) => String(item.user_id) === String(user.id))
-    return String(match?.mapping_status || '')
+  const currentUserDriverMapping = useMemo(() => {
+    if (!user?.id) return null
+    return driverMappings.find((item) => String(item.user_id) === String(user.id)) || null
   }, [driverMappings, user])
+  const currentUserDriverMappingStatus = String(currentUserDriverMapping?.mapping_status || '')
   const getCurrentBookingsWindow = useCallback(() => getBookingWindowDates(pastWeeksVisible, futureWeeksVisible), [pastWeeksVisible, futureWeeksVisible])
 
   const apiFetch = useCallback(async (path, options = {}) => {
@@ -1777,61 +1777,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
               {!bookingDetailLoading && bookingForm && (
                 <form className="admin-form-grid" onSubmit={isAdmin ? handleBookingSave : undefined}>
 
-                  <div className="field-full admin-viewer-availability">
-                      {isCurrentUserConfirmedDriver ? (
-                        <>
-                          <p className="admin-viewer-confirmed-label">You are confirmed for this booking</p>
-                          <p className="admin-viewer-confirmed-note">Contact us right away if your situation changes and you cannot do the booking.</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="admin-viewer-availability-label">
-                            {hasConfirmedDriver
-                              ? `${formatDisplayText(bookingForm.driverName, 'Another driver')} is already the confirmed driver for this booking but it is still useful to know your availability in case anything changes.`
-                              : (currentUserDriverMappingStatus
-                                ? `You are ${formatDriverMappingStatus(currentUserDriverMappingStatus).toLowerCase()} for this booking`
-                                : 'Please let us know your availability for this booking')}
-                          </p>
-                          <div className="admin-viewer-availability-actions">
-                            <button
-                              className={`button admin-availability-btn admin-availability-btn-available${currentUserDriverMappingStatus === 'available' ? ' is-active' : ''}`}
-                              type="button"
-                              disabled={driverMappingsSaveLoading}
-                              onClick={() => handleUpdateDriverMapping('available', user.id)}
-                            >
-                              <FontAwesomeIcon icon={faCheck} aria-hidden="true" />
-                              I&apos;m available
-                            </button>
-                            <button
-                              className={`button admin-availability-btn admin-availability-btn-maybe${currentUserDriverMappingStatus === 'maybe_available' ? ' is-active' : ''}`}
-                              type="button"
-                              disabled={driverMappingsSaveLoading}
-                              onClick={() => handleUpdateDriverMapping('maybe_available', user.id)}
-                            >
-                              <FontAwesomeIcon icon={faHourglassHalf} aria-hidden="true" />
-                              I&apos;m maybe available
-                            </button>
-                            <button
-                              className={`button admin-availability-btn admin-availability-btn-unavailable${currentUserDriverMappingStatus === 'not_available' ? ' is-active' : ''}`}
-                              type="button"
-                              disabled={driverMappingsSaveLoading}
-                              onClick={() => handleUpdateDriverMapping('not_available', user.id)}
-                            >
-                              <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
-                              I&apos;m not available
-                            </button>
-                          </div>
-                          {currentUserDriverMappingStatus === 'available' && (
-                            <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
-                          )}
-                          {currentUserDriverMappingStatus === 'maybe_available' && (
-                            <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please let us know your availability as soon as you can.</p>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  
-
                   <label className="field-full admin-detail-tabs-mobile">
                     <span>Select view</span>
                     <select
@@ -1840,6 +1785,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       aria-label="Select booking detail view"
                     >
                       <option value="main">Main booking</option>
+                      <option value="availability">Your Avaliability</option>
                       {isAdmin && <option value="driver-assignment">Driver Assignment</option>}
                       <option value="checklist">Checklist</option>
                     </select>
@@ -1848,6 +1794,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   <nav className="field-full admin-detail-tabs" aria-label="Booking detail tabs" role="tablist">
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => setBookingDetailTab('main')}>
                       Main booking
+                    </button>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'availability'} className={bookingDetailTab === 'availability' ? 'is-active' : ''} onClick={() => setBookingDetailTab('availability')}>
+                      Your Avaliability
                     </button>
                     {isAdmin && (
                       <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => setBookingDetailTab('driver-assignment')}>
@@ -2117,6 +2066,98 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   </label>
 
                     </>
+                  )}
+
+                  {bookingDetailTab === 'availability' && (
+                    <section className="field-full admin-availability-panel" aria-label="Driver availability">
+                      <div className="admin-detail-tab-heading">
+                        <h3>Your Avaliability</h3>
+                        <p>Share your response for this booking and review what each option means.</p>
+                      </div>
+
+                      {isCurrentUserConfirmedDriver ? (
+                        <>
+                          <p className="admin-viewer-confirmed-label">You are confirmed for this booking</p>
+                          <p className="admin-viewer-confirmed-note">Contact us right away if your situation changes and you cannot do the booking.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="admin-viewer-availability-label">
+                            {hasConfirmedDriver
+                              ? `${formatDisplayText(bookingForm.driverName, 'Another driver')} is already the confirmed driver for this booking, but your response still helps if anything changes.`
+                              : (currentUserDriverMappingStatus
+                                ? `Your current response: ${formatDriverMappingStatus(currentUserDriverMappingStatus)}.`
+                                : 'Please let us know your availability for this booking.')}
+                          </p>
+
+                          <div className="admin-availability-current-status" aria-live="polite">
+                            <p className="admin-availability-current-status-label">Your current status</p>
+                            <div className="admin-availability-current-status-main">
+                              <span className={`admin-driver-mapping-badge status-${currentUserDriverMappingStatus || 'none'}`}>
+                                {currentUserDriverMappingStatus ? formatDriverMappingStatus(currentUserDriverMappingStatus) : 'No response yet'}
+                              </span>
+                              <span className="admin-driver-mapping-updated-at">
+                                {currentUserDriverMappingStatus
+                                  ? `Responded: ${formatDisplayText(formatDateTimeUK(currentUserDriverMapping?.updated_at), 'Not available')}`
+                                  : 'Responded: Not yet'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="admin-availability-vote-grid" role="radiogroup" aria-label="Choose your availability">
+                            <button
+                              className={`button admin-availability-vote admin-availability-btn-available${currentUserDriverMappingStatus === 'available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('available', user.id)}
+                              role="radio"
+                              aria-checked={currentUserDriverMappingStatus === 'available'}
+                            >
+                              <span className="admin-availability-vote-title">
+                                <span className="admin-availability-radio-indicator" aria-hidden="true" />
+                                Available
+                              </span>
+                              <span className="admin-availability-vote-detail">I can confidently take this booking and commit if assigned.</span>
+                            </button>
+                            <button
+                              className={`button admin-availability-vote admin-availability-btn-maybe${currentUserDriverMappingStatus === 'maybe_available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('maybe_available', user.id)}
+                              role="radio"
+                              aria-checked={currentUserDriverMappingStatus === 'maybe_available'}
+                            >
+                              <span className="admin-availability-vote-title">
+                                <span className="admin-availability-radio-indicator" aria-hidden="true" />
+                                Maybe Available
+                              </span>
+                              <span className="admin-availability-vote-detail">I am unsure right now and will update to Available or Not Available as soon as I can.</span>
+                            </button>
+                            <button
+                              className={`button admin-availability-vote admin-availability-btn-unavailable${currentUserDriverMappingStatus === 'not_available' ? ' is-active' : ''}`}
+                              type="button"
+                              disabled={driverMappingsSaveLoading}
+                              onClick={() => handleUpdateDriverMapping('not_available', user.id)}
+                              role="radio"
+                              aria-checked={currentUserDriverMappingStatus === 'not_available'}
+                            >
+                              <span className="admin-availability-vote-title">
+                                <span className="admin-availability-radio-indicator" aria-hidden="true" />
+                                Not Available
+                              </span>
+                              <span className="admin-availability-vote-detail">I cannot take this booking, so planning can move ahead quickly.</span>
+                            </button>
+                          </div>
+
+                          {currentUserDriverMappingStatus === 'available' && (
+                            <p className="admin-viewer-availability-note admin-viewer-availability-note-available">Look out for a confirmation that you are the assigned driver for this booking soon. This will be via email and you'll see it here.</p>
+                          )}
+                          {currentUserDriverMappingStatus === 'maybe_available' && (
+                            <p className="admin-viewer-availability-note admin-viewer-availability-note-maybe">Please update this to Available or Not Available as soon as you can.</p>
+                          )}
+                        </>
+                      )}
+                    </section>
                   )}
 
                   {bookingDetailTab === 'driver-assignment' && (

@@ -107,6 +107,12 @@ return [
   - endpoint: `POST /bookings/create.php`
   - template: `backend/templates/emails/booking-acknowledgement.html`
   - status in that email is stage 1 (`Pending`) and explicitly states the booking is not fully confirmed until a driver is matched.
+- Booking form submissions now also trigger an automated driver availability request email to all system users with a valid email address:
+	- endpoint: `POST /bookings/create.php`
+	- template: `backend/templates/emails/booking-driver-availability-request.html`
+	- audience: all rows in `admin_users` where `email` is present and valid (deduplicated)
+	- purpose: asks drivers to set availability as `Available`, `Maybe Available`, or `Not Available` using the booking deep link
+	- deep link format: `https://theeddiebus.org.uk/admin/?bookingRef=<booking_ref>`
 - Booking updates now trigger an automatic confirmation email to the booking contact when status moves to stage 2 (`confirmed`):
   - endpoint: `POST /admin/bookings/update.php`
   - template: `backend/templates/emails/booking-confirmed.html`

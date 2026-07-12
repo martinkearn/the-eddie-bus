@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>New booking request: please share your availability</h1>
+
+    <p>Hi {{recipient_name}},</p>
+
+    <p>
+      A new booking request is now seeking a driver. Please use the booking link below and let us know your availability.
+    </p>
+
+    <p>
+      <a href="{{admin_booking_url}}">Open this booking and update my availability</a>
+    </p>
+
+    <p>
+      Please choose one of the following:
+      <strong>Available</strong>, <strong>Maybe Available</strong>, or <strong>Not Available</strong>.
+      If you choose <strong>Maybe Available</strong>, please update this to <strong>Available</strong> or <strong>Not Available</strong>
+      as soon as you can.
+    </p>
+
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Status:</strong> {{booking_status_label}}
+    </p>
+
+    <h2>Booking details</h2>
+    <p>
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination name:</strong> {{destination_name}}<br />
+      <strong>Destination address:</strong> {{destination_address}}<br />
+      <strong>Booking date and pickup time:</strong> {{booking_when}}
+    </p>
+
+    <p>
+      If you have any questions, please reply to this email or contact us at
+      <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>

@@ -3781,6 +3781,12 @@ main {
   color: #0d4fa6;
 }
 
+.admin-driver-mapping-badge.status-none {
+  background: #f2f4f7;
+  border-color: #d5dce5;
+  color: #425466;
+}
+
 .admin-viewer-availability {
   display: grid;
   gap: 0.55rem;
@@ -3788,6 +3794,112 @@ main {
   border: 1px solid var(--outline);
   border-radius: 0.75rem;
   background: #f8f9fa;
+}
+
+.admin-availability-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.admin-availability-vote-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-availability-current-status {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--outline);
+  border-radius: 0.65rem;
+  background: #ffffff;
+}
+
+.admin-availability-current-status-label {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.admin-availability-current-status-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-availability-vote {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+  text-align: left;
+  min-height: 7.2rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.4rem;
+  border-width: 2px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.admin-availability-vote:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.08);
+}
+
+.admin-availability-vote:focus-visible {
+  outline: 3px solid rgba(13, 79, 166, 0.35);
+  outline-offset: 2px;
+}
+
+.admin-availability-vote-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.admin-availability-vote-detail {
+  color: inherit;
+  opacity: 0.95;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.admin-availability-radio-indicator {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  display: inline-block;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.admin-availability-radio-indicator::after {
+  content: '';
+  position: absolute;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.12s ease;
+}
+
+.admin-availability-vote.is-active .admin-availability-radio-indicator::after {
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .admin-viewer-availability-label {
@@ -3907,6 +4019,10 @@ main {
   .admin-driver-mapping-self label,
   .admin-driver-mapping-admin-actions label {
     min-width: 0;
+  }
+
+  .admin-availability-vote-grid {
+    grid-template-columns: 1fr;
   }
 }
 
