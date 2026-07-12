@@ -11,7 +11,7 @@ export const homePage = {
     'The EDDIE Bus is available for eligible Bromsgrove groups who need accessible transport for local outings and day trips. Our volunteer-run minibus helps passengers get out and about, whether they are visiting a garden centre, going for lunch, attending a social activity or enjoying a group day out.',
     'The minibus is fitted with a passenger lift, making it easier for people with walking difficulties or wheelchair users to get on and off safely.',
   ],
-  operateAreas: ['Bromsgrove', 'Catshill', 'Rubery', 'Wythall', 'Alvechurch', 'Barnt Green', 'Upton Warren'],
+  operateAreas: ['Alvechurch', 'Barnt Green', 'Bromsgrove', 'Catshill', 'Droitwich', 'Hagley', 'Rubery', 'Wychbold', 'Wythall'],
   operateNote: 'Other nearby areas may also be considered. Please contact us to discuss your requirements.',
   supportGroups: [
     'Care homes',
