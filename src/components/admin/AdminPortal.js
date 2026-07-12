@@ -391,34 +391,60 @@ function decodeUrlSegment(value) {
   }
 }
 
-function getBookingReferenceFromLocation() {
+const BOOKING_DETAIL_TAB_SLUGS = {
+  main: 'main',
+  availability: 'youravaliability',
+  'driver-assignment': 'driver-assignment',
+  checklist: 'checklist',
+}
+
+function normalizeBookingDetailTab(value) {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (normalized === 'availability' || normalized === 'youravaliability' || normalized === 'youravailability') return 'availability'
+  if (normalized === 'driver-assignment' || normalized === 'driverassignment') return 'driver-assignment'
+  if (normalized === 'checklist') return 'checklist'
+  return 'main'
+}
+
+function getBookingDeepLinkStateFromLocation() {
   if (typeof window === 'undefined') {
-    return ''
+    return { reference: '', detailTab: 'main' }
   }
 
   const currentUrl = new URL(window.location.href)
   const rawQueryReference = currentUrl.searchParams.get('bookingRef') || currentUrl.searchParams.get('bookingReference') || currentUrl.searchParams.get('ref') || ''
+  const rawQueryTab = currentUrl.searchParams.get('tab') || ''
   const queryReference = decodeUrlSegment(rawQueryReference)
   if (queryReference) {
-    return queryReference
+    return {
+      reference: queryReference,
+      detailTab: normalizeBookingDetailTab(rawQueryTab),
+    }
   }
 
-  const pathMatch = currentUrl.pathname.match(/^\/admin\/(.+?)\/?$/i)
+  const pathMatch = currentUrl.pathname.match(/^\/admin\/([^/]+)(?:\/([^/]+))?\/?$/i)
   if (!pathMatch || !pathMatch[1]) {
-    return ''
+    return { reference: '', detailTab: 'main' }
   }
 
-  return decodeUrlSegment(pathMatch[1])
+  return {
+    reference: decodeUrlSegment(pathMatch[1]),
+    detailTab: normalizeBookingDetailTab(decodeUrlSegment(pathMatch[2] || '')),
+  }
 }
 
-function updateBookingReferenceInUrl(reference, { replace = false } = {}) {
+function updateBookingReferenceInUrl(reference, { replace = false, detailTab = 'main' } = {}) {
   if (typeof window === 'undefined') {
     return
   }
 
   const normalizedReference = String(reference || '').trim()
+  const normalizedDetailTab = normalizeBookingDetailTab(detailTab)
+  const detailTabSlug = BOOKING_DETAIL_TAB_SLUGS[normalizedDetailTab] || BOOKING_DETAIL_TAB_SLUGS.main
   const currentUrl = new URL(window.location.href)
-  const nextPathname = normalizedReference ? `/admin/${encodeURIComponent(normalizedReference)}` : '/admin/'
+  const nextPathname = normalizedReference
+    ? `/admin/${encodeURIComponent(normalizedReference)}${normalizedDetailTab !== 'main' ? `/${encodeURIComponent(detailTabSlug)}` : ''}`
+    : '/admin/'
   const nextSearch = ''
   const currentPathAndQuery = `${currentUrl.pathname}${currentUrl.search}`
   const nextPathAndQuery = `${nextPathname}${nextSearch}`
@@ -470,6 +496,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
   const [copyFeedbackKey, setCopyFeedbackKey] = useState('')
   const copyFeedbackTimerRef = useRef(null)
   const [pendingDeepLinkReference, setPendingDeepLinkReference] = useState(initialBookingReferenceTerm)
+  const [pendingDeepLinkDetailTab, setPendingDeepLinkDetailTab] = useState('main')
 
   const [users, setUsers] = useState([])
   const [assignableUsers, setAssignableUsers] = useState([])
@@ -495,6 +522,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
   const isCurrentUserConfirmedDriver = hasConfirmedDriver && !!user?.id && String(bookingForm.driverUserId) === String(user.id)
   const isBookingsTab = activeTab === 'bookings'
   const isMyBookingsTab = activeTab === 'my-bookings'
+  const resolveBookingDetailTab = useCallback((value) => {
+    const normalized = normalizeBookingDetailTab(value)
+    if (!isAdmin && normalized === 'driver-assignment') {
+      return 'main'
+    }
+
+    return normalized
+  }, [isAdmin])
   const myBookingsDriverUserId = isMyBookingsTab && user?.id !== undefined && user?.id !== null ? String(user.id) : ''
   const currentUserDriverMapping = useMemo(() => {
     if (!user?.id) return null
@@ -642,17 +677,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     }
   }, [apiFetch, user])
 
-  const loadBookingDetail = useCallback(async (id, bookingReferenceHint = '', { historyMode = 'none' } = {}) => {
+  const loadBookingDetail = useCallback(async (id, bookingReferenceHint = '', { historyMode = 'none', detailTab = 'main' } = {}) => {
     if (!id) return
 
     const normalizedHint = String(bookingReferenceHint || '').trim()
+    const normalizedDetailTab = resolveBookingDetailTab(detailTab)
     if (normalizedHint && historyMode !== 'none') {
-      updateBookingReferenceInUrl(normalizedHint, { replace: historyMode === 'replace' })
+      updateBookingReferenceInUrl(normalizedHint, { replace: historyMode === 'replace', detailTab: normalizedDetailTab })
     }
 
     setSelectedBookingId(String(id))
     setBookingForm(null)
-    setBookingDetailTab('main')
+    setBookingDetailTab(normalizedDetailTab)
     setDriverMappings([])
     setMyDriverMappingDraft('')
     setAdminConfirmUserIdDraft('')
@@ -662,7 +698,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       const nextBookingForm = mapBookingToForm(data.item)
       setBookingForm(nextBookingForm)
       if (historyMode !== 'none') {
-        updateBookingReferenceInUrl(nextBookingForm?.bookingRef || normalizedHint, { replace: historyMode === 'replace' })
+        updateBookingReferenceInUrl(nextBookingForm?.bookingRef || normalizedHint, { replace: historyMode === 'replace', detailTab: normalizedDetailTab })
       }
       await loadDriverMappings(id)
     } catch (error) {
@@ -671,10 +707,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     } finally {
       setBookingDetailLoading(false)
     }
-  }, [apiFetch, loadDriverMappings])
+  }, [apiFetch, loadDriverMappings, resolveBookingDetailTab])
 
-  const openBookingByReference = useCallback(async (reference, { historyMode = 'replace' } = {}) => {
+  const openBookingByReference = useCallback(async (reference, { historyMode = 'replace', detailTab = 'main' } = {}) => {
     const normalizedReference = String(reference || '').trim()
+    const normalizedDetailTab = resolveBookingDetailTab(detailTab)
     if (!user || !normalizedReference) {
       return
     }
@@ -693,12 +730,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     const exactMatch = items.find((item) => String(item.booking_ref || '').trim().toLowerCase() === normalizedReferenceLower)
 
     if (exactMatch) {
-      await loadBookingDetail(exactMatch.id, exactMatch.booking_ref, { historyMode })
+      await loadBookingDetail(exactMatch.id, exactMatch.booking_ref, { historyMode, detailTab: normalizedDetailTab })
       return
     }
 
-    updateBookingReferenceInUrl(normalizedReference, { replace: historyMode === 'replace' })
-  }, [futureWeeksVisible, loadBookingDetail, loadBookings, pastWeeksVisible, user])
+    updateBookingReferenceInUrl(normalizedReference, { replace: historyMode === 'replace', detailTab: normalizedDetailTab })
+  }, [futureWeeksVisible, loadBookingDetail, loadBookings, pastWeeksVisible, resolveBookingDetailTab, user])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -720,11 +757,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       return
     }
 
-    const locationReference = getBookingReferenceFromLocation()
-    if (locationReference && locationReference !== pendingDeepLinkReference) {
-      setPendingDeepLinkReference(locationReference)
+    const deepLinkState = getBookingDeepLinkStateFromLocation()
+    if (deepLinkState.reference && deepLinkState.reference !== pendingDeepLinkReference) {
+      setPendingDeepLinkReference(deepLinkState.reference)
     }
-  }, [pendingDeepLinkReference])
+    if (deepLinkState.detailTab !== pendingDeepLinkDetailTab) {
+      setPendingDeepLinkDetailTab(deepLinkState.detailTab)
+    }
+  }, [pendingDeepLinkDetailTab, pendingDeepLinkReference])
 
   useEffect(() => {
     if (!user) {
@@ -861,8 +901,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       return
     }
 
-    void openBookingByReference(pendingDeepLinkReference, { historyMode: 'replace' })
-  }, [openBookingByReference, pendingDeepLinkReference, user])
+    void openBookingByReference(pendingDeepLinkReference, { historyMode: 'replace', detailTab: pendingDeepLinkDetailTab })
+  }, [openBookingByReference, pendingDeepLinkDetailTab, pendingDeepLinkReference, user])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -870,9 +910,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     }
 
     const handlePopState = () => {
-      const nextReference = getBookingReferenceFromLocation()
+      const deepLinkState = getBookingDeepLinkStateFromLocation()
+      const nextReference = deepLinkState.reference
       if (!nextReference) {
         setPendingDeepLinkReference('')
+        setPendingDeepLinkDetailTab('main')
         setSelectedBookingId('')
         setBookingForm(null)
         setBookingDetailTab('main')
@@ -885,8 +927,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       }
 
       setPendingDeepLinkReference(nextReference)
+      setPendingDeepLinkDetailTab(deepLinkState.detailTab)
       if (user) {
-        void openBookingByReference(nextReference, { historyMode: 'none' })
+        void openBookingByReference(nextReference, { historyMode: 'none', detailTab: deepLinkState.detailTab })
       }
     }
 
@@ -1057,6 +1100,16 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     }))
   }
 
+  function handleBookingDetailTabChange(nextTab) {
+    const normalizedTab = resolveBookingDetailTab(nextTab)
+    setBookingDetailTab(normalizedTab)
+
+    const activeBookingRef = String(bookingForm?.bookingRef || '').trim()
+    if (activeBookingRef) {
+      updateBookingReferenceInUrl(activeBookingRef, { replace: true, detailTab: normalizedTab })
+    }
+  }
+
   async function handleBookingSave(event) {
     event.preventDefault()
     if (!bookingForm || !isAdmin) return
@@ -1079,7 +1132,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       const window = getBookingWindowDates(pastWeeksVisible, futureWeeksVisible)
       setBanner({ type: 'success', message: 'Booking updated successfully.' })
       await loadBookings({ q: searchTerm, windowFrom: window.from, windowTo: window.to })
-      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace', detailTab: bookingDetailTab })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not update booking.' })
     } finally {
@@ -1112,7 +1165,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
         windowTo: window.to,
         driverUserId: isMyBookingsTab ? myBookingsDriverUserId : '',
       })
-      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace', detailTab: bookingDetailTab })
 
       const baseMessage = mappingStatus === 'confirmed'
         ? 'Driver confirmed for booking.'
@@ -1160,7 +1213,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       })
 
       setBanner({ type: 'success', message: 'Checklist saved successfully.' })
-      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace' })
+      await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace', detailTab: bookingDetailTab })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not save checklist.' })
     } finally {
@@ -1781,7 +1834,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                     <span>Select view</span>
                     <select
                       value={bookingDetailTab}
-                      onChange={(event) => setBookingDetailTab(event.target.value)}
+                      onChange={(event) => handleBookingDetailTabChange(event.target.value)}
                       aria-label="Select booking detail view"
                     >
                       <option value="main">Main booking</option>
@@ -1792,18 +1845,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   </label>
 
                   <nav className="field-full admin-detail-tabs" aria-label="Booking detail tabs" role="tablist">
-                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => setBookingDetailTab('main')}>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'main'} className={bookingDetailTab === 'main' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('main')}>
                       Main booking
                     </button>
-                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'availability'} className={bookingDetailTab === 'availability' ? 'is-active' : ''} onClick={() => setBookingDetailTab('availability')}>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'availability'} className={bookingDetailTab === 'availability' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('availability')}>
                       Your Avaliability
                     </button>
                     {isAdmin && (
-                      <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => setBookingDetailTab('driver-assignment')}>
+                      <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('driver-assignment')}>
                         Driver Assignment
                       </button>
                     )}
-                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => setBookingDetailTab('checklist')}>
+                    <button type="button" role="tab" aria-selected={bookingDetailTab === 'checklist'} className={bookingDetailTab === 'checklist' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('checklist')}>
                       Checklist
                     </button>
                   </nav>
