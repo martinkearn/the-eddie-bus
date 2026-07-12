@@ -64,10 +64,26 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          timeout 300 lftp \
-            -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Mirror out to public_html attempt ${attempt}/3"
+            if timeout 420 lftp \
+              -u "$FTP_USERNAME","$FTP_PASSWORD" \
+              "sftp://$FTP_SERVER:722" \
+              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"; then
+              exit 0
+            fi
+
+            exit_code=$?
+            if [ "$attempt" -lt 3 ]; then
+              backoff_seconds=$((attempt * 20))
+              echo "Mirror out to public_html failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
+              sleep "$backoff_seconds"
+            else
+              echo "Mirror out to public_html failed after 3 attempts (last exit ${exit_code})."
+              exit "$exit_code"
+            fi
+          done
 
       - name: Mirror PHP API public files
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -76,10 +92,26 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          timeout 300 lftp \
-            -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/public/ /public_html/api/; bye"
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Mirror PHP API public files attempt ${attempt}/3"
+            if timeout 420 lftp \
+              -u "$FTP_USERNAME","$FTP_PASSWORD" \
+              "sftp://$FTP_SERVER:722" \
+              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./backend/public/ /public_html/api/; bye"; then
+              exit 0
+            fi
+
+            exit_code=$?
+            if [ "$attempt" -lt 3 ]; then
+              backoff_seconds=$((attempt * 20))
+              echo "Mirror PHP API public files failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
+              sleep "$backoff_seconds"
+            else
+              echo "Mirror PHP API public files failed after 3 attempts (last exit ${exit_code})."
+              exit "$exit_code"
+            fi
+          done
 
       - name: Mirror PHP API runtime files
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -88,10 +120,26 @@ jobs:
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
-          timeout 300 lftp \
-            -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            "$FTP_SERVER" \
-            -e "set cmd:fail-exit yes; set ftp:passive-mode on; set ssl:verify-certificate no; set net:timeout 10; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; mirror --reverse ./backend/templates/emails/ /booking-api/templates/emails/; bye"
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Mirror PHP API runtime files attempt ${attempt}/3"
+            if timeout 420 lftp \
+              -u "$FTP_USERNAME","$FTP_PASSWORD" \
+              "sftp://$FTP_SERVER:722" \
+              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; mirror --reverse ./backend/templates/emails/ /booking-api/templates/emails/; bye"; then
+              exit 0
+            fi
+
+            exit_code=$?
+            if [ "$attempt" -lt 3 ]; then
+              backoff_seconds=$((attempt * 20))
+              echo "Mirror PHP API runtime files failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
+              sleep "$backoff_seconds"
+            else
+              echo "Mirror PHP API runtime files failed after 3 attempts (last exit ${exit_code})."
+              exit "$exit_code"
+            fi
+          done
 
       - name: Show deploy results
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
