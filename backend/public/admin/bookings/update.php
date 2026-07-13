@@ -45,6 +45,20 @@ function format_booking_date_words(string $bookingDate): string
     return $date->format('l j F Y');
 }
 
+function is_cancellation_status(string $status): bool
+{
+    return in_array($status, ['cancelled_by_customer', 'cancelled_by_us'], true);
+}
+
+function cancellation_status_label(string $status): string
+{
+    return match ($status) {
+        'cancelled_by_customer' => 'Cancelled by customer',
+        'cancelled_by_us' => 'Cancelled by us',
+        default => 'Cancelled',
+    };
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     fail_json(405, 'Method not allowed.');
 }
@@ -112,6 +126,9 @@ if ($contactEmail === '' || filter_var($contactEmail, FILTER_VALIDATE_EMAIL) ===
 }
 if ($contactNumber === '') {
     $errors['contactNumber'] = 'Contact number is required.';
+}
+if (is_cancellation_status($status) && $adminNotes === '') {
+    $errors['adminNotes'] = 'Cancellation reason is required when cancelling a booking.';
 }
 if ($driverUserIdRaw !== '' && !ctype_digit($driverUserIdRaw)) {
     $errors['driverUserId'] = 'Driver must be a valid user selection.';
@@ -307,19 +324,23 @@ try {
     $pdo->commit();
 
     $statusMovedToConfirmed = $status === 'confirmed' && $statusBeforeUpdate !== 'confirmed';
+    $statusMovedToCancellation = is_cancellation_status($status) && $statusBeforeUpdate !== $status;
     $driverChanged = $driverUserIdBeforeUpdate !== $driverUserId;
     $driverChangedToAssigned = $driverChanged && $driverUserId !== null;
     $confirmationEmailSent = true;
     $confirmationEmailError = null;
+    $cancellationEmailSent = null;
+    $cancellationEmailError = null;
     $driverAssignmentEmailSent = null;
     $driverAssignmentEmailError = null;
     $emailBooking = null;
 
-    if ($statusMovedToConfirmed || $driverChangedToAssigned) {
+    if ($statusMovedToConfirmed || $statusMovedToCancellation || $driverChangedToAssigned) {
         try {
             $emailBookingStmt = $pdo->prepare(
                 "SELECT
                     b.booking_ref,
+                    b.status,
                     b.booking_date,
                     TIME_FORMAT(b.pickup_time, '%H:%i') AS pickup_time,
                     b.organisation,
@@ -332,6 +353,7 @@ try {
                     b.powered_wheelchairs,
                     b.passenger_transfers,
                     b.special_requirements,
+                          b.admin_notes,
                     d.email AS driver_email,
                     d.username AS driver_username,
                     COALESCE(NULLIF(TRIM(d.display_name), ''), d.username) AS driver_name
@@ -352,6 +374,11 @@ try {
                 $confirmationEmailError = $runtimeException->getMessage();
             }
 
+            if ($statusMovedToCancellation) {
+                $cancellationEmailSent = false;
+                $cancellationEmailError = $runtimeException->getMessage();
+            }
+
             if ($driverChangedToAssigned) {
                 $driverAssignmentEmailSent = false;
                 $driverAssignmentEmailError = $runtimeException->getMessage();
@@ -362,6 +389,11 @@ try {
             if ($statusMovedToConfirmed) {
                 $confirmationEmailSent = false;
                 $confirmationEmailError = 'Could not load booking details for confirmation email.';
+            }
+
+            if ($statusMovedToCancellation) {
+                $cancellationEmailSent = false;
+                $cancellationEmailError = 'Could not load booking details for cancellation email.';
             }
 
             if ($driverChangedToAssigned) {
@@ -422,6 +454,64 @@ try {
             $confirmationEmailSent = false;
             $confirmationEmailError = 'Could not send booking confirmation email.';
             error_log('Booking confirmed email failed: ' . $emailException->getMessage());
+        }
+    }
+
+    if ($statusMovedToCancellation && is_array($emailBooking)) {
+        if ($cancellationEmailSent === null) {
+            $cancellationEmailSent = true;
+        }
+
+        try {
+            $recipientEmails = normalize_email_recipients([
+                (string)($emailBooking['contact_email'] ?? ''),
+                (string)($emailBooking['driver_email'] ?? ''),
+            ]);
+            if ($recipientEmails === []) {
+                throw new RuntimeException('No valid customer or driver email was available for the cancellation email.');
+            }
+
+            $bookingRefForEmail = trim((string)($emailBooking['booking_ref'] ?? ''));
+            $bookingDateWords = format_booking_date_words((string)($emailBooking['booking_date'] ?? ''));
+            $pickupTimeForEmail = trim((string)($emailBooking['pickup_time'] ?? ''));
+            $bookingWhen = trim($bookingDateWords . ($pickupTimeForEmail !== '' ? ' at ' . $pickupTimeForEmail : ''));
+            $cancellationReason = trim((string)($emailBooking['admin_notes'] ?? ''));
+            $statusLabel = cancellation_status_label((string)($emailBooking['status'] ?? $status));
+
+            $subject = $bookingRefForEmail !== ''
+                ? 'EDDIE bus booking ' . $bookingRefForEmail . ' has been cancelled'
+                : 'Your EDDIE bus booking has been cancelled';
+
+            send_resend_templated_email_to_recipients(
+                $recipientEmails,
+                $subject,
+                'booking-cancelled',
+                [
+                    'subject' => $subject,
+                    'recipient_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'there'),
+                    'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
+                    'booking_when' => fallback_text($bookingWhen, 'Not provided'),
+                    'booking_status_label' => $statusLabel,
+                    'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'Not provided'),
+                    'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'Not provided'),
+                    'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
+                    'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),
+                    'contact_email' => fallback_text((string)($emailBooking['contact_email'] ?? ''), 'Not provided'),
+                    'contact_number' => fallback_text((string)($emailBooking['contact_number'] ?? ''), 'Not provided'),
+                    'driver_name' => fallback_text((string)($emailBooking['driver_name'] ?? ''), 'No driver assigned'),
+                    'cancellation_reason' => fallback_text($cancellationReason, 'No reason provided'),
+                    'support_email' => 'bookings@theeddiebus.org.uk',
+                    'support_phone' => '07805 400180',
+                ]
+            );
+        } catch (RuntimeException $runtimeException) {
+            $cancellationEmailSent = false;
+            $cancellationEmailError = $runtimeException->getMessage();
+            error_log('Booking cancellation email failed: ' . $runtimeException->getMessage());
+        } catch (Throwable $emailException) {
+            $cancellationEmailSent = false;
+            $cancellationEmailError = 'Could not send booking cancellation email.';
+            error_log('Booking cancellation email failed: ' . $emailException->getMessage());
         }
     }
 
@@ -490,6 +580,11 @@ try {
             ? 'Booking confirmation email sent.'
             : 'Booking confirmation email could not be sent.';
     }
+    if ($statusMovedToCancellation) {
+        $messages[] = $cancellationEmailSent
+            ? 'Booking cancellation email sent.'
+            : 'Booking cancellation email could not be sent.';
+    }
     if ($driverChangedToAssigned) {
         $messages[] = $driverAssignmentEmailSent
             ? 'Driver assignment email sent.'
@@ -501,6 +596,8 @@ try {
         'message' => implode(' ', $messages),
         'confirmationEmailSent' => $statusMovedToConfirmed ? $confirmationEmailSent : null,
         'confirmationEmailError' => $statusMovedToConfirmed ? $confirmationEmailError : null,
+        'cancellationEmailSent' => $statusMovedToCancellation ? $cancellationEmailSent : null,
+        'cancellationEmailError' => $statusMovedToCancellation ? $cancellationEmailError : null,
         'driverAssignmentEmailSent' => $driverChangedToAssigned ? $driverAssignmentEmailSent : null,
         'driverAssignmentEmailError' => $driverChangedToAssigned ? $driverAssignmentEmailError : null,
     ]);

@@ -98,6 +98,11 @@ function formatBookingStatusDescription(value) {
   return getBookingStatusMeta(value).description
 }
 
+function isCancellationBookingStatus(value) {
+  const normalized = normalizeBookingStatus(value)
+  return normalized === 'cancelled_by_customer' || normalized === 'cancelled_by_us'
+}
+
 function isStandardBookingStatus(value) {
   return STANDARD_BOOKING_STATUS_VALUES.has(value)
 }
@@ -1125,6 +1130,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       return
     }
 
+    if (isCancellationBookingStatus(bookingForm.status) && !String(bookingForm.adminNotes || '').trim()) {
+      setBanner({ type: 'error', message: 'Enter a cancellation reason before saving a cancelled booking.' })
+      return
+    }
+
     setBookingSaveLoading(true)
     setBanner({ type: 'idle', message: '' })
 
@@ -2101,8 +2111,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   </label>
 
                   <label className="field-full">
-                    <span>Admin Notes</span>
-                    <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>Internal notes only shown to admin portal users</small>
+                    <span>{isCancellationBookingStatus(bookingForm.status) ? 'Cancellation Reason' : 'Admin Notes'}</span>
+                    <small style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--muted)', fontSize: '0.85rem' }}>
+                      {isCancellationBookingStatus(bookingForm.status)
+                        ? 'This reason will be included in the cancellation email sent to the customer and assigned driver.'
+                        : 'Internal notes only shown to admin portal users'}
+                    </small>
                     {isAdmin ? (
                       <textarea
                         rows={4}

@@ -122,6 +122,11 @@ return [
   - template: `backend/templates/emails/booking-driver-confirmed.html`
   - recipient: the newly assigned driver's `admin_users.email`
   - this sends on driver assignment/change during save.
+- Booking updates now also trigger an automatic cancellation email when status changes to `cancelled_by_customer` or `cancelled_by_us`:
+	- endpoint: `POST /admin/bookings/update.php`
+	- template: `backend/templates/emails/booking-cancelled.html`
+	- recipients: booking contact and assigned driver when present, with `bookings@theeddiebus.org.uk` CC'd automatically
+	- cancellation reason is taken from the booking's admin notes field, which becomes a required customer-visible cancellation reason while the booking is in a cancelled state
 - Driver availability updates now trigger an admin alert email when a driver records or changes their own availability:
 	- endpoint: `POST /admin/bookings/driver-mappings/update.php`
 	- template: `backend/templates/emails/booking-driver-availability-admin-alert.html`

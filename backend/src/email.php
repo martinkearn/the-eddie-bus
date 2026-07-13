@@ -286,3 +286,35 @@ function send_resend_templated_email(
 
     return resend_send_email($payload, $mailConfig['api_key'], $addDefaultCc);
 }
+
+function send_resend_templated_email_to_recipients(
+    array $toEmails,
+    string $subject,
+    string $templateName,
+    array $templateData = [],
+    bool $addDefaultCc = true
+): array {
+    $normalizedRecipients = normalize_email_recipients($toEmails);
+    if ($normalizedRecipients === []) {
+        throw new RuntimeException('At least one valid recipient email is required.');
+    }
+
+    $subjectLine = trim($subject);
+    if ($subjectLine === '') {
+        throw new RuntimeException('Email subject is required.');
+    }
+
+    $mailConfig = resend_mail_config();
+    $html = render_email_html_template($templateName, $templateData);
+    $text = html_to_plain_text($html);
+
+    $payload = [
+        'from' => sprintf('%s <%s>', $mailConfig['from_name'], $mailConfig['from_email']),
+        'to' => $normalizedRecipients,
+        'subject' => $subjectLine,
+        'html' => $html,
+        'text' => $text,
+    ];
+
+    return resend_send_email($payload, $mailConfig['api_key'], $addDefaultCc);
+}

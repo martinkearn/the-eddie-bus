@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>Your booking has been cancelled</h1>
+
+    <p>Hi {{recipient_name}},</p>
+
+    <p>
+      This email confirms that the booking for <strong>{{organisation}}</strong> to <strong>{{destination_name}}</strong> on
+      <strong>{{booking_when}}</strong> has been cancelled.
+    </p>
+
+    <p>
+      <strong>Status:</strong> {{booking_status_label}}<br />
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Assigned driver:</strong> {{driver_name}}
+    </p>
+
+    <h2>Cancellation reason</h2>
+    <p>{{cancellation_reason}}</p>
+
+    <h2>Booking details</h2>
+    <p>
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination name:</strong> {{destination_name}}<br />
+      <strong>Destination address:</strong> {{destination_address}}<br />
+      <strong>Booking date and pickup time:</strong> {{booking_when}}
+    </p>
+
+    <p>
+      If you have any questions, please reply to this email or contact us at
+      <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>
