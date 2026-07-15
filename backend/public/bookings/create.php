@@ -366,34 +366,71 @@ try {
                 $adminBookingUrl .= rawurlencode($bookingRef) . '/youravaliability';
             }
 
-            foreach ($driverRecipients as $recipient) {
-                try {
-                    $recipientName = fallback_text((string)($recipient['display_name'] ?? ''), (string)($recipient['username'] ?? 'there'));
+            $driverRecipientEmails = array_values(array_map(
+                static fn (array $recipient): string => (string)($recipient['email'] ?? ''),
+                array_values($driverRecipients)
+            ));
 
-                    send_resend_templated_email(
-                        (string)$recipient['email'],
-                        $driverAvailabilitySubject,
-                        'booking-driver-availability-request',
-                        [
-                            'subject' => $driverAvailabilitySubject,
-                            'recipient_name' => $recipientName,
-                            'organisation' => fallback_text($organisation, 'your organisation'),
-                            'destination_name' => fallback_text($destinationName, 'your chosen destination'),
-                            'destination_address' => fallback_text($destinationAddress, 'Not provided'),
-                            'booking_ref' => fallback_text($bookingRef, 'Not provided'),
-                            'booking_when' => fallback_text($bookingWhen, 'your requested date'),
-                            'booking_status_label' => 'Pending',
-                            'admin_booking_url' => $adminBookingUrl,
-                            'support_email' => 'bookings@theeddiebus.org.uk',
-                            'support_phone' => '07805 400180',
-                        ]
-                    );
+            try {
+                send_resend_templated_email_to_recipients(
+                    $driverRecipientEmails,
+                    $driverAvailabilitySubject,
+                    'booking-driver-availability-request',
+                    [
+                        'subject' => $driverAvailabilitySubject,
+                        'recipient_name' => 'there',
+                        'organisation' => fallback_text($organisation, 'your organisation'),
+                        'destination_name' => fallback_text($destinationName, 'your chosen destination'),
+                        'destination_address' => fallback_text($destinationAddress, 'Not provided'),
+                        'booking_ref' => fallback_text($bookingRef, 'Not provided'),
+                        'booking_when' => fallback_text($bookingWhen, 'your requested date'),
+                        'booking_status_label' => 'Pending',
+                        'admin_booking_url' => $adminBookingUrl,
+                        'support_email' => 'bookings@theeddiebus.org.uk',
+                        'support_phone' => '07805 400180',
+                    ]
+                );
 
-                    $driverAvailabilityEmailSentCount += 1;
-                } catch (Throwable $driverEmailException) {
-                    $driverAvailabilityEmailFailedCount += 1;
-                    error_log('Driver availability email failed for ' . (string)$recipient['email'] . ': ' . $driverEmailException->getMessage());
+                $driverAvailabilityEmailSentCount = $driverAvailabilityEmailTotalRecipients;
+            } catch (Throwable $bulkDriverEmailException) {
+                error_log('Driver availability bulk email failed, retrying per recipient: ' . $bulkDriverEmailException->getMessage());
+
+                foreach ($driverRecipients as $recipient) {
+                    try {
+                        $recipientName = fallback_text((string)($recipient['display_name'] ?? ''), (string)($recipient['username'] ?? 'there'));
+
+                        send_resend_templated_email(
+                            (string)$recipient['email'],
+                            $driverAvailabilitySubject,
+                            'booking-driver-availability-request',
+                            [
+                                'subject' => $driverAvailabilitySubject,
+                                'recipient_name' => $recipientName,
+                                'organisation' => fallback_text($organisation, 'your organisation'),
+                                'destination_name' => fallback_text($destinationName, 'your chosen destination'),
+                                'destination_address' => fallback_text($destinationAddress, 'Not provided'),
+                                'booking_ref' => fallback_text($bookingRef, 'Not provided'),
+                                'booking_when' => fallback_text($bookingWhen, 'your requested date'),
+                                'booking_status_label' => 'Pending',
+                                'admin_booking_url' => $adminBookingUrl,
+                                'support_email' => 'bookings@theeddiebus.org.uk',
+                                'support_phone' => '07805 400180',
+                            ]
+                        );
+
+                        $driverAvailabilityEmailSentCount += 1;
+                    } catch (Throwable $driverEmailException) {
+                        $driverAvailabilityEmailFailedCount += 1;
+                        error_log('Driver availability email failed for ' . (string)$recipient['email'] . ': ' . $driverEmailException->getMessage());
+                    }
                 }
+            }
+
+            if ($driverAvailabilityEmailSentCount < $driverAvailabilityEmailTotalRecipients) {
+                $driverAvailabilityEmailFailedCount = max(
+                    $driverAvailabilityEmailFailedCount,
+                    $driverAvailabilityEmailTotalRecipients - $driverAvailabilityEmailSentCount
+                );
             }
 
             if ($driverAvailabilityEmailFailedCount > 0) {
@@ -409,7 +446,10 @@ try {
         error_log('Driver availability email batch failed: ' . $driverAvailabilityException->getMessage());
     }
 
-    if ($emailSent) {
+    $driverAvailabilityEmailsFullySent = $driverAvailabilityEmailTotalRecipients === 0
+        || $driverAvailabilityEmailSentCount === $driverAvailabilityEmailTotalRecipients;
+
+    if ($emailSent && $driverAvailabilityEmailsFullySent) {
         respond_json(201, [
             'ok' => true,
             'message' => 'Booking request saved and confirmation email sent.',
@@ -425,23 +465,35 @@ try {
         ]);
     }
 
+    $errorCode = $emailErrorCode;
+    $errorProviderStatus = $emailErrorStatus;
+    $errorDetail = $emailError;
+    $failureMessage = 'Your booking request was saved, but we could not send your confirmation email right now. Please contact us and quote your booking reference.';
+
+    if ($emailSent && !$driverAvailabilityEmailsFullySent) {
+        $errorCode = 'DRIVER_AVAILABILITY_EMAIL_FAILED';
+        $errorProviderStatus = null;
+        $errorDetail = $driverAvailabilityEmailError ?? 'Could not send driver availability notification emails to all recipients.';
+        $failureMessage = 'Your booking request was saved, but we could not send the driver availability emails to all admin users right now. Please contact us and quote your booking reference.';
+    }
+
     respond_json(502, [
         'ok' => false,
-        'message' => 'Your booking request was saved, but we could not send your confirmation email right now. Please contact us and quote your booking reference.',
+        'message' => $failureMessage,
         'bookingId' => $bookingId,
         'bookingRef' => $bookingRef,
         'bookingSaved' => true,
-        'emailSent' => false,
-        'emailError' => $emailError,
+        'emailSent' => $emailSent,
+        'emailError' => $errorDetail,
         'driverAvailabilityEmailTotalRecipients' => $driverAvailabilityEmailTotalRecipients,
         'driverAvailabilityEmailSentCount' => $driverAvailabilityEmailSentCount,
         'driverAvailabilityEmailFailedCount' => $driverAvailabilityEmailFailedCount,
         'driverAvailabilityEmailError' => $driverAvailabilityEmailError,
         'error' => [
-            'code' => $emailErrorCode,
+            'code' => $errorCode,
             'provider' => 'resend',
-            'providerStatus' => $emailErrorStatus,
-            'detail' => $emailError,
+            'providerStatus' => $errorProviderStatus,
+            'detail' => $errorDetail,
         ],
     ]);
 } catch (Throwable $exception) {
