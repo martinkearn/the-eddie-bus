@@ -189,7 +189,7 @@ export const volunteeringPage = {
   driverText: [
     'We need volunteer drivers to help meet local demand.',
     'You may be suitable if you have:',
-    'There is no minimum age requirement, provided you hold a valid driving licence.',
+    'For insurance purposes, drivers must be aged between 25 and 75 with a valid driving licence.',
     'Drivers aged over 70 require D1 entitlement and a medical declaration.',
     'The EDDIE Bus provides the necessary insurance.',
     'Trial drives and inductions are provided as required.',
@@ -197,7 +197,6 @@ export const volunteeringPage = {
   checks: [
     'The charity does not currently require DBS checks.',
     'Formal driver training is not required or provided.',
-    'The EDDIE Bus operates in compliance with Section 19 permit requirements, and volunteer drivers are covered by the charity’s insurance when driving for the service.',
     'The EDDIE Bus operates in compliance with Section 19 permit requirements, and volunteer drivers are covered by the charity’s insurance when driving for the service.',
   ],
   helper: 'If driving is not for you, there may still be ways to help. Volunteer helpers can support the charity by assisting with outings, administration, local promotion or general support.',
@@ -224,7 +223,7 @@ export const placesPage = {
         { label: 'Little Heath Nursery, Lickey End', href: 'https://www.littleheathgardencentre.co.uk/' },
         { label: 'Mappleborough Green', href: 'https://www.mappleboroughgreengardencentre.co.uk/' },
         { label: 'Notcutts, Shirley', href: 'https://www.notcutts.co.uk/garden-centres/solihull' },
-        { label: 'Rowberry’s, Chaddesley Corbett', href: 'https://www.rowberrys.co.uk/' },
+        { label: 'Rowberry’s Nursery, Chaddesley Corbett', href: 'https://rowberrys-nursery.co.uk/' },
         { label: 'St Peters, Worcester', href: 'https://www.stpetersgardencentre.co.uk/' },
         { label: 'Webbs, Hagley', href: 'https://www.webbsdirect.co.uk/west-hagley/' },
         { label: 'Webbs, Wychbold', href: 'https://www.webbsdirect.co.uk/' },

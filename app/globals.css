@@ -650,6 +650,36 @@ main {
   border-top: 1px solid rgba(255, 255, 255, 0.24);
 }
 
+.booking-bottom-cta {
+  width: min(calc(100% - 2rem), var(--max));
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-bright));
+  color: #ffffff;
+  box-shadow: 0 16px 34px rgba(186, 0, 19, 0.2);
+}
+
+.booking-bottom-cta .eyebrow {
+  margin-bottom: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(117, 0, 12, 0.42);
+  color: #ffffff;
+}
+
+.booking-bottom-cta h2 {
+  color: #ffffff;
+}
+
+.booking-bottom-cta .button {
+  flex: 0 0 auto;
+}
+
 .booking-intro-highlights {
   margin-top: 1.1rem;
   display: grid;
@@ -2802,6 +2832,15 @@ main {
   .contact-actions,
   .button {
     width: 100%;
+  }
+
+  .booking-bottom-cta {
+    align-items: stretch;
+    padding: 1.35rem 1.25rem;
+  }
+
+  .booking-bottom-cta .button {
+    justify-content: center;
   }
 
   .image-badge {

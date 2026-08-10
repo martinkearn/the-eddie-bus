@@ -37,7 +37,7 @@ export default function BookingsPage() {
     'Minimum charge is £25.',
     'Mileage is from the bus storage area (B61 7EZ) to collection point(s), destination, drop-off point(s), then back to storage.',
     'Disability Blue Badge usually means no parking charges during trips.',
-    'Payment is bank transfer only. We issue an invoice after the trip once final mileage is confirmed.',
+    'Payment is preferred by bank transfer, cheque is also accepted. We issue an invoice after the trip once final mileage is confirmed.',
     'Payment is expected within one month of the journey.',
   ]
 
@@ -130,6 +130,13 @@ export default function BookingsPage() {
       <Callout title="Looking for trip ideas?">
         <p><FontAwesomeIcon icon={faMapLocationDot} aria-hidden="true" /> See <Link href="/places-to-visit/">Places to Visit</Link> for outing ideas.</p>
       </Callout>
+      <section className="booking-bottom-cta" aria-labelledby="booking-bottom-cta-title">
+        <div>
+          <p className="eyebrow">Ready to book?</p>
+          <h2 id="booking-bottom-cta-title">Send us your trip details</h2>
+        </div>
+        <Link className="button button-light" href="/bookings/request"><FontAwesomeIcon icon={faClipboardList} aria-hidden="true" />Start booking request</Link>
+      </section>
       <ContactPanel
         title="Contact details"
         text={['Use the booking request form for the quickest response. Email and phone bookings are also welcome.']}

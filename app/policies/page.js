@@ -124,8 +124,8 @@ function capacitySummary(capacity) {
   }
 
   if (capacity.title === 'Static wheelchairs') {
-    return 'Up to 3 static wheelchair users, with capacity for additional passengers depending on the final seating layout. Each static wheelchair must be secured to the floor with the correct restraints and seat belts, and one seat must be removed for each wheelchair.'
+    return 'Up to 2 static wheelchair users, with capacity for additional passengers depending on the final seating layout. Each static wheelchair must be secured to the floor with the correct restraints and seat belts, and one seat must be removed for each wheelchair.'
   }
 
-  return 'Usually 1 powered wheelchair user, plus additional passengers depending on the final seating layout. It must be secured front and rear to the floor with a seat belt, and two seats must be removed; if space allows, one static wheelchair may also be accommodated at the driver’s discretion.'
+  return 'Usually 1 powered wheelchair user, plus additional passengers depending on the final seating layout. It must be secured front and rear to the floor with a seat belt, and two seats must be removed. Overall seating capacity reduced to 12.'
 }
