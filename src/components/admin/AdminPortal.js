@@ -1844,7 +1844,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       aria-label="Select booking detail view"
                     >
                       <option value="main">Main Booking</option>
-                      <option value="availability">Your Avaliability</option>
+                      <option value="availability">Your Availability</option>
                       {isAdmin && <option value="driver-assignment">Driver Assignment</option>}
                       <option value="checklist">Checklist</option>
                     </select>
@@ -1855,7 +1855,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       Main Booking
                     </button>
                     <button type="button" role="tab" aria-selected={bookingDetailTab === 'availability'} className={bookingDetailTab === 'availability' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('availability')}>
-                      Your Avaliability
+                      Your Availability
                     </button>
                     {isAdmin && (
                       <button type="button" role="tab" aria-selected={bookingDetailTab === 'driver-assignment'} className={bookingDetailTab === 'driver-assignment' ? 'is-active' : ''} onClick={() => handleBookingDetailTabChange('driver-assignment')}>
