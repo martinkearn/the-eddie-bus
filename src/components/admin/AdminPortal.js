@@ -1285,7 +1285,12 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       })
       setNewUserForm({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer' })
       setShowCreateUserForm(false)
-      setBanner({ type: 'success', message: 'User created successfully.' })
+      setBanner({
+        type: data.emailSent === false ? 'error' : 'success',
+        message: data.emailSent === false
+          ? data.warning || 'User created, but the access email could not be sent.'
+          : 'User created successfully and access email sent.',
+      })
       await loadUsers()
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not create user.' })
@@ -2636,6 +2641,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       type="email"
                       value={newUserForm.email}
                       onChange={(event) => setNewUserForm((current) => ({ ...current, email: event.target.value }))}
+                      required
                     />
                   </label>
                   <label>
@@ -2672,7 +2678,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
             {resetPasswordResult?.source === 'created' && (
               <section className="admin-editor admin-login-details" aria-label="New user login details">
                 <h3>New user login details</h3>
-                <p>Copy these details and send them securely to the new user.</p>
+                <p>These details are also emailed to the new user. You can still copy them here if needed.</p>
                 <p>
                   Username: <strong>{resetPasswordResult.username}</strong>
                 </p>
@@ -2870,13 +2876,13 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
         )}
 
         {resetPasswordResult?.source === 'reset' && (
-          <section className="admin-editor" aria-label="Temporary password panel">
-            <h3>Temporary Password</h3>
+          <section className="admin-editor" aria-label="Password panel">
+            <h3>Password</h3>
             <p>
               Username: <strong>{resetPasswordResult.username}</strong>
             </p>
             <p>
-              Temporary password: <strong>{resetPasswordResult.temporaryPassword}</strong>
+              Password: <strong>{resetPasswordResult.temporaryPassword}</strong>
             </p>
             <div className="admin-inline-actions">
               <button className={`button button-primary ${copyFeedbackKey === 'temporary-password' ? 'is-copied' : ''}`} type="button" onClick={handleCopyTemporaryPassword}>

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../../bootstrap_api.php';
+require_once $srcPath . '/email.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     fail_json(405, 'Method not allowed.');
@@ -40,7 +41,9 @@ $policyError = validate_password_policy($password);
 if ($policyError !== null) {
     $errors['password'] = $policyError;
 }
-if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+if ($email === '') {
+    $errors['email'] = 'Email address is required.';
+} elseif (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
     $errors['email'] = 'Email address is invalid.';
 }
 if ($phoneNumber !== '' && strlen($phoneNumber) > 32) {
@@ -72,11 +75,38 @@ try {
         'targetRole' => $role,
     ]);
 
+    $emailSent = true;
+    $emailWarning = null;
+    $subject = 'Your EDDIE Bus admin portal account';
+
+    try {
+        send_resend_templated_email(
+            $email,
+            $subject,
+            'admin-user-welcome',
+            [
+                'subject' => $subject,
+                'recipient_name' => $displayName !== '' ? $displayName : $username,
+                'admin_portal_url' => 'https://theeddiebus.org.uk/admin/',
+                'username' => $username,
+                'temporary_password' => $password,
+                'support_email' => 'bookings@theeddiebus.org.uk',
+            ],
+            false
+        );
+    } catch (Throwable $emailException) {
+        $emailSent = false;
+        $emailWarning = 'The user was created, but the access email could not be sent. Copy and send the login details securely.';
+        error_log('Admin user welcome email failed for user ' . $newUserId . ': ' . $emailException->getMessage());
+    }
+
     respond_json(201, [
         'ok' => true,
-        'message' => 'User created.',
+        'message' => $emailSent ? 'User created and access email sent.' : 'User created, but access email failed.',
         'userId' => $newUserId,
         'temporaryPassword' => $password,
+        'emailSent' => $emailSent,
+        'warning' => $emailWarning,
     ]);
 } catch (PDOException $pdoException) {
     $sqlState = $pdoException->errorInfo[0] ?? '';

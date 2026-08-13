@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>Your EDDIE Bus admin portal account</h1>
+
+    <p>Hi {{recipient_name}},</p>
+
+    <p>An account has been created for you on the EDDIE Bus admin portal.</p>
+
+    <p>
+      <a href="{{admin_portal_url}}">Open the admin portal</a>
+    </p>
+
+    <p>
+      <strong>Username:</strong> {{username}}<br />
+      <strong>Password:</strong> {{temporary_password}}
+    </p>
+
+    <p>
+      Sign in using the details above. You can keep this password or change it under <strong>My Account</strong>.
+      Please keep these details secure and do not forward this email.
+    </p>
+
+    <p>
+      If you have any trouble accessing the portal, contact
+      <a href="mailto:{{support_email}}">{{support_email}}</a>.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>
