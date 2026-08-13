@@ -1278,6 +1278,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       })
 
       setResetPasswordResult({
+        source: 'created',
         userId: String(data.userId || ''),
         username: newUserForm.username,
         temporaryPassword: data.temporaryPassword || '',
@@ -1401,6 +1402,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       const tempPassword = data.temporaryPassword || ''
       const targetUser = users.find((item) => String(item.id) === String(userId))
       setResetPasswordResult({
+        source: 'reset',
         userId: String(userId),
         username: targetUser?.username || 'User',
         temporaryPassword: tempPassword,
@@ -2667,6 +2669,29 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
               </section>
             )}
 
+            {resetPasswordResult?.source === 'created' && (
+              <section className="admin-editor admin-login-details" aria-label="New user login details">
+                <h3>New user login details</h3>
+                <p>Copy these details and send them securely to the new user.</p>
+                <p>
+                  Username: <strong>{resetPasswordResult.username}</strong>
+                </p>
+                <p>
+                  Password: <strong>{resetPasswordResult.temporaryPassword}</strong>
+                </p>
+                <div className="admin-inline-actions">
+                  <button className={`button button-primary ${copyFeedbackKey === 'temporary-password' ? 'is-copied' : ''}`} type="button" onClick={handleCopyTemporaryPassword}>
+                    <FontAwesomeIcon icon={faCopy} aria-hidden="true" />
+                    Copy login details
+                  </button>
+                  <button className="button button-quiet" type="button" onClick={() => setResetPasswordResult(null)}>
+                    <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                    Close
+                  </button>
+                </div>
+              </section>
+            )}
+
             <div className="admin-table-wrap">
               <table className="admin-table admin-users-table">
                 <thead>
@@ -2844,7 +2869,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
           </section>
         )}
 
-        {resetPasswordResult && (
+        {resetPasswordResult?.source === 'reset' && (
           <section className="admin-editor" aria-label="Temporary password panel">
             <h3>Temporary Password</h3>
             <p>

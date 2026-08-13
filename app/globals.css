@@ -4160,6 +4160,17 @@ main {
   background: #fcfcfc;
 }
 
+.admin-login-details {
+  border: 2px solid #1f6feb;
+  background: #eef6ff;
+  box-shadow: 0 0.35rem 1rem rgba(31, 111, 235, 0.14);
+}
+
+.admin-login-details h3,
+.admin-login-details p {
+  margin: 0;
+}
+
 .admin-editor-booking {
   padding: 0;
   border: 0;
