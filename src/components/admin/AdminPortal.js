@@ -1527,8 +1527,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
               <img src="/logo.png" alt="The EDDIE Bus logo" />
             </Link>
             <div>
-              <h1>Admin Portal</h1>
-              <p>Welcome {formatDisplayText(user?.displayName, user?.username || 'there')}</p>
+              <h1>Admin Portal - {preferredUserLabel(user)}</h1>
             </div>
           </div>
 
