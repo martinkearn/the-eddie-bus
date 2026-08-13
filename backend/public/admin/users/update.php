@@ -25,7 +25,6 @@ $displayName = trim((string)($payload['displayName'] ?? $payload['display_name']
 $role = trim((string)($payload['role'] ?? ''));
 $email = trim((string)($payload['email'] ?? ''));
 $phoneNumber = trim((string)($payload['phoneNumber'] ?? $payload['phone_number'] ?? ''));
-$currentPassword = (string)($payload['currentPassword'] ?? '');
 $newPassword = (string)($payload['newPassword'] ?? '');
 
 $errors = [];
@@ -47,17 +46,11 @@ if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
 if ($phoneNumber !== '' && strlen($phoneNumber) > 32) {
     $errors['phoneNumber'] = 'Phone number must be 32 characters or fewer.';
 }
-if ($currentPassword !== '' || $newPassword !== '') {
-        if ($currentPassword === '') {
-            $errors['currentPassword'] = 'Current password is required.';
-        }
-        if ($newPassword === '') {
-            $errors['newPassword'] = 'New password is required.';
-        }
-        $policyError = validate_password_policy($newPassword);
-        if ($policyError !== null) {
-                $errors['newPassword'] = $policyError;
-        }
+if ($newPassword !== '') {
+    $policyError = validate_password_policy($newPassword);
+    if ($policyError !== null) {
+        $errors['newPassword'] = $policyError;
+    }
 }
 
 if ($errors !== []) {
@@ -84,7 +77,7 @@ try {
         fail_json(404, 'User not found.');
     }
 
-    $passwordChangeRequested = $currentPassword !== '' || $newPassword !== '';
+    $passwordChangeRequested = $newPassword !== '';
     if ($passwordChangeRequested && $actorId !== $targetUserId) {
         fail_json(403, 'You can only change your own password.');
     }
@@ -116,13 +109,6 @@ try {
 
     $signedOut = false;
     if ($passwordChangeRequested) {
-        $passwordStmt = $pdo->prepare('SELECT password_hash FROM admin_users WHERE id = :id LIMIT 1');
-        $passwordStmt->execute([':id' => $targetUserId]);
-        $passwordRow = $passwordStmt->fetch();
-        if (!is_array($passwordRow) || !password_verify_secure($currentPassword, (string)$passwordRow['password_hash'])) {
-            fail_json(401, 'Current password is incorrect.');
-        }
-
         $newHash = password_hash_secure($newPassword);
         $passwordUpdateStmt = $pdo->prepare('UPDATE admin_users SET password_hash = :password_hash WHERE id = :id');
         $passwordUpdateStmt->execute([

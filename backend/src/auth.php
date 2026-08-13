@@ -66,17 +66,51 @@ function password_verify_secure(string $password, string $hash): bool
     return password_verify($password, $hash);
 }
 
-function random_password(int $length = 12): string
+function random_memorable_password(): string
 {
-    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
-    $max = strlen($chars) - 1;
+    $words = [
+        'acorn', 'apple', 'apron', 'arrow', 'baker', 'beach', 'beacon', 'berry',
+        'birch', 'biscuit', 'blossom', 'blue', 'boat', 'book', 'breeze', 'brick',
+        'bridge', 'brook', 'button', 'cabin', 'candle', 'carrot', 'castle', 'cedar',
+        'chair', 'cherry', 'cloud', 'coast', 'comet', 'coral', 'cottage', 'crane',
+        'daisy', 'dolphin', 'door', 'dragon', 'drum', 'eagle', 'elm', 'falcon',
+        'feather', 'fern', 'field', 'finch', 'forest', 'fox', 'garden', 'gate',
+        'ginger', 'glade', 'grape', 'green', 'harbour', 'hazel', 'hill', 'honey',
+        'horse', 'island', 'ivy', 'jacket', 'juniper', 'kettle', 'kingfisher', 'kite',
+        'lake', 'lantern', 'lemon', 'lilac', 'lime', 'maple', 'marble', 'meadow',
+        'melon', 'mint', 'moon', 'morning', 'mouse', 'oak', 'ocean', 'olive',
+        'orange', 'orchard', 'otter', 'owl', 'paper', 'peach', 'pearl', 'pepper',
+        'pine', 'planet', 'plum', 'pond', 'poppy', 'rabbit', 'rain', 'raven',
+        'red', 'river', 'robin', 'rocket', 'rose', 'sailor', 'shell', 'silver',
+        'sky', 'sparrow', 'spoon', 'spruce', 'star', 'stone', 'storm', 'squirrel',
+        'sunset', 'table', 'thistle', 'tiger', 'train', 'tree', 'tulip', 'valley',
+        'violet', 'walnut', 'wave', 'willow', 'window', 'winter', 'wood', 'yellow',
+        'anchor', 'angel', 'ant', 'badger', 'banana', 'barn', 'basket', 'bat',
+        'bell', 'bench', 'bird', 'blanket', 'boot', 'bottle', 'branch', 'bread',
+        'broom', 'bucket', 'butterfly', 'cactus', 'camel', 'canoe', 'cheese', 'chestnut',
+        'circle', 'clock', 'clover', 'cocoa', 'copper', 'corn', 'crown', 'cup',
+        'deer', 'diamond', 'duck', 'earth', 'egg', 'elephant', 'ember', 'engine',
+        'farm', 'fire', 'fish', 'flower', 'flute', 'frog', 'frost', 'glove',
+        'goat', 'gold', 'goose', 'grass', 'hammer', 'hat', 'hawk', 'heart',
+        'hedgehog', 'heron', 'holly', 'house', 'ice', 'ink', 'key', 'ladder',
+        'lamb', 'leaf', 'lighthouse', 'lion', 'magpie', 'mango', 'milk', 'mill',
+        'mirror', 'muffin', 'mountain', 'mug', 'mushroom', 'nest', 'night', 'nutmeg',
+        'onion', 'palm', 'panda', 'parrot', 'path', 'pear', 'pencil', 'piano',
+        'pickle', 'pillow', 'pink', 'pumpkin', 'queen', 'rainbow', 'reed', 'ring',
+        'road', 'sail', 'salmon', 'scarf', 'seal', 'sheep', 'shoe', 'shore',
+        'snow', 'sock', 'soap', 'spring', 'stamp', 'strawberry', 'summer', 'swan',
+        'tea', 'thunder', 'toast', 'tomato', 'tower', 'trumpet', 'turtle', 'umbrella',
+        'wagon', 'water', 'whale', 'wheat', 'whistle', 'wind', 'wing', 'zebra',
+    ];
+    $max = count($words) - 1;
 
-    $result = '';
-    for ($i = 0; $i < $length; $i += 1) {
-        $result .= $chars[random_int(0, $max)];
-    }
+    $firstWord = $words[random_int(0, $max)];
+    $secondWord = $words[random_int(0, $max)];
+    $firstNumber = str_pad((string)random_int(0, 99), 2, '0', STR_PAD_LEFT);
+    $secondNumber = str_pad((string)random_int(0, 99), 2, '0', STR_PAD_LEFT);
 
-    return $result;
+    return $firstWord . '-' . $firstNumber
+        . '-' . $secondWord . '-' . $secondNumber;
 }
 
 function session_token_from_request(): string

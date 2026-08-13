@@ -22,7 +22,7 @@ if (!is_array($payload)) {
 $username = trim((string)($payload['username'] ?? ''));
 $displayName = trim((string)($payload['displayName'] ?? $payload['display_name'] ?? ''));
 $role = trim((string)($payload['role'] ?? 'viewer'));
-$password = (string)($payload['password'] ?? '');
+$password = random_memorable_password();
 $email = trim((string)($payload['email'] ?? ''));
 $phoneNumber = trim((string)($payload['phoneNumber'] ?? $payload['phone_number'] ?? ''));
 
@@ -76,6 +76,7 @@ try {
         'ok' => true,
         'message' => 'User created.',
         'userId' => $newUserId,
+        'temporaryPassword' => $password,
     ]);
 } catch (PDOException $pdoException) {
     $sqlState = $pdoException->errorInfo[0] ?? '';

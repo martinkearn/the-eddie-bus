@@ -5,17 +5,11 @@ export const metadata = {
   description: 'Secure admin portal for managing bookings and user accounts.',
 }
 
-export default function AdminPage({ searchParams }) {
-  const rawBookingReference = searchParams?.bookingRef ?? searchParams?.bookingReference ?? searchParams?.ref ?? ''
-  const bookingReference = Array.isArray(rawBookingReference)
-    ? String(rawBookingReference[0] || '').trim()
-    : String(rawBookingReference || '').trim()
-
+export default function AdminPage() {
   return (
     <AdminPortal
       bookingApiEndpoint={process.env.NEXT_PUBLIC_BOOKING_API_ENDPOINT || ''}
       adminApiBase={process.env.NEXT_PUBLIC_ADMIN_API_BASE || ''}
-      initialBookingReference={bookingReference}
     />
   )
 }

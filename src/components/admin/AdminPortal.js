@@ -530,11 +530,11 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
   const [userDeleteLoading, setUserDeleteLoading] = useState(false)
   const [userResetLoading, setUserResetLoading] = useState(false)
   const [resetPasswordResult, setResetPasswordResult] = useState(null)
-  const [newUserForm, setNewUserForm] = useState({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer', password: '' })
+  const [newUserForm, setNewUserForm] = useState({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer' })
   const [newUserLoading, setNewUserLoading] = useState(false)
   const [showCreateUserForm, setShowCreateUserForm] = useState(false)
 
-  const [accountForm, setAccountForm] = useState({ displayName: '', email: '', phoneNumber: '', currentPassword: '', newPassword: '' })
+  const [accountForm, setAccountForm] = useState({ displayName: '', email: '', phoneNumber: '', newPassword: '' })
   const [accountSaving, setAccountSaving] = useState(false)
 
   const isAdmin = user?.role === 'admin'
@@ -827,7 +827,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       displayName: String(user?.displayName || ''),
       email: String(user?.email || ''),
       phoneNumber: String(user?.phoneNumber || ''),
-      currentPassword: '',
       newPassword: '',
     })
   }, [user])
@@ -1013,7 +1012,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     setUsers([])
     setSelectedUserProfileId('')
     setSelectedUserProfileDraft({ username: '', displayName: '', role: 'viewer', email: '', phoneNumber: '' })
-    setAccountForm({ displayName: '', email: '', phoneNumber: '', currentPassword: '', newPassword: '' })
+    setAccountForm({ displayName: '', email: '', phoneNumber: '', newPassword: '' })
     setBookingForm(null)
     setSelectedBookingId('')
     setDriverMappings([])
@@ -1272,13 +1271,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     setBanner({ type: 'idle', message: '' })
 
     try {
-      await apiFetch('/users/create.php', {
+      const data = await apiFetch('/users/create.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newUserForm),
       })
 
-      setNewUserForm({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer', password: '' })
+      setResetPasswordResult({
+        userId: String(data.userId || ''),
+        username: newUserForm.username,
+        temporaryPassword: data.temporaryPassword || '',
+      })
+      setNewUserForm({ username: '', displayName: '', email: '', phoneNumber: '', role: 'viewer' })
       setShowCreateUserForm(false)
       setBanner({ type: 'success', message: 'User created successfully.' })
       await loadUsers()
@@ -1319,7 +1323,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     setBanner({ type: 'idle', message: '' })
 
     try {
-      await apiFetch('/users/update.php', {
+      const data = await apiFetch('/users/update.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1352,7 +1356,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     setBanner({ type: 'idle', message: '' })
 
     try {
-      await apiFetch('/users/update.php', {
+      const data = await apiFetch('/users/update.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1362,8 +1366,15 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
           displayName: accountForm.displayName,
           email: accountForm.email,
           phoneNumber: accountForm.phoneNumber,
+          newPassword: accountForm.newPassword,
         }),
       })
+
+      if (data.signedOut) {
+        await handleLogout()
+        setBanner({ type: 'success', message: 'Password changed. Please sign in again.' })
+        return
+      }
 
       setBanner({ type: 'success', message: 'Account details updated successfully.' })
       await refreshSession()
@@ -1650,6 +1661,15 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
             My Account
           </button>
         </nav>
+
+        {banner.type !== 'idle' && (
+          <p
+            className={`admin-banner admin-banner-${banner.type}`}
+            role={banner.type === 'error' ? 'alert' : 'status'}
+          >
+            {banner.message}
+          </p>
+        )}
 
         {(isBookingsTab || isMyBookingsTab) && (
           <section className="admin-section" aria-label="Booking management">
@@ -2633,17 +2653,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       <option value="admin">admin</option>
                     </select>
                   </label>
-                  <label>
-                    <span>Password</span>
-                    <input
-                      type="password"
-                      minLength={8}
-                      value={newUserForm.password}
-                      onChange={(event) => setNewUserForm((current) => ({ ...current, password: event.target.value }))}
-                      required
-                    />
-                  </label>
-
                   <div className="field-full admin-inline-actions">
                     <button className="button button-primary" type="submit" disabled={newUserLoading}>
                       <FontAwesomeIcon icon={faUserPlus} aria-hidden="true" />
@@ -2811,16 +2820,6 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                 <input
                   value={accountForm.phoneNumber}
                   onChange={(event) => setAccountForm((current) => ({ ...current, phoneNumber: event.target.value }))}
-                />
-              </label>
-
-              <label>
-                <span>Current password</span>
-                <input
-                  type="text"
-                  value={accountForm.currentPassword}
-                  onChange={(event) => setAccountForm((current) => ({ ...current, currentPassword: event.target.value }))}
-                  placeholder="Leave blank to keep your password"
                 />
               </label>
 

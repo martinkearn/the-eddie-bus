@@ -19,11 +19,10 @@ if (!is_array($payload)) {
     fail_json(400, 'Invalid JSON payload.');
 }
 
-$currentPassword = (string)($payload['currentPassword'] ?? '');
 $newPassword = (string)($payload['newPassword'] ?? '');
 
-if ($currentPassword === '' || $newPassword === '') {
-    fail_json(422, 'Current password and new password are required.');
+if ($newPassword === '') {
+    fail_json(422, 'New password is required.');
 }
 
 $policyError = validate_password_policy($newPassword);
@@ -34,14 +33,6 @@ if ($policyError !== null) {
 try {
     $pdo = db_connection();
     $user = require_auth($pdo);
-
-    $stmt = $pdo->prepare('SELECT password_hash FROM admin_users WHERE id = :id LIMIT 1');
-    $stmt->execute([':id' => (int)$user['id']]);
-    $row = $stmt->fetch();
-
-    if (!is_array($row) || !password_verify_secure($currentPassword, (string)$row['password_hash'])) {
-        fail_json(401, 'Current password is incorrect.');
-    }
 
     $newHash = password_hash_secure($newPassword);
     $updateStmt = $pdo->prepare('UPDATE admin_users SET password_hash = :password_hash WHERE id = :id');

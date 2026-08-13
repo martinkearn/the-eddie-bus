@@ -27,7 +27,7 @@ if ($idRaw === '' || !ctype_digit($idRaw)) {
 }
 $targetUserId = (int)$idRaw;
 
-$newPassword = $providedPassword !== '' ? $providedPassword : random_password(12);
+$newPassword = $providedPassword !== '' ? $providedPassword : random_memorable_password();
 $policyError = validate_password_policy($newPassword);
 if ($policyError !== null) {
     fail_json(422, $policyError);
