@@ -3376,6 +3376,12 @@ main {
   font-weight: 800;
 }
 
+.admin-form .required-marker,
+.admin-form-grid .required-marker {
+  color: #c62828;
+  margin-left: 0.1rem;
+}
+
 .admin-form-grid .field-full {
   grid-column: 1 / -1;
 }

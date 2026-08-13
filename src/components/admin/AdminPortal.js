@@ -2621,7 +2621,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                 <h3>Create User</h3>
                 <form className="admin-form-grid" onSubmit={handleCreateUser}>
                   <label>
-                    <span>Username</span>
+                    <span>Username <span className="required-marker" aria-hidden="true">*</span></span>
                     <input
                       value={newUserForm.username}
                       onChange={(event) => setNewUserForm((current) => ({ ...current, username: event.target.value }))}
@@ -2636,7 +2636,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                     />
                   </label>
                   <label>
-                    <span>Email</span>
+                    <span>Email <span className="required-marker" aria-hidden="true">*</span></span>
                     <input
                       type="email"
                       value={newUserForm.email}
