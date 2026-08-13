@@ -43,7 +43,27 @@ npm run build
 
 - The site uses Next.js static export, so the build output is safe to host on a file-based web server.
 - Interactive features should be added as client-side React components.
-- Deployment mirrors the generated `out/` directory to the FTP host and also uploads the PHP API public/runtime files.
+
+## Deployment
+
+Every push to `main` runs [.github/workflows/deploy-ftp.yml](.github/workflows/deploy-ftp.yml). The workflow:
+
+1. Installs the locked dependencies with `npm ci` and builds the static export.
+2. Checks that the expected website and API files exist.
+3. Uses one FTPS connection to upload the static site and PHP API directly to Krystal.
+
+The FTP command fails the workflow if it cannot connect or any upload fails. Unchanged files are skipped automatically.
+
+The repository must define these GitHub Actions secrets:
+
+- `KRYSTAL_FTP_SERVER`
+- `KRYSTAL_FTP_USERNAME`
+- `KRYSTAL_FTP_PASSWORD`
+- `NEXT_PUBLIC_BOOKING_API_ENDPOINT` when the frontend cannot use the same-origin `/api/` default
+
+Set `KRYSTAL_FTP_SERVER` to the home-server hostname shown by Krystal, rather than the website domain. The workflow uses Krystal's recommended explicit FTPS configuration: TLS on port 21 in passive mode.
+
+The Krystal FTP account must have access to both `/public_html/` and `/booking-api/`. The private production config remains server-managed outside `public_html` and is never uploaded.
 
 ## Booking API Integration
 

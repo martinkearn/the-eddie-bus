@@ -1,23 +1,23 @@
-name: Deploy static export to Krystal FTP
+name: Deploy to Krystal
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-krystal-ftp
+  group: deploy-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Build and upload site + API
+    name: Build and deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -30,120 +30,52 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build static export
         env:
           NEXT_PUBLIC_BOOKING_API_ENDPOINT: ${{ secrets.NEXT_PUBLIC_BOOKING_API_ENDPOINT }}
         run: npm run build
 
-      - name: Verify export artifact layout
+      - name: Check build output
         run: |
-          test -d out/_next/static
           test -f out/index.html
-
-      - name: Log deploy fingerprint
-        run: |
-          echo "Deploying commit: $GITHUB_SHA"
-          grep -o 'Last updated:[^<]*' out/index.html | head -n 1
-
-      - name: Install lftp
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: sudo apt-get install -y lftp
-
-      - name: Verify email templates directory
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
+          test -d out/_next/static
+          test -f backend/public/bootstrap_api.php
+          test -d backend/src
+          test -d backend/sql
           test -d backend/templates/emails
-          find backend/templates/emails -type f -name '*.html' | sort
 
-      - name: Mirror out to public_html
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Install FTP client
+        run: sudo apt-get install --no-install-recommends -y lftp
+
+      - name: Upload to Krystal
         env:
           FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
         run: |
           set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "Mirror out to public_html attempt ${attempt}/3"
-            if timeout 420 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              "sftp://$FTP_SERVER:722" \
-              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./out/_next/ /public_html/_next/; mirror --reverse --exclude-glob _next/** ./out/ /public_html/; bye"; then
-              exit 0
-            fi
+          : "${FTP_SERVER:?KRYSTAL_FTP_SERVER is not configured}"
+          : "${FTP_USERNAME:?KRYSTAL_FTP_USERNAME is not configured}"
+          : "${FTP_PASSWORD:?KRYSTAL_FTP_PASSWORD is not configured}"
 
-            exit_code=$?
-            if [ "$attempt" -lt 3 ]; then
-              backoff_seconds=$((attempt * 20))
-              echo "Mirror out to public_html failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
-              sleep "$backoff_seconds"
-            else
-              echo "Mirror out to public_html failed after 3 attempts (last exit ${exit_code})."
-              exit "$exit_code"
-            fi
-          done
+          timeout 600 lftp \
+            -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            "ftp://$FTP_SERVER:21" <<'LFTP_COMMANDS'
+          set cmd:fail-exit yes
+          set ftp:passive-mode yes
+          set ftp:ssl-force yes
+          set ftp:ssl-protect-data yes
+          set ssl:verify-certificate yes
+          set net:timeout 30
+          set net:max-retries 2
 
-      - name: Mirror PHP API public files
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "Mirror PHP API public files attempt ${attempt}/3"
-            if timeout 420 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              "sftp://$FTP_SERVER:722" \
-              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./backend/public/ /public_html/api/; bye"; then
-              exit 0
-            fi
-
-            exit_code=$?
-            if [ "$attempt" -lt 3 ]; then
-              backoff_seconds=$((attempt * 20))
-              echo "Mirror PHP API public files failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
-              sleep "$backoff_seconds"
-            else
-              echo "Mirror PHP API public files failed after 3 attempts (last exit ${exit_code})."
-              exit "$exit_code"
-            fi
-          done
-
-      - name: Mirror PHP API runtime files
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          FTP_SERVER: ${{ secrets.KRYSTAL_FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.KRYSTAL_FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.KRYSTAL_FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3; do
-            echo "Mirror PHP API runtime files attempt ${attempt}/3"
-            if timeout 420 lftp \
-              -u "$FTP_USERNAME","$FTP_PASSWORD" \
-              "sftp://$FTP_SERVER:722" \
-              -e "set cmd:fail-exit yes; set sftp:auto-confirm yes; set net:timeout 20; set net:max-retries 1; set net:reconnect-interval-base 5; set net:reconnect-interval-max 30; mirror --reverse ./backend/src/ /booking-api/src/; mirror --reverse ./backend/sql/ /booking-api/sql/; mirror --reverse ./backend/templates/emails/ /booking-api/templates/emails/; bye"; then
-              exit 0
-            fi
-
-            exit_code=$?
-            if [ "$attempt" -lt 3 ]; then
-              backoff_seconds=$((attempt * 20))
-              echo "Mirror PHP API runtime files failed (exit ${exit_code}). Retrying in ${backoff_seconds}s..."
-              sleep "$backoff_seconds"
-            else
-              echo "Mirror PHP API runtime files failed after 3 attempts (last exit ${exit_code})."
-              exit "$exit_code"
-            fi
-          done
-
-      - name: Show deploy results
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "=== Local files deployed ==="
-          find ./out -type f | wc -l
-          echo "files copied"
+          mirror --reverse --delete --parallel=4 ./out/_next/ /public_html/_next/
+          mirror --reverse --parallel=4 --exclude-glob _next/** ./out/ /public_html/
+          mirror --reverse --delete --parallel=4 --exclude-glob .DS_Store ./backend/public/ /public_html/api/
+          mirror --reverse --delete --parallel=4 ./backend/src/ /booking-api/src/
+          mirror --reverse --delete --parallel=4 ./backend/sql/ /booking-api/sql/
+          mirror --reverse --delete --parallel=4 --exclude-glob .DS_Store ./backend/templates/ /booking-api/templates/
+          bye
+          LFTP_COMMANDS
