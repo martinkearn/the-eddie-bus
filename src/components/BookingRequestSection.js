@@ -21,7 +21,7 @@ function formatReadableDate(date) {
   return `${weekday} ${day} ${month} ${year}`
 }
 
-const PICKUP_TIME_OPTIONS = [
+const BOOKING_TIME_OPTIONS = [
   '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
@@ -146,8 +146,10 @@ function createMailToBody(data) {
     `Destination name: ${data.destinationName || 'Not provided'}`,
     `Destination address: ${data.destinationAddress || 'Not provided'}`,
     `Pickup time: ${data.pickupTime}`,
+    `Estimated return time: ${data.estimatedReturnTime}`,
     `Contact name: ${data.contactName}`,
     `Contact email: ${data.contactEmail}`,
+    `Invoice email address: ${data.invoiceEmail}`,
     `Contact number: ${data.contactNumber}`,
     `Static wheelchairs: ${data.staticWheelchairs}`,
     `Powered wheelchairs: ${data.poweredWheelchairs}`,
@@ -438,8 +440,10 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
       destinationName: String(form.get('destinationName') || ''),
       destinationAddress: String(form.get('destinationAddress') || ''),
       pickupTime: String(form.get('pickupTime') || ''),
+      estimatedReturnTime: String(form.get('estimatedReturnTime') || ''),
       contactName: String(form.get('contactName') || ''),
       contactEmail: String(form.get('contactEmail') || ''),
+      invoiceEmail: String(form.get('invoiceEmail') || ''),
       contactNumber: String(form.get('contactNumber') || ''),
       staticWheelchairs: String(form.get('staticWheelchairs') || 'No'),
       poweredWheelchairs: String(form.get('poweredWheelchairs') || 'No'),
@@ -504,11 +508,13 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         bookingStatusLabel: 'Pending (Stage 1)',
         bookingDate: bookingDateDisplay,
         pickupTime: payload.pickupTime,
+        estimatedReturnTime: payload.estimatedReturnTime,
         organisation: payload.organisation,
         destinationName: payload.destinationName || 'Not provided',
         destinationAddress: payload.destinationAddress || 'Not provided',
         contactName: payload.contactName,
         contactEmail: payload.contactEmail,
+        invoiceEmail: payload.invoiceEmail,
         contactNumber: payload.contactNumber,
         staticWheelchairs: payload.staticWheelchairs,
         poweredWheelchairs: payload.poweredWheelchairs,
@@ -716,7 +722,18 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <small className="field-prompt">Times between 07:00 and 16:00. We're flexible and can discuss alternatives.</small>
               <select name="pickupTime" required defaultValue="">
                 <option value="" disabled>Select pickup time</option>
-                {PICKUP_TIME_OPTIONS.map((time) => (
+                {BOOKING_TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Estimated return time *</span>
+              <small className="field-prompt">Your best estimate for returning to the pickup location.</small>
+              <select name="estimatedReturnTime" required defaultValue="">
+                <option value="" disabled>Select return time</option>
+                {BOOKING_TIME_OPTIONS.map((time) => (
                   <option key={time} value={time}>{time}</option>
                 ))}
               </select>
@@ -738,6 +755,12 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <span>Contact email *</span>
               <small className="field-prompt">We'll send confirmation and next steps here</small>
               <input type="email" name="contactEmail" required autoComplete="email" />
+            </label>
+
+            <label className="field-full">
+              <span>Invoice email address *</span>
+              <small className="field-prompt">This may be the same as the contact email address</small>
+              <input type="email" name="invoiceEmail" required autoComplete="email" />
             </label>
 
             <label className="field-full">

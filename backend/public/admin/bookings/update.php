@@ -84,11 +84,13 @@ $bookingRef = trim((string)($payload['bookingRef'] ?? ''));
 $status = trim((string)($payload['status'] ?? ''));
 $bookingDate = trim((string)($payload['bookingDate'] ?? ''));
 $pickupTime = trim((string)($payload['pickupTime'] ?? ''));
+$estimatedReturnTime = trim((string)($payload['estimatedReturnTime'] ?? ''));
 $organisation = trim((string)($payload['organisation'] ?? ''));
 $destinationName = trim((string)($payload['destinationName'] ?? ''));
 $destinationAddress = trim((string)($payload['destinationAddress'] ?? ''));
 $contactName = trim((string)($payload['contactName'] ?? ''));
 $contactEmail = trim((string)($payload['contactEmail'] ?? ''));
+$invoiceEmail = trim((string)($payload['invoiceEmail'] ?? ''));
 $contactNumber = trim((string)($payload['contactNumber'] ?? ''));
 $specialRequirements = trim((string)($payload['specialRequirements'] ?? ''));
 $adminNotes = trim((string)($payload['adminNotes'] ?? ''));
@@ -115,6 +117,9 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $bookingDate)) {
 if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $pickupTime)) {
     $errors['pickupTime'] = 'Pickup time must be in HH:MM format.';
 }
+if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $estimatedReturnTime)) {
+    $errors['estimatedReturnTime'] = 'Estimated return time must be in HH:MM format.';
+}
 if ($organisation === '') {
     $errors['organisation'] = 'Organisation is required.';
 }
@@ -123,6 +128,9 @@ if ($contactName === '') {
 }
 if ($contactEmail === '' || filter_var($contactEmail, FILTER_VALIDATE_EMAIL) === false) {
     $errors['contactEmail'] = 'Valid contact email is required.';
+}
+if ($invoiceEmail === '' || filter_var($invoiceEmail, FILTER_VALIDATE_EMAIL) === false) {
+    $errors['invoiceEmail'] = 'Valid invoice email is required.';
 }
 if ($contactNumber === '') {
     $errors['contactNumber'] = 'Contact number is required.';
@@ -206,11 +214,13 @@ try {
              driver_user_id = :driver_user_id,
              booking_date = :booking_date,
              pickup_time = :pickup_time,
+             estimated_return_time = :estimated_return_time,
              organisation = :organisation,
              destination_name = :destination_name,
              destination_address = :destination_address,
              contact_name = :contact_name,
              contact_email = :contact_email,
+             invoice_email = :invoice_email,
              contact_number = :contact_number,
              static_wheelchairs = :static_wheelchairs,
              powered_wheelchairs = :powered_wheelchairs,
@@ -244,11 +254,13 @@ try {
         ':driver_user_id' => $driverUserId,
         ':booking_date' => $bookingDate,
         ':pickup_time' => $pickupTime . ':00',
+        ':estimated_return_time' => $estimatedReturnTime . ':00',
         ':organisation' => $organisation,
         ':destination_name' => $destinationName,
         ':destination_address' => $destinationAddress !== '' ? $destinationAddress : null,
         ':contact_name' => $contactName,
         ':contact_email' => $contactEmail,
+        ':invoice_email' => $invoiceEmail,
         ':contact_number' => $contactNumber,
         ':static_wheelchairs' => bool_to_int($payload['staticWheelchairs'] ?? 0),
         ':powered_wheelchairs' => bool_to_int($payload['poweredWheelchairs'] ?? 0),

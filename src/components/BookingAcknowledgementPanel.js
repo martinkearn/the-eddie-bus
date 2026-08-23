@@ -85,7 +85,8 @@ export function BookingAcknowledgementPanel() {
           <strong>Destination name:</strong> {details?.destinationName || 'Not available'}<br />
           <strong>Destination address:</strong> {details?.destinationAddress || 'Not available'}<br />
           <strong>Booking date:</strong> {details?.bookingDate || 'Not available'}<br />
-          <strong>Pickup time:</strong> {details?.pickupTime || 'Not available'}
+          <strong>Pickup time:</strong> {details?.pickupTime || 'Not available'}<br />
+          <strong>Estimated return time:</strong> {details?.estimatedReturnTime || 'Not available'}
         </p>
       </article>
 
@@ -94,6 +95,7 @@ export function BookingAcknowledgementPanel() {
         <p>
           <strong>Name:</strong> {details?.contactName || 'Not available'}<br />
           <strong>Email:</strong> {details?.contactEmail || 'Not available'}<br />
+          <strong>Invoice email address:</strong> {details?.invoiceEmail || 'Not available'}<br />
           <strong>Phone:</strong> {details?.contactNumber || 'Not available'}
         </p>
       </article>

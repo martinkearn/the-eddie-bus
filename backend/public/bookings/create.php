@@ -139,9 +139,11 @@ if (!is_array($payload)) {
 $requiredFields = [
     'bookingDate',
     'pickupTime',
+    'estimatedReturnTime',
     'organisation',
     'contactName',
     'contactEmail',
+    'invoiceEmail',
     'contactNumber',
 ];
 
@@ -154,7 +156,9 @@ foreach ($requiredFields as $field) {
 
 $bookingDate = trim((string)($payload['bookingDate'] ?? ''));
 $pickupTime = trim((string)($payload['pickupTime'] ?? ''));
+$estimatedReturnTime = trim((string)($payload['estimatedReturnTime'] ?? ''));
 $contactEmail = trim((string)($payload['contactEmail'] ?? ''));
+$invoiceEmail = trim((string)($payload['invoiceEmail'] ?? ''));
 
 if ($bookingDate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $bookingDate)) {
     $errors['bookingDate'] = 'Date must be in YYYY-MM-DD format.';
@@ -164,8 +168,16 @@ if ($pickupTime !== '' && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $pickupTime
     $errors['pickupTime'] = 'Pickup time must be in HH:MM format.';
 }
 
+if ($estimatedReturnTime !== '' && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $estimatedReturnTime)) {
+    $errors['estimatedReturnTime'] = 'Estimated return time must be in HH:MM format.';
+}
+
 if ($contactEmail !== '' && filter_var($contactEmail, FILTER_VALIDATE_EMAIL) === false) {
     $errors['contactEmail'] = 'Please provide a valid email address.';
+}
+
+if ($invoiceEmail !== '' && filter_var($invoiceEmail, FILTER_VALIDATE_EMAIL) === false) {
+    $errors['invoiceEmail'] = 'Please provide a valid invoice email address.';
 }
 
 if ($errors !== []) {
@@ -201,11 +213,13 @@ try {
             booking_ref,
             booking_date,
             pickup_time,
+            estimated_return_time,
             organisation,
             destination_name,
             destination_address,
             contact_name,
             contact_email,
+            invoice_email,
             contact_number,
             static_wheelchairs,
             powered_wheelchairs,
@@ -217,11 +231,13 @@ try {
             :booking_ref,
             :booking_date,
             :pickup_time,
+            :estimated_return_time,
             :organisation,
             :destination_name,
             :destination_address,
             :contact_name,
             :contact_email,
+            :invoice_email,
             :contact_number,
             :static_wheelchairs,
             :powered_wheelchairs,
@@ -236,11 +252,13 @@ try {
         ':booking_ref' => $bookingRef,
         ':booking_date' => $bookingDate,
         ':pickup_time' => $pickupTime . ':00',
+        ':estimated_return_time' => $estimatedReturnTime . ':00',
         ':organisation' => $organisation,
         ':destination_name' => $destinationName,
         ':destination_address' => $destinationAddress !== '' ? $destinationAddress : null,
         ':contact_name' => $contactName,
         ':contact_email' => $contactEmail,
+        ':invoice_email' => $invoiceEmail,
         ':contact_number' => $contactNumber,
         ':static_wheelchairs' => $staticWheelchairs,
         ':powered_wheelchairs' => $poweredWheelchairs,

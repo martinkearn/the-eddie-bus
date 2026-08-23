@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS booking_driver_mappings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CALL ensure_booking_column('driver_user_id', 'BIGINT UNSIGNED NULL', 'status');
+CALL ensure_booking_column('estimated_return_time', 'TIME NULL', 'pickup_time');
+CALL ensure_booking_column('invoice_email', 'VARCHAR(255) NULL', 'contact_email');
 CALL ensure_booking_column('admin_notes', 'TEXT NULL', 'special_requirements');
 CALL ensure_booking_column('start_mileage', 'DECIMAL(8,2) NULL', 'admin_notes');
 CALL ensure_booking_column('finish_mileage', 'DECIMAL(8,2) NULL', 'start_mileage');
@@ -140,7 +142,12 @@ CALL ensure_booking_column('vehicle_check_date', 'DATE NULL', 'checklist_tail_li
 CALL ensure_booking_column('vehicle_check_signed_by', 'VARCHAR(255) NULL', 'vehicle_check_date');
 CALL ensure_booking_column('vehicle_faults_recorded', 'TEXT NULL', 'vehicle_check_signed_by');
 
+UPDATE bookings
+SET invoice_email = contact_email
+WHERE invoice_email IS NULL OR TRIM(invoice_email) = '';
+
 ALTER TABLE bookings
+  MODIFY invoice_email VARCHAR(255) NOT NULL,
   MODIFY static_wheelchairs TINYINT(1) NOT NULL DEFAULT 0,
   MODIFY powered_wheelchairs TINYINT(1) NOT NULL DEFAULT 0,
   MODIFY passenger_transfers TINYINT(1) NOT NULL DEFAULT 0;

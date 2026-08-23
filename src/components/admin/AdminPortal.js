@@ -217,11 +217,13 @@ function mapBookingToForm(booking) {
     driverName: String(booking.driver_name || booking.driver_display_name || booking.driver_username || ''),
     bookingDate: String(booking.booking_date || ''),
     pickupTime: String(booking.pickup_time || ''),
+    estimatedReturnTime: String(booking.estimated_return_time || ''),
     organisation: String(booking.organisation || ''),
     destinationName: String(booking.destination_name || ''),
     destinationAddress: String(booking.destination_address || ''),
     contactName: String(booking.contact_name || ''),
     contactEmail: String(booking.contact_email || ''),
+    invoiceEmail: String(booking.invoice_email || ''),
     contactNumber: String(booking.contact_number || ''),
     staticWheelchairs: toBooleanFlag(booking.static_wheelchairs),
     poweredWheelchairs: toBooleanFlag(booking.powered_wheelchairs),
@@ -2045,6 +2047,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   </label>
 
                   <label>
+                    <span>Estimated return time</span>
+                    {isAdmin ? (
+                      <input
+                        type="time"
+                        value={bookingForm.estimatedReturnTime}
+                        onChange={(event) => handleBookingFieldChange('estimatedReturnTime', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(formatPickupTime(bookingForm.estimatedReturnTime))}</div>
+                    )}
+                  </label>
+
+                  <label>
                     <span>Organisation</span>
                     {isAdmin ? (
                       <input
@@ -2105,6 +2121,20 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       />
                     ) : (
                       <div className="admin-readonly-value">{formatDisplayText(bookingForm.contactEmail)}</div>
+                    )}
+                  </label>
+
+                  <label>
+                    <span>Invoice email address</span>
+                    {isAdmin ? (
+                      <input
+                        type="email"
+                        value={bookingForm.invoiceEmail}
+                        onChange={(event) => handleBookingFieldChange('invoiceEmail', event.target.value)}
+                        required
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.invoiceEmail)}</div>
                     )}
                   </label>
 
