@@ -40,6 +40,7 @@ try {
         TIME_FORMAT(bookings.pickup_time, "%H:%i") AS pickup_time,
         TIME_FORMAT(bookings.estimated_return_time, "%H:%i") AS estimated_return_time,
         bookings.organisation,
+        bookings.pickup_address,
         bookings.destination_name,
         bookings.destination_address,
         bookings.contact_name,

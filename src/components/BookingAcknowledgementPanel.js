@@ -82,6 +82,7 @@ export function BookingAcknowledgementPanel() {
         <h3>Booking details submitted</h3>
         <p>
           <strong>Organisation:</strong> {details?.organisation || 'Not available'}<br />
+          <strong>Pickup address:</strong> {details?.pickupAddress || 'Not available'}<br />
           <strong>Destination name:</strong> {details?.destinationName || 'Not available'}<br />
           <strong>Destination address:</strong> {details?.destinationAddress || 'Not available'}<br />
           <strong>Booking date:</strong> {details?.bookingDate || 'Not available'}<br />

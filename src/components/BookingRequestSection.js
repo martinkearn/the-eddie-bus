@@ -143,6 +143,7 @@ function createMailToBody(data) {
     '',
     `Date for booking: ${bookingDateDisplay}`,
     `Organisation or group: ${data.organisation}`,
+    `Pickup address: ${data.pickupAddress || 'Not provided'}`,
     `Destination name: ${data.destinationName || 'Not provided'}`,
     `Destination address: ${data.destinationAddress || 'Not provided'}`,
     `Pickup time: ${data.pickupTime}`,
@@ -437,6 +438,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
     const payload = {
       bookingDate: String(form.get('bookingDate') || ''),
       organisation: String(form.get('organisation') || ''),
+      pickupAddress: String(form.get('pickupAddress') || ''),
       destinationName: String(form.get('destinationName') || ''),
       destinationAddress: String(form.get('destinationAddress') || ''),
       pickupTime: String(form.get('pickupTime') || ''),
@@ -510,6 +512,7 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         pickupTime: payload.pickupTime,
         estimatedReturnTime: payload.estimatedReturnTime,
         organisation: payload.organisation,
+        pickupAddress: payload.pickupAddress || 'Not provided',
         destinationName: payload.destinationName || 'Not provided',
         destinationAddress: payload.destinationAddress || 'Not provided',
         contactName: payload.contactName,
@@ -715,6 +718,12 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
               <span>Destination name</span>
               <small className="field-prompt">e.g. Garden centers, Museums, Parks, Community Centre. Leave blank if you do not yet know where you going.</small>
               <input type="text" name="destinationName" />
+            </label>
+
+            <label className="field-full">
+              <span>Pickup address</span>
+              <small className="field-prompt">Optional. If you have it, the postcode is the most important bit for route planning.</small>
+              <input type="text" name="pickupAddress" autoComplete="street-address" />
             </label>
 
             <label>

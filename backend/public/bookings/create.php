@@ -189,6 +189,7 @@ $toFlag = static function (mixed $value): int {
 };
 
 $organisation = trim((string)($payload['organisation'] ?? ''));
+$pickupAddress = trim((string)($payload['pickupAddress'] ?? ''));
 $destinationName = trim((string)($payload['destinationName'] ?? ''));
 $destinationAddress = trim((string)($payload['destinationAddress'] ?? ''));
 $contactName = trim((string)($payload['contactName'] ?? ''));
@@ -215,6 +216,7 @@ try {
             pickup_time,
             estimated_return_time,
             organisation,
+            pickup_address,
             destination_name,
             destination_address,
             contact_name,
@@ -233,6 +235,7 @@ try {
             :pickup_time,
             :estimated_return_time,
             :organisation,
+            :pickup_address,
             :destination_name,
             :destination_address,
             :contact_name,
@@ -254,6 +257,7 @@ try {
         ':pickup_time' => $pickupTime . ':00',
         ':estimated_return_time' => $estimatedReturnTime . ':00',
         ':organisation' => $organisation,
+        ':pickup_address' => $pickupAddress !== '' ? $pickupAddress : null,
         ':destination_name' => $destinationName,
         ':destination_address' => $destinationAddress !== '' ? $destinationAddress : null,
         ':contact_name' => $contactName,
@@ -309,6 +313,7 @@ try {
                 'subject' => $subject,
                 'recipient_name' => fallback_text($contactName, 'there'),
                 'organisation' => fallback_text($organisation, 'your organisation'),
+                'pickup_address' => fallback_text($pickupAddress, 'Not provided'),
                 'destination_name' => fallback_text($destinationName, 'your chosen destination'),
                 'destination_address' => fallback_text($destinationAddress, 'Not provided'),
                 'booking_ref' => fallback_text($bookingRef, 'Not provided'),
@@ -398,6 +403,7 @@ try {
                         'subject' => $driverAvailabilitySubject,
                         'recipient_name' => 'there',
                         'organisation' => fallback_text($organisation, 'your organisation'),
+                        'pickup_address' => fallback_text($pickupAddress, 'Not provided'),
                         'destination_name' => fallback_text($destinationName, 'your chosen destination'),
                         'destination_address' => fallback_text($destinationAddress, 'Not provided'),
                         'booking_ref' => fallback_text($bookingRef, 'Not provided'),
@@ -425,6 +431,7 @@ try {
                                 'subject' => $driverAvailabilitySubject,
                                 'recipient_name' => $recipientName,
                                 'organisation' => fallback_text($organisation, 'your organisation'),
+                                'pickup_address' => fallback_text($pickupAddress, 'Not provided'),
                                 'destination_name' => fallback_text($destinationName, 'your chosen destination'),
                                 'destination_address' => fallback_text($destinationAddress, 'Not provided'),
                                 'booking_ref' => fallback_text($bookingRef, 'Not provided'),

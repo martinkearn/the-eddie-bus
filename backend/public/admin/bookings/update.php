@@ -86,6 +86,7 @@ $bookingDate = trim((string)($payload['bookingDate'] ?? ''));
 $pickupTime = trim((string)($payload['pickupTime'] ?? ''));
 $estimatedReturnTime = trim((string)($payload['estimatedReturnTime'] ?? ''));
 $organisation = trim((string)($payload['organisation'] ?? ''));
+$pickupAddress = trim((string)($payload['pickupAddress'] ?? ''));
 $destinationName = trim((string)($payload['destinationName'] ?? ''));
 $destinationAddress = trim((string)($payload['destinationAddress'] ?? ''));
 $contactName = trim((string)($payload['contactName'] ?? ''));
@@ -216,6 +217,7 @@ try {
              pickup_time = :pickup_time,
              estimated_return_time = :estimated_return_time,
              organisation = :organisation,
+             pickup_address = :pickup_address,
              destination_name = :destination_name,
              destination_address = :destination_address,
              contact_name = :contact_name,
@@ -256,6 +258,7 @@ try {
         ':pickup_time' => $pickupTime . ':00',
         ':estimated_return_time' => $estimatedReturnTime . ':00',
         ':organisation' => $organisation,
+        ':pickup_address' => $pickupAddress !== '' ? $pickupAddress : null,
         ':destination_name' => $destinationName,
         ':destination_address' => $destinationAddress !== '' ? $destinationAddress : null,
         ':contact_name' => $contactName,
@@ -359,6 +362,7 @@ try {
                     b.booking_date,
                     TIME_FORMAT(b.pickup_time, '%H:%i') AS pickup_time,
                     b.organisation,
+                    b.pickup_address,
                     b.destination_name,
                     b.destination_address,
                     b.contact_name,
@@ -448,6 +452,7 @@ try {
                     'subject' => $subject,
                     'recipient_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'there'),
                     'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'your organisation'),
+                    'pickup_address' => fallback_text((string)($emailBooking['pickup_address'] ?? ''), 'Not provided'),
                     'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'your chosen destination'),
                     'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
                     'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
@@ -512,6 +517,7 @@ try {
                     'booking_when' => fallback_text($bookingWhen, 'Not provided'),
                     'booking_status_label' => $statusLabel,
                     'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'Not provided'),
+                    'pickup_address' => fallback_text((string)($emailBooking['pickup_address'] ?? ''), 'Not provided'),
                     'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'Not provided'),
                     'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
                     'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),
@@ -573,6 +579,7 @@ try {
                         'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
                         'booking_when' => fallback_text($bookingWhen, 'Not provided'),
                         'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'Not provided'),
+                        'pickup_address' => fallback_text((string)($emailBooking['pickup_address'] ?? ''), 'Not provided'),
                         'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'Not provided'),
                         'destination_address' => fallback_text((string)($emailBooking['destination_address'] ?? ''), 'Not provided'),
                         'contact_name' => fallback_text((string)($emailBooking['contact_name'] ?? ''), 'Not provided'),

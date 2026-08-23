@@ -219,6 +219,7 @@ function mapBookingToForm(booking) {
     pickupTime: String(booking.pickup_time || ''),
     estimatedReturnTime: String(booking.estimated_return_time || ''),
     organisation: String(booking.organisation || ''),
+    pickupAddress: String(booking.pickup_address || ''),
     destinationName: String(booking.destination_name || ''),
     destinationAddress: String(booking.destination_address || ''),
     contactName: String(booking.contact_name || ''),
@@ -2070,6 +2071,18 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       />
                     ) : (
                       <div className="admin-readonly-value">{formatDisplayText(bookingForm.organisation)}</div>
+                    )}
+                  </label>
+
+                  <label className="field-full">
+                    <span>Pickup address</span>
+                    {isAdmin ? (
+                      <input
+                        value={bookingForm.pickupAddress}
+                        onChange={(event) => handleBookingFieldChange('pickupAddress', event.target.value)}
+                      />
+                    ) : (
+                      <div className="admin-readonly-value">{formatDisplayText(bookingForm.pickupAddress)}</div>
                     )}
                   </label>
 

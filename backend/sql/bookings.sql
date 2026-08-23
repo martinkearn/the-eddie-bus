@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   pickup_time TIME NOT NULL,
   estimated_return_time TIME NOT NULL,
   organisation VARCHAR(255) NOT NULL,
+  pickup_address VARCHAR(255) NULL,
   destination_name VARCHAR(255) NOT NULL,
   destination_address VARCHAR(255) NULL,
   contact_name VARCHAR(255) NOT NULL,
