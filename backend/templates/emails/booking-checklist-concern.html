@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>Urgent vehicle safety concern</h1>
+
+    <p>
+      One or more vehicle checklist items have been flagged as a concern and need prompt attention.
+    </p>
+
+    <p>
+      <a href="{{admin_portal_url}}">Open the admin portal</a>
+    </p>
+
+    <h2>Checklist concerns</h2>
+    <p>
+      <strong>Newly flagged:</strong> {{new_concerns}}<br />
+      <strong>All current concerns:</strong> {{all_concerns}}<br />
+      <strong>Faults recorded:</strong> {{vehicle_faults_recorded}}<br />
+      <strong>Vehicle check date:</strong> {{vehicle_check_date}}<br />
+      <strong>Signed by:</strong> {{vehicle_check_signed_by}}<br />
+      <strong>Updated by:</strong> {{updated_by}}
+    </p>
+
+    <h2>Booking details</h2>
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Booking date:</strong> {{booking_date}}<br />
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Pickup address:</strong> {{pickup_address}}<br />
+      <strong>Destination:</strong> {{destination_name}}
+    </p>
+
+    <p>
+      Do not use the vehicle until the safety concern has been assessed and addressed.
+    </p>
+  </body>
+</html>

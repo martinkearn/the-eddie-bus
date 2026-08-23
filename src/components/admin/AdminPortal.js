@@ -173,7 +173,7 @@ function TriStateButtonGroup({ value, onChange }) {
   const normalizedValue = String(value || 'not-entered')
 
   return (
-    <div className="admin-tri-state-buttons" role="group" aria-label="Checklist response options">
+    <div className={`admin-tri-state-buttons${normalizedValue === 'concern' ? ' is-concern' : ''}`} role="group" aria-label="Checklist response options">
       {TRI_STATE_CHECKLIST_OPTIONS.map((option) => (
         <button
           key={option.value}
@@ -185,6 +185,15 @@ function TriStateButtonGroup({ value, onChange }) {
           {option.label}
         </button>
       ))}
+    </div>
+  )
+}
+
+function TriStateReadonlyValue({ value }) {
+  const normalizedValue = String(value || 'not-entered')
+  return (
+    <div className={`admin-readonly-value${normalizedValue === 'concern' ? ' is-concern' : ''}`}>
+      {triStateLabel(normalizedValue)}
     </div>
   )
 }
@@ -279,6 +288,10 @@ function isVehicleCheckComplete(booking) {
   const hasAllChecks = VEHICLE_CHECK_KEYS.every((key) => toTriStateSelection(booking[key]) === 'ok')
 
   return hasDate && hasSignature && hasAllChecks
+}
+
+function hasVehicleChecklistConcern(booking) {
+  return Boolean(booking) && VEHICLE_CHECK_KEYS.some((key) => toTriStateSelection(booking[key]) === 'concern')
 }
 
 function formatDateUK(dateStr) {
@@ -1246,7 +1259,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     setBanner({ type: 'idle', message: '' })
 
     try {
-      await apiFetch('/bookings/update-checklist.php', {
+      const result = await apiFetch('/bookings/update-checklist.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1273,7 +1286,19 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
         }),
       })
 
-      setBanner({ type: 'success', message: 'Checklist saved successfully.' })
+      if (result.concernNotificationRequired && !result.concernNotificationSent) {
+        setBanner({
+          type: 'error',
+          message: 'Checklist saved, but one or more admin safety alerts could not be sent. Contact an administrator now.',
+        })
+      } else {
+        setBanner({
+          type: 'success',
+          message: result.concernNotificationRequired
+            ? 'Checklist saved and all administrators notified of the safety concern.'
+            : 'Checklist saved successfully.',
+        })
+      }
       await loadBookingDetail(bookingForm.id, bookingForm.bookingRef, { historyMode: 'replace', detailTab: bookingDetailTab })
     } catch (error) {
       setBanner({ type: 'error', message: error.message || 'Could not save checklist.' })
@@ -1854,6 +1879,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       className={[
                         String(selectedBookingId) === String(item.id) ? 'is-selected' : '',
                         item.driver_name ? '' : 'is-missing-driver',
+                        hasVehicleChecklistConcern(item) ? 'has-checklist-concern' : '',
                       ].filter(Boolean).join(' ')}
                       onClick={() => loadBookingDetail(item.id, item.booking_ref, { historyMode: 'push' })}
                     >
@@ -1865,7 +1891,9 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       </td>
                       <td>
                         <div>{formatBookingStatusLabel(item.status)}</div>
-                        {isVehicleCheckComplete(item) ? (
+                        {hasVehicleChecklistConcern(item) ? (
+                          <span className="admin-vehicle-check-badge is-concern">Checklist concern</span>
+                        ) : isVehicleCheckComplete(item) ? (
                           <span className="admin-vehicle-check-badge is-complete">Vehicle check complete</span>
                         ) : null}
                       </td>
@@ -2452,157 +2480,170 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Lights & indicators</span>
+                    <span className="admin-vehicle-checklist-description">All lights must be clean, working, and show correct colour/intensity.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistLightsIndicators}
                         onChange={(nextValue) => handleBookingFieldChange('checklistLightsIndicators', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistLightsIndicators)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistLightsIndicators} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Tyres</span>
+                    <span className="admin-vehicle-checklist-description">Check tread depth, inflation, damage, and embedded objects.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistTyres}
                         onChange={(nextValue) => handleBookingFieldChange('checklistTyres', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTyres)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistTyres} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheel nuts</span>
+                    <span className="admin-vehicle-checklist-description">Ensure they're secure.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistWheelNuts}
                         onChange={(nextValue) => handleBookingFieldChange('checklistWheelNuts', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelNuts)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistWheelNuts} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Bodywork</span>
+                    <span className="admin-vehicle-checklist-description">Look for loose panels, sharp edges, or damage.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistBodywork}
                         onChange={(nextValue) => handleBookingFieldChange('checklistBodywork', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBodywork)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistBodywork} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Mirrors & glass</span>
+                    <span className="admin-vehicle-checklist-description">Clean, undamaged, correctly adjusted, and unobstructed.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistMirrorsGlass}
                         onChange={(nextValue) => handleBookingFieldChange('checklistMirrorsGlass', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistMirrorsGlass)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistMirrorsGlass} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Brakes</span>
+                    <span className="admin-vehicle-checklist-description">Test foot and parking brakes.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistBrakes}
                         onChange={(nextValue) => handleBookingFieldChange('checklistBrakes', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistBrakes)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistBrakes} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Steering</span>
+                    <span className="admin-vehicle-checklist-description">Check for excessive play, wear, or leaks.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistSteering}
                         onChange={(nextValue) => handleBookingFieldChange('checklistSteering', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSteering)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistSteering} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wipers & washers</span>
+                    <span className="admin-vehicle-checklist-description">Confirm full windscreen coverage and fluid levels.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistWipersWashers}
                         onChange={(nextValue) => handleBookingFieldChange('checklistWipersWashers', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWipersWashers)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistWipersWashers} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Dashboard warning lights</span>
+                    <span className="admin-vehicle-checklist-description">Ensure no alerts are active.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistDashboardWarningLights}
                         onChange={(nextValue) => handleBookingFieldChange('checklistDashboardWarningLights', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistDashboardWarningLights)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistDashboardWarningLights} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Seats & seatbelts</span>
+                    <span className="admin-vehicle-checklist-description">Secure, undamaged, and functional.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistSeatsSeatbelts}
                         onChange={(nextValue) => handleBookingFieldChange('checklistSeatsSeatbelts', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistSeatsSeatbelts)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistSeatsSeatbelts} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Emergency equipment</span>
+                    <span className="admin-vehicle-checklist-description">Fire extinguisher, first aid kit, and warning triangle present and accessible.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistEmergencyEquipment}
                         onChange={(nextValue) => handleBookingFieldChange('checklistEmergencyEquipment', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistEmergencyEquipment)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistEmergencyEquipment} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Wheelchair lifts & restraints</span>
+                    <span className="admin-vehicle-checklist-description">Operational and safe.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistWheelchairLiftsRestraints}
                         onChange={(nextValue) => handleBookingFieldChange('checklistWheelchairLiftsRestraints', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistWheelchairLiftsRestraints)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistWheelchairLiftsRestraints} />
                     )}
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
                     <span>Tail lifts</span>
+                    <span className="admin-vehicle-checklist-description">Check for smooth operation and safety features.</span>
                     {canEditChecklist ? (
                       <TriStateButtonGroup
                         value={bookingForm.checklistTailLifts}
                         onChange={(nextValue) => handleBookingFieldChange('checklistTailLifts', nextValue)}
                       />
                     ) : (
-                      <div className="admin-readonly-value">{triStateLabel(bookingForm.checklistTailLifts)}</div>
+                      <TriStateReadonlyValue value={bookingForm.checklistTailLifts} />
                     )}
                   </label>
 

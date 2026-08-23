@@ -3561,6 +3561,20 @@ main {
   color: #0f5f31;
 }
 
+.admin-vehicle-check-badge.is-concern {
+  background: #b42318;
+  border-color: #7a271a;
+  color: #ffffff;
+}
+
+.admin-table tbody tr.has-checklist-concern:not(.is-selected) {
+  background: #fff1f0;
+}
+
+.admin-table tbody tr.has-checklist-concern:not(.is-selected):hover {
+  background: #ffe4e1;
+}
+
 .admin-readonly-value {
   width: 100%;
   min-height: 2.45rem;
@@ -4115,6 +4129,28 @@ main {
   gap: 0.45rem;
 }
 
+.admin-vehicle-checklist-item:has(.admin-tri-state-buttons.is-concern),
+.admin-vehicle-checklist-item:has(.admin-readonly-value.is-concern) {
+  margin: -0.35rem;
+  padding: 0.7rem;
+  border: 2px solid #d92d20;
+  border-radius: 0.5rem;
+  background: #fff1f0;
+  color: #912018;
+}
+
+.admin-readonly-value.is-concern {
+  color: #912018;
+  font-weight: 800;
+}
+
+.admin-form-grid label .admin-vehicle-checklist-description {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
 .admin-tri-state-buttons {
   display: inline-flex;
   gap: 0.35rem;
@@ -4134,6 +4170,11 @@ main {
   background: #1f6feb;
   border-color: #1f6feb;
   color: #ffffff;
+}
+
+.admin-tri-state-buttons.is-concern .admin-tri-state-btn.is-active {
+  background: #b42318;
+  border-color: #7a271a;
 }
 
 .admin-banner {

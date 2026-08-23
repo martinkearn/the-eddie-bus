@@ -487,12 +487,14 @@ export function BookingRequestSection({ emailHref, fallbackPhone, fallbackPhoneH
         body: JSON.stringify(payload),
       })
 
-      const result = await response.json().catch(() => null)
+      const responseResult = await response.json().catch(() => null)
 
-      if (!response.ok || !result?.ok) {
-        const message = buildSubmitErrorMessage({ response, result, fallbackPhone })
+      if (!response.ok) {
+        const message = buildSubmitErrorMessage({ response, result: responseResult, fallbackPhone })
         throw new Error(message)
       }
+
+      const result = responseResult && typeof responseResult === 'object' ? responseResult : {}
 
       const bookingReferenceText = typeof result.bookingRef === 'string' && result.bookingRef.trim() !== ''
         ? ` and your reference is ${result.bookingRef}`
