@@ -196,6 +196,17 @@ function formatMileage(value) {
   return Number.isFinite(mileage) ? mileage.toFixed(0) : String(value)
 }
 
+function calculateBookableMileage(startMileage, finishMileage, nonBillableMileage) {
+  if (startMileage === '' || finishMileage === '') return ''
+
+  const start = Number(startMileage)
+  const finish = Number(finishMileage)
+  const nonBillable = nonBillableMileage === '' ? 0 : Number(nonBillableMileage)
+
+  if (![start, finish, nonBillable].every(Number.isFinite)) return ''
+  return (finish - start - nonBillable).toFixed(0)
+}
+
 function mapBookingToForm(booking) {
   if (!booking) return null
   return {
@@ -2383,6 +2394,17 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                     ) : (
                       <div className="admin-readonly-value">{formatDisplayText(bookingForm.nonBillableMileage)}</div>
                     )}
+                  </label>
+
+                  <label>
+                    <span>Bookable mileage</span>
+                    <div className="admin-readonly-value">
+                      {formatDisplayText(calculateBookableMileage(
+                        bookingForm.startMileage,
+                        bookingForm.finishMileage,
+                        bookingForm.nonBillableMileage,
+                      ))}
+                    </div>
                   </label>
 
                   <label className="admin-vehicle-checklist-item">
