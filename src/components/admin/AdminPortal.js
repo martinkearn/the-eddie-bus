@@ -30,6 +30,7 @@ import { faCircleCheck } from '@fortawesome/free-regular-svg-icons'
 const PAGE_SIZE = 250
 const DEFAULT_PAST_WEEKS = 4
 const DEFAULT_FUTURE_WEEKS = 8
+const API_REQUEST_TIMEOUT_MS = 10000
 
 const BOOKING_STATUS_OPTIONS = [
   { value: 'pending', label: '1. Pending', description: 'This is a new booking. Next step is to match a driver and confirm to the customer.' },
@@ -483,7 +484,8 @@ function updateBookingReferenceInUrl(reference, { replace = false, detailTab = '
 export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initialBookingReference = '' }) {
   const baseUrl = useMemo(() => deriveAdminApiBase(bookingApiEndpoint, adminApiBase), [bookingApiEndpoint, adminApiBase])
   const initialBookingReferenceTerm = useMemo(() => String(initialBookingReference || '').trim(), [initialBookingReference])
-  const [sessionToken, setSessionToken] = useState('')
+  const [sessionToken, setSessionToken] = useState(null)
+  const hasBootstrappedSessionRef = useRef(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const [sessionLoading, setSessionLoading] = useState(true)
@@ -570,11 +572,25 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
       requestHeaders['X-Admin-Session'] = sessionToken
     }
 
-    const response = await fetch(`${baseUrl}${path}`, {
-      credentials: 'include',
-      ...options,
-      headers: requestHeaders,
-    })
+    const abortController = new AbortController()
+    const timeoutId = window.setTimeout(() => abortController.abort(), API_REQUEST_TIMEOUT_MS)
+    let response
+
+    try {
+      response = await fetch(`${baseUrl}${path}`, {
+        credentials: 'include',
+        ...options,
+        headers: requestHeaders,
+        signal: abortController.signal,
+      })
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        throw new Error('The admin API did not respond in time. Check the API and database connection.')
+      }
+      throw error
+    } finally {
+      window.clearTimeout(timeoutId)
+    }
 
     let data = null
     try {
@@ -599,8 +615,14 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     try {
       const data = await apiFetch('/auth/me.php')
       setUser(data.user)
-    } catch {
+    } catch (error) {
       setUser(null)
+      if (error?.status !== 401) {
+        setBanner({
+          type: 'error',
+          message: error?.message || 'Could not connect to the admin API.',
+        })
+      }
     } finally {
       setSessionLoading(false)
     }
@@ -766,14 +788,17 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     }
 
     const storedToken = window.localStorage.getItem('eddie_admin_session_token') || ''
-    if (storedToken) {
-      setSessionToken(storedToken)
-    }
+    setSessionToken(storedToken)
   }, [])
 
   useEffect(() => {
+    if (sessionToken === null || hasBootstrappedSessionRef.current) {
+      return
+    }
+
+    hasBootstrappedSessionRef.current = true
     refreshSession()
-  }, [refreshSession])
+  }, [refreshSession, sessionToken])
 
   useEffect(() => {
     if (typeof window === 'undefined') {

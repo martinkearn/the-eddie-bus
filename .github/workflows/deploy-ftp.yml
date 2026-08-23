@@ -40,6 +40,7 @@ jobs:
       - name: Check build output
         run: |
           test -f out/index.html
+          test -f out/.htaccess
           test -d out/_next/static
           test -f backend/public/bootstrap_api.php
           test -d backend/src
