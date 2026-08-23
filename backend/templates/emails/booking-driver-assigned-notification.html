@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{subject}}</title>
+  </head>
+  <body>
+    <h1>A driver has now been assigned</h1>
+
+    <p>Thank you for sharing your availability for this booking.</p>
+
+    <p>
+      <strong>{{assigned_driver_name}}</strong> has now been assigned as the driver, so we no longer need another driver for this journey.
+    </p>
+
+    <p>
+      <strong>Booking reference:</strong> {{booking_ref}}<br />
+      <strong>Date and pickup time:</strong> {{booking_when}}<br />
+      <strong>Organisation:</strong> {{organisation}}<br />
+      <strong>Destination:</strong> {{destination_name}}
+    </p>
+
+    <p>
+      If you have any questions, please contact us at
+      <a href="mailto:{{support_email}}">{{support_email}}</a> or {{support_phone}}.
+    </p>
+
+    <p>
+      Best wishes,<br />
+      The EDDIE Bus team
+    </p>
+  </body>
+</html>

@@ -122,6 +122,11 @@ return [
   - template: `backend/templates/emails/booking-driver-confirmed.html`
   - recipient: the newly assigned driver's `admin_users.email`
   - this sends on driver assignment/change during save.
+- When a driver is assigned, other drivers who recorded `Available` or `Maybe Available` are notified separately:
+	- endpoint: `POST /admin/bookings/update.php`
+	- template: `backend/templates/emails/booking-driver-assigned-notification.html`
+	- recipients: valid email addresses for other users mapped to the booking as `available` or `maybe_available`
+	- purpose: confirms that the booking now has a driver and includes the assigned driver's name.
 - Booking updates now also trigger an automatic cancellation email when status changes to `cancelled_by_customer` or `cancelled_by_us`:
 	- endpoint: `POST /admin/bookings/update.php`
 	- template: `backend/templates/emails/booking-cancelled.html`

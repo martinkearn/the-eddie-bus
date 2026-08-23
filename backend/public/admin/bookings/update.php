@@ -345,6 +345,9 @@ try {
     $cancellationEmailError = null;
     $driverAssignmentEmailSent = null;
     $driverAssignmentEmailError = null;
+    $otherDriversNotificationEmailSent = null;
+    $otherDriversNotificationEmailError = null;
+    $otherDriversNotificationRecipientCount = null;
     $emailBooking = null;
 
     if ($statusMovedToConfirmed || $statusMovedToCancellation || $driverChangedToAssigned) {
@@ -394,6 +397,8 @@ try {
             if ($driverChangedToAssigned) {
                 $driverAssignmentEmailSent = false;
                 $driverAssignmentEmailError = $runtimeException->getMessage();
+                $otherDriversNotificationEmailSent = false;
+                $otherDriversNotificationEmailError = $runtimeException->getMessage();
             }
 
             error_log('Booking email preload failed: ' . $runtimeException->getMessage());
@@ -411,6 +416,8 @@ try {
             if ($driverChangedToAssigned) {
                 $driverAssignmentEmailSent = false;
                 $driverAssignmentEmailError = 'Could not load booking details for driver assignment email.';
+                $otherDriversNotificationEmailSent = false;
+                $otherDriversNotificationEmailError = 'Could not load booking details for driver assignment notification email.';
             }
 
             error_log('Booking email preload failed: ' . $emailException->getMessage());
@@ -531,6 +538,9 @@ try {
         if ($driverAssignmentEmailSent === null) {
             $driverAssignmentEmailSent = true;
         }
+        if ($otherDriversNotificationEmailSent === null) {
+            $otherDriversNotificationEmailSent = true;
+        }
 
         if (is_array($emailBooking)) {
             try {
@@ -583,6 +593,61 @@ try {
                 $driverAssignmentEmailError = 'Could not send driver assignment email.';
                 error_log('Driver assignment email failed: ' . $emailException->getMessage());
             }
+
+            try {
+                $otherDriversStmt = $pdo->prepare(
+                    "SELECT u.email
+                     FROM booking_driver_mappings m
+                     INNER JOIN admin_users u ON u.id = m.user_id
+                     WHERE m.booking_id = :booking_id
+                       AND m.mapping_status IN ('available', 'maybe_available')
+                       AND m.user_id <> :assigned_driver_user_id"
+                );
+                $otherDriversStmt->execute([
+                    ':booking_id' => $bookingId,
+                    ':assigned_driver_user_id' => $driverUserId,
+                ]);
+                $otherDriverEmails = normalize_email_recipients($otherDriversStmt->fetchAll(PDO::FETCH_COLUMN));
+                $otherDriversNotificationRecipientCount = count($otherDriverEmails);
+
+                if ($otherDriverEmails !== []) {
+                    $bookingRefForEmail = trim((string)($emailBooking['booking_ref'] ?? ''));
+                    $bookingDateWords = format_booking_date_words((string)($emailBooking['booking_date'] ?? ''));
+                    $pickupTimeForEmail = trim((string)($emailBooking['pickup_time'] ?? ''));
+                    $bookingWhen = trim($bookingDateWords . ($pickupTimeForEmail !== '' ? ' at ' . $pickupTimeForEmail : ''));
+                    $assignedDriverName = fallback_text((string)($emailBooking['driver_name'] ?? ''), 'The assigned driver');
+
+                    $subject = $bookingRefForEmail !== ''
+                        ? 'A driver has been assigned to booking ' . $bookingRefForEmail
+                        : 'A driver has been assigned to an EDDIE bus booking';
+
+                    foreach ($otherDriverEmails as $otherDriverEmail) {
+                        send_resend_templated_email(
+                            $otherDriverEmail,
+                            $subject,
+                            'booking-driver-assigned-notification',
+                            [
+                            'subject' => $subject,
+                            'assigned_driver_name' => $assignedDriverName,
+                            'booking_ref' => fallback_text($bookingRefForEmail, 'Not provided'),
+                            'booking_when' => fallback_text($bookingWhen, 'Not provided'),
+                            'organisation' => fallback_text((string)($emailBooking['organisation'] ?? ''), 'Not provided'),
+                            'destination_name' => fallback_text((string)($emailBooking['destination_name'] ?? ''), 'Not provided'),
+                            'support_email' => 'bookings@theeddiebus.org.uk',
+                            'support_phone' => '07805 400180',
+                            ]
+                        );
+                    }
+                }
+            } catch (RuntimeException $runtimeException) {
+                $otherDriversNotificationEmailSent = false;
+                $otherDriversNotificationEmailError = $runtimeException->getMessage();
+                error_log('Other drivers assignment notification email failed: ' . $runtimeException->getMessage());
+            } catch (Throwable $emailException) {
+                $otherDriversNotificationEmailSent = false;
+                $otherDriversNotificationEmailError = 'Could not send driver assignment notification email.';
+                error_log('Other drivers assignment notification email failed: ' . $emailException->getMessage());
+            }
         }
     }
 
@@ -601,6 +666,13 @@ try {
         $messages[] = $driverAssignmentEmailSent
             ? 'Driver assignment email sent.'
             : 'Driver assignment email could not be sent.';
+        if ($otherDriversNotificationRecipientCount === 0) {
+            $messages[] = 'No other available drivers needed notification.';
+        } else {
+            $messages[] = $otherDriversNotificationEmailSent
+                ? 'Other available drivers notified.'
+                : 'Other available drivers could not be notified.';
+        }
     }
 
     respond_json(200, [
@@ -612,6 +684,9 @@ try {
         'cancellationEmailError' => $statusMovedToCancellation ? $cancellationEmailError : null,
         'driverAssignmentEmailSent' => $driverChangedToAssigned ? $driverAssignmentEmailSent : null,
         'driverAssignmentEmailError' => $driverChangedToAssigned ? $driverAssignmentEmailError : null,
+        'otherDriversNotificationEmailSent' => $driverChangedToAssigned ? $otherDriversNotificationEmailSent : null,
+        'otherDriversNotificationEmailError' => $driverChangedToAssigned ? $otherDriversNotificationEmailError : null,
+        'otherDriversNotificationRecipientCount' => $driverChangedToAssigned ? $otherDriversNotificationRecipientCount : null,
     ]);
 } catch (PDOException $pdoException) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
