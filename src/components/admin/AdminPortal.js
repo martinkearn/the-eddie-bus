@@ -189,6 +189,13 @@ function TriStateButtonGroup({ value, onChange }) {
   )
 }
 
+function formatMileage(value) {
+  if (value === null || value === undefined || value === '') return ''
+
+  const mileage = Number(value)
+  return Number.isFinite(mileage) ? mileage.toFixed(0) : String(value)
+}
+
 function mapBookingToForm(booking) {
   if (!booking) return null
   return {
@@ -209,9 +216,9 @@ function mapBookingToForm(booking) {
     poweredWheelchairs: toBooleanFlag(booking.powered_wheelchairs),
     passengerTransfers: toBooleanFlag(booking.passenger_transfers),
     specialRequirements: String(booking.special_requirements || ''),
-    startMileage: booking.start_mileage !== null && booking.start_mileage !== undefined ? String(booking.start_mileage) : '',
-    finishMileage: booking.finish_mileage !== null && booking.finish_mileage !== undefined ? String(booking.finish_mileage) : '',
-    nonBillableMileage: booking.non_billable_mileage !== null && booking.non_billable_mileage !== undefined ? String(booking.non_billable_mileage) : '',
+    startMileage: formatMileage(booking.start_mileage),
+    finishMileage: formatMileage(booking.finish_mileage),
+    nonBillableMileage: formatMileage(booking.non_billable_mileage),
     checklistLightsIndicators: toTriStateSelection(booking.checklist_lights_indicators),
     checklistTyres: toTriStateSelection(booking.checklist_tyres),
     checklistWheelNuts: toTriStateSelection(booking.checklist_wheel_nuts),
@@ -2339,7 +2346,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={bookingForm.startMileage}
                         onChange={(event) => handleBookingFieldChange('startMileage', event.target.value)}
                       />
@@ -2354,7 +2361,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={bookingForm.finishMileage}
                         onChange={(event) => handleBookingFieldChange('finishMileage', event.target.value)}
                       />
@@ -2369,7 +2376,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                       <input
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="1"
                         value={bookingForm.nonBillableMileage}
                         onChange={(event) => handleBookingFieldChange('nonBillableMileage', event.target.value)}
                       />
