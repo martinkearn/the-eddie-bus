@@ -5,15 +5,15 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../bootstrap_api.php';
 require_once $srcPath . '/email.php';
 
-function tri_state_to_nullable_int(mixed $value): ?int
+function checklist_status_or_null(mixed $value): ?string
 {
     $normalized = strtolower(trim((string)$value));
-    if (in_array($normalized, ['1', 'true', 'yes', 'y', 'on'], true)) {
-        return 1;
+    if (in_array($normalized, ['ok', '1', 'true', 'yes', 'y', 'on'], true)) {
+        return 'ok';
     }
 
-    if (in_array($normalized, ['0', 'false', 'no', 'n', 'off'], true)) {
-        return 0;
+    if (in_array($normalized, ['concern', '0', 'false', 'no', 'n', 'off'], true)) {
+        return 'concern';
     }
 
     return null;
@@ -257,19 +257,19 @@ try {
         ':start_mileage' => $startMileage,
         ':finish_mileage' => $finishMileage,
         ':non_billable_mileage' => $nonBillableMileage,
-        ':checklist_lights_indicators' => tri_state_to_nullable_int($payload['checklistLightsIndicators'] ?? null),
-        ':checklist_tyres' => tri_state_to_nullable_int($payload['checklistTyres'] ?? null),
-        ':checklist_wheel_nuts' => tri_state_to_nullable_int($payload['checklistWheelNuts'] ?? null),
-        ':checklist_bodywork' => tri_state_to_nullable_int($payload['checklistBodywork'] ?? null),
-        ':checklist_mirrors_glass' => tri_state_to_nullable_int($payload['checklistMirrorsGlass'] ?? null),
-        ':checklist_brakes' => tri_state_to_nullable_int($payload['checklistBrakes'] ?? null),
-        ':checklist_steering' => tri_state_to_nullable_int($payload['checklistSteering'] ?? null),
-        ':checklist_wipers_washers' => tri_state_to_nullable_int($payload['checklistWipersWashers'] ?? null),
-        ':checklist_dashboard_warning_lights' => tri_state_to_nullable_int($payload['checklistDashboardWarningLights'] ?? null),
-        ':checklist_seats_seatbelts' => tri_state_to_nullable_int($payload['checklistSeatsSeatbelts'] ?? null),
-        ':checklist_emergency_equipment' => tri_state_to_nullable_int($payload['checklistEmergencyEquipment'] ?? null),
-        ':checklist_wheelchair_lifts_restraints' => tri_state_to_nullable_int($payload['checklistWheelchairLiftsRestraints'] ?? null),
-        ':checklist_tail_lifts' => tri_state_to_nullable_int($payload['checklistTailLifts'] ?? null),
+        ':checklist_lights_indicators' => checklist_status_or_null($payload['checklistLightsIndicators'] ?? null),
+        ':checklist_tyres' => checklist_status_or_null($payload['checklistTyres'] ?? null),
+        ':checklist_wheel_nuts' => checklist_status_or_null($payload['checklistWheelNuts'] ?? null),
+        ':checklist_bodywork' => checklist_status_or_null($payload['checklistBodywork'] ?? null),
+        ':checklist_mirrors_glass' => checklist_status_or_null($payload['checklistMirrorsGlass'] ?? null),
+        ':checklist_brakes' => checklist_status_or_null($payload['checklistBrakes'] ?? null),
+        ':checklist_steering' => checklist_status_or_null($payload['checklistSteering'] ?? null),
+        ':checklist_wipers_washers' => checklist_status_or_null($payload['checklistWipersWashers'] ?? null),
+        ':checklist_dashboard_warning_lights' => checklist_status_or_null($payload['checklistDashboardWarningLights'] ?? null),
+        ':checklist_seats_seatbelts' => checklist_status_or_null($payload['checklistSeatsSeatbelts'] ?? null),
+        ':checklist_emergency_equipment' => checklist_status_or_null($payload['checklistEmergencyEquipment'] ?? null),
+        ':checklist_wheelchair_lifts_restraints' => checklist_status_or_null($payload['checklistWheelchairLiftsRestraints'] ?? null),
+        ':checklist_tail_lifts' => checklist_status_or_null($payload['checklistTailLifts'] ?? null),
         ':vehicle_check_date' => $vehicleCheckDate,
         ':vehicle_check_signed_by' => $vehicleCheckSignedBy !== '' ? $vehicleCheckSignedBy : null,
         ':vehicle_faults_recorded' => $vehicleFaultsRecorded !== '' ? $vehicleFaultsRecorded : null,

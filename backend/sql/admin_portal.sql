@@ -123,19 +123,19 @@ CALL ensure_booking_column('admin_notes', 'TEXT NULL', 'special_requirements');
 CALL ensure_booking_column('start_mileage', 'DECIMAL(8,2) NULL', 'admin_notes');
 CALL ensure_booking_column('finish_mileage', 'DECIMAL(8,2) NULL', 'start_mileage');
 CALL ensure_booking_column('non_billable_mileage', 'DECIMAL(8,2) NULL', 'finish_mileage');
-CALL ensure_booking_column('checklist_lights_indicators', 'TINYINT(1) NULL DEFAULT NULL', 'non_billable_mileage');
-CALL ensure_booking_column('checklist_tyres', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_lights_indicators');
-CALL ensure_booking_column('checklist_wheel_nuts', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_tyres');
-CALL ensure_booking_column('checklist_bodywork', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_wheel_nuts');
-CALL ensure_booking_column('checklist_mirrors_glass', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_bodywork');
-CALL ensure_booking_column('checklist_brakes', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_mirrors_glass');
-CALL ensure_booking_column('checklist_steering', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_brakes');
-CALL ensure_booking_column('checklist_wipers_washers', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_steering');
-CALL ensure_booking_column('checklist_dashboard_warning_lights', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_wipers_washers');
-CALL ensure_booking_column('checklist_seats_seatbelts', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_dashboard_warning_lights');
-CALL ensure_booking_column('checklist_emergency_equipment', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_seats_seatbelts');
-CALL ensure_booking_column('checklist_wheelchair_lifts_restraints', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_emergency_equipment');
-CALL ensure_booking_column('checklist_tail_lifts', 'TINYINT(1) NULL DEFAULT NULL', 'checklist_wheelchair_lifts_restraints');
+CALL ensure_booking_column('checklist_lights_indicators', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'non_billable_mileage');
+CALL ensure_booking_column('checklist_tyres', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_lights_indicators');
+CALL ensure_booking_column('checklist_wheel_nuts', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_tyres');
+CALL ensure_booking_column('checklist_bodywork', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_wheel_nuts');
+CALL ensure_booking_column('checklist_mirrors_glass', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_bodywork');
+CALL ensure_booking_column('checklist_brakes', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_mirrors_glass');
+CALL ensure_booking_column('checklist_steering', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_brakes');
+CALL ensure_booking_column('checklist_wipers_washers', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_steering');
+CALL ensure_booking_column('checklist_dashboard_warning_lights', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_wipers_washers');
+CALL ensure_booking_column('checklist_seats_seatbelts', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_dashboard_warning_lights');
+CALL ensure_booking_column('checklist_emergency_equipment', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_seats_seatbelts');
+CALL ensure_booking_column('checklist_wheelchair_lifts_restraints', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_emergency_equipment');
+CALL ensure_booking_column('checklist_tail_lifts', 'ENUM(''ok'', ''concern'') NULL DEFAULT NULL', 'checklist_wheelchair_lifts_restraints');
 CALL ensure_booking_column('vehicle_check_date', 'DATE NULL', 'checklist_tail_lifts');
 CALL ensure_booking_column('vehicle_check_signed_by', 'VARCHAR(255) NULL', 'vehicle_check_date');
 CALL ensure_booking_column('vehicle_faults_recorded', 'TEXT NULL', 'vehicle_check_signed_by');
@@ -143,20 +143,59 @@ CALL ensure_booking_column('vehicle_faults_recorded', 'TEXT NULL', 'vehicle_chec
 ALTER TABLE bookings
   MODIFY static_wheelchairs TINYINT(1) NOT NULL DEFAULT 0,
   MODIFY powered_wheelchairs TINYINT(1) NOT NULL DEFAULT 0,
-  MODIFY passenger_transfers TINYINT(1) NOT NULL DEFAULT 0,
-  MODIFY checklist_lights_indicators TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_tyres TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_wheel_nuts TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_bodywork TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_mirrors_glass TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_brakes TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_steering TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_wipers_washers TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_dashboard_warning_lights TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_seats_seatbelts TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_emergency_equipment TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_wheelchair_lifts_restraints TINYINT(1) NULL DEFAULT NULL,
-  MODIFY checklist_tail_lifts TINYINT(1) NULL DEFAULT NULL;
+  MODIFY passenger_transfers TINYINT(1) NOT NULL DEFAULT 0;
+
+DROP PROCEDURE IF EXISTS migrate_checklist_column;
+DELIMITER //
+CREATE PROCEDURE migrate_checklist_column(IN p_column_name VARCHAR(64))
+BEGIN
+  SET @checklist_to_text_sql = CONCAT(
+    'ALTER TABLE bookings MODIFY COLUMN ',
+    p_column_name,
+    ' VARCHAR(16) NULL DEFAULT NULL'
+  );
+  PREPARE stmt FROM @checklist_to_text_sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  SET @normalize_checklist_sql = CONCAT(
+    'UPDATE bookings SET ',
+    p_column_name,
+    ' = CASE ',
+    'WHEN LOWER(TRIM(', p_column_name, ')) IN (''ok'', ''1'', ''true'', ''yes'', ''y'', ''on'') THEN ''ok'' ',
+    'WHEN LOWER(TRIM(', p_column_name, ')) IN (''concern'', ''0'', ''false'', ''no'', ''n'', ''off'') THEN ''concern'' ',
+    'ELSE NULL END'
+  );
+  PREPARE stmt FROM @normalize_checklist_sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  SET @checklist_to_enum_sql = CONCAT(
+    'ALTER TABLE bookings MODIFY COLUMN ',
+    p_column_name,
+    ' ENUM(''ok'', ''concern'') NULL DEFAULT NULL'
+  );
+  PREPARE stmt FROM @checklist_to_enum_sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END //
+DELIMITER ;
+
+CALL migrate_checklist_column('checklist_lights_indicators');
+CALL migrate_checklist_column('checklist_tyres');
+CALL migrate_checklist_column('checklist_wheel_nuts');
+CALL migrate_checklist_column('checklist_bodywork');
+CALL migrate_checklist_column('checklist_mirrors_glass');
+CALL migrate_checklist_column('checklist_brakes');
+CALL migrate_checklist_column('checklist_steering');
+CALL migrate_checklist_column('checklist_wipers_washers');
+CALL migrate_checklist_column('checklist_dashboard_warning_lights');
+CALL migrate_checklist_column('checklist_seats_seatbelts');
+CALL migrate_checklist_column('checklist_emergency_equipment');
+CALL migrate_checklist_column('checklist_wheelchair_lifts_restraints');
+CALL migrate_checklist_column('checklist_tail_lifts');
+
+DROP PROCEDURE IF EXISTS migrate_checklist_column;
 
 SET @has_driver_index = (
   SELECT COUNT(*)

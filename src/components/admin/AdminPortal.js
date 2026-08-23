@@ -145,28 +145,28 @@ function toBooleanFlag(value) {
 }
 
 function toTriStateSelection(value) {
-  if (value === true || value === 1 || value === '1') return 'yes'
-  if (value === false || value === 0 || value === '0') return 'no'
+  if (value === true || value === 1 || value === '1') return 'ok'
+  if (value === false || value === 0 || value === '0') return 'concern'
 
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase()
-    if (['yes', 'true', '1', 'y', 'on'].includes(normalized)) return 'yes'
-    if (['no', 'false', '0', 'n', 'off'].includes(normalized)) return 'no'
+    if (['ok', 'yes', 'true', '1', 'y', 'on'].includes(normalized)) return 'ok'
+    if (['concern', 'no', 'false', '0', 'n', 'off'].includes(normalized)) return 'concern'
   }
 
   return 'not-entered'
 }
 
 function triStateLabel(value) {
-  if (value === 'yes') return 'Yes'
-  if (value === 'no') return 'No'
+  if (value === 'ok') return 'OK'
+  if (value === 'concern') return 'Concern'
   return 'Not entered'
 }
 
 const TRI_STATE_CHECKLIST_OPTIONS = [
   { value: 'not-entered', label: 'Not entered' },
-  { value: 'no', label: 'No' },
-  { value: 'yes', label: 'Yes' },
+  { value: 'concern', label: 'Concern' },
+  { value: 'ok', label: 'OK' },
 ]
 
 function TriStateButtonGroup({ value, onChange }) {
@@ -273,7 +273,7 @@ function isVehicleCheckComplete(booking) {
 
   const hasDate = String(booking.vehicle_check_date || '').trim() !== ''
   const hasSignature = String(booking.vehicle_check_signed_by || '').trim() !== ''
-  const hasAllChecks = VEHICLE_CHECK_KEYS.every((key) => toBooleanFlag(booking[key]))
+  const hasAllChecks = VEHICLE_CHECK_KEYS.every((key) => toTriStateSelection(booking[key]) === 'ok')
 
   return hasDate && hasSignature && hasAllChecks
 }
