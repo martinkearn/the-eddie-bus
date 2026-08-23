@@ -2377,7 +2377,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                   <section className="field-full admin-vehicle-checklist-panel" aria-label="Vehicle checklist section">
                     <div className="admin-detail-tab-heading">
                       <h3>Checklist</h3>
-                      <p>Record mileage and complete the post-journey checklist.</p>
+                      <p>Record mileage and complete the checklist.</p>
                     </div>
 
                     <div className="admin-vehicle-checklist-grid">
