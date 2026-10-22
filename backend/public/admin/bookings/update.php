@@ -142,8 +142,8 @@ if (is_cancellation_status($status) && $adminNotes === '') {
 if ($driverUserIdRaw !== '' && !ctype_digit($driverUserIdRaw)) {
     $errors['driverUserId'] = 'Driver must be a valid user selection.';
 }
-if ($status !== 'pending' && in_array(trim(strtolower($driverUserIdRaw)), ['', 'unassigned'], true)) {
-    $errors['driverUserId'] = 'Driver must be assigned before moving booking beyond Pending.';
+if ($status !== 'pending' && !is_cancellation_status($status) && in_array(trim(strtolower($driverUserIdRaw)), ['', 'unassigned'], true)) {
+    $errors['driverUserId'] = 'Driver must be assigned before confirming or progressing a booking. Pending and cancelled bookings can remain unassigned.';
 }
 
 $isValidMileage = static function (string $value): bool {
