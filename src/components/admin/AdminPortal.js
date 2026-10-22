@@ -104,6 +104,10 @@ function isCancellationBookingStatus(value) {
   return normalized === 'cancelled_by_customer' || normalized === 'cancelled_by_us'
 }
 
+function bookingStatusRequiresDriver(value) {
+  return normalizeBookingStatus(value) !== 'pending' && !isCancellationBookingStatus(value)
+}
+
 function isStandardBookingStatus(value) {
   return STANDARD_BOOKING_STATUS_VALUES.has(value)
 }
@@ -1183,8 +1187,8 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
     event.preventDefault()
     if (!bookingForm || !isAdmin) return
 
-    if (normalizeBookingStatus(bookingForm.status) !== 'pending' && isDriverUnassigned(bookingForm.driverUserId)) {
-      setBanner({ type: 'error', message: 'Assign a driver before moving a booking beyond Pending.' })
+    if (bookingStatusRequiresDriver(bookingForm.status) && isDriverUnassigned(bookingForm.driverUserId)) {
+      setBanner({ type: 'error', message: 'Assign a driver before confirming or progressing a booking. Pending and cancelled bookings can remain unassigned.' })
       return
     }
 
@@ -1984,7 +1988,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                           onChange={(event) => handleBookingFieldChange('status', event.target.value)}
                         >
                           {BOOKING_STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value} disabled={option.value !== 'pending' && isDriverSelectionUnassigned}>{option.label}</option>
+                            <option key={option.value} value={option.value} disabled={bookingStatusRequiresDriver(option.value) && isDriverSelectionUnassigned}>{option.label}</option>
                           ))}
                         </select>
                         {isStandardBookingStatus(normalizeBookingStatus(bookingForm.status)) ? (
@@ -2004,7 +2008,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                                       className="admin-status-process-step-button"
                                       type="button"
                                       onClick={() => handleBookingFieldChange('status', option.value)}
-                                      disabled={option.value !== 'pending' && isDriverSelectionUnassigned}
+                                      disabled={bookingStatusRequiresDriver(option.value) && isDriverSelectionUnassigned}
                                       aria-pressed={normalizeBookingStatus(bookingForm.status) === option.value}
                                     >
                                       <span className="admin-status-process-content">
@@ -2021,7 +2025,7 @@ export function AdminPortal({ bookingApiEndpoint = '', adminApiBase = '', initia
                           </div>
                         ) : null}
                         {isDriverSelectionUnassigned ? (
-                          <small className="admin-field-help">Assign a driver before moving a booking beyond Pending.</small>
+                          <small className="admin-field-help">Assign a driver before confirming or progressing a booking. Pending and cancelled bookings can remain unassigned.</small>
                         ) : null}
                         <small className="admin-field-help">{formatBookingStatusDescription(bookingForm.status)}</small>
                       </>

@@ -1,4 +1,7 @@
-# Admin Portal Specification (Agreed Scope)
+---
+title: Admin Portal Specification (Agreed Scope)
+description: Agreed requirements for the bookings admin portal.
+---
 
 Date captured: 26 May 2026
 
@@ -51,6 +54,10 @@ This document records the agreed requirements for the bookings admin portal befo
 - Default list view: all bookings.
 - Default sort: newest booking date first.
 - Status values include: `pending`, `confirmed`, `journey_completed`, `customer_billed`, `booking_completed`, `cancelled_by_customer`, `cancelled_by_us`.
+- Pending bookings and both cancellation statuses can be saved without assigning a driver.
+  Confirming a booking or progressing it through the remaining standard workflow requires a driver.
+- Cancelling a booking requires a cancellation reason. The cancellation email is sent to the
+  customer and, if assigned, the driver. With no driver assigned, the email shows "No driver assigned".
 - Search model:
   - Primary interaction is global search (not a heavy filter UI)
   - Partial/fuzzy matching
